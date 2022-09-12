@@ -47820,6 +47820,215 @@ ENDIF
 
 \ ******************************************************************************
 \
+\       Name: SceneEditor
+\       Type: Subroutine
+\   Category: Scene editor
+\    Summary: Scene editor
+\
+\ ******************************************************************************
+
+.SceneEditor
+
+ LDA #1                 \ Clear the top part of the screen, draw a white border,
+ JSR TT66               \ and set the current view type in QQ11 to 1
+
+ JSR RESET              \ Call RESET to initialise most of the game variables
+
+ LDA #%10000000
+ STA ALP2+1
+ STA BET2+1
+
+ LDA #0                 \ Set ALPHA and ALP1 to 0, so our roll angle (i.e. that
+ STA ALPHA              \ of the camera) is 0
+ STA ALP1
+ STA BETA
+ STA BET1
+ STA ALP2
+ STA BET2
+
+ STA DELTA              \ Set DELTA to 0, so our current speed (i.e. that of the
+                        \ camera) is 0
+
+\ STA scacol+CYL         \ Set the scanner colour for the Cobra Mk III to colour
+                        \ 0 (black), so it doesn't appear on the scanner during
+                        \ the demo
+
+ JSR DOVDU19            \ Send a #SETVDU19 0 command to the I/O processor to
+                        \ switch to the mode 1 palette for the space view,
+                        \ which is yellow (colour 1), red (colour 2) and cyan
+                        \ (colour 3)
+
+ JSR nWq                \ Call nWq to create a random cloud of stardust
+
+                        \ COBRA 1
+
+ JSR ZINF2              \ Call ZINF2 to reset INWK and the orientation vectors,
+                        \ with nosev pointing into the screen
+
+ LDA #1                 \ x_hi
+ STA INWK+1
+
+ LDA #%10000000         \ x_sign = left
+ STA INWK+2
+
+ LDA #108               \ y_lo = 108
+ STA INWK+3
+
+ LDA #%10000000         \ y_sign = bottom
+ STA INWK+5
+
+ LDA #200               \ z_lo
+ STA INWK+6
+
+ LDA #2                 \ z_hi
+ STA INWK+7
+
+ LDA #%00000000         \ z_sign = in front of camera
+ STA INWK+8
+
+ LDA #CYL               \ Set the ship type to a Cobra Mk III
+ STA TYPE
+
+ JSR NWSHP              \ Add a new Cobra Mk III to the local bubble (in this
+                        \ case, the demo screen), pointing INF to the new ship's
+                        \ data block in K%
+
+ JSR STORE
+
+\ JSR LL9                \ Call LL9 to draw the Cobra on-screen
+
+ JSR ZINF2              \ Call ZINF2 to reset INWK and the orientation vectors,
+                        \ with nosev pointing into the screen
+
+ LDA #&E0               \ Set nosev_z_hi = -1 (as &E0 is a negative unit vector
+ STA INWK+14            \ length), so the ship points out of the screen, towards
+                        \ us
+
+\ LDX #15                \ Set the ship's speed to 15
+\ STX INWK+27
+
+ LDX #2                 \ Set the ship's z_hi to 5, so it's in the distance
+ STX INWK+7
+
+ LDA #ADA               \ Set the ship type to an Adder
+ STA TYPE
+
+ JSR NWSHP              \ Add a new Adder to the local bubble (in this case, the
+                        \ demo screen)
+
+ JSR STORE
+
+\ JSR LL9                \ Call LL9 to draw the Adder on-screen
+
+.ShowLoop
+
+ LDX #0                 \ We're about to work our way through all the ships in
+                        \ our local bubble of universe, so set a counter in X,
+                        \ starting from 0, to refer to each ship slot in turn
+
+.ShowShips1
+
+ STX XSAV               \ Store the current slot number in XSAV
+
+ LDA FRIN,X             \ Fetch the contents of this slot into A. If it is 0
+ BNE P%+5               \ then this slot is empty and we have no more ships to
+ JMP ShowShips5         \ process, so jump to ShowShips5 below, otherwise A contains
+                        \ the type of ship that's in this slot, so skip over the
+                        \ JMP ShowShips5 instruction and keep going
+
+ STA TYPE               \ Store the ship type in TYPE
+
+ JSR GINF               \ Call GINF to fetch the address of the ship data block
+                        \ for the ship in slot X and store it in INF. The data
+                        \ block is in the K% workspace, which is where all the
+                        \ ship data blocks are stored
+
+                        \ Next we want to copy the ship data block from INF to
+                        \ the zero-page workspace at INWK, so we can process it
+                        \ more efficiently
+
+ LDY #NI%-1             \ There are NI% bytes in each ship data block (and in
+                        \ the INWK workspace, so we set a counter in Y so we can
+                        \ loop through them
+
+.ShowShips2
+
+ LDA (INF),Y            \ Load the Y-th byte of INF and store it in the Y-th
+ STA INWK,Y             \ byte of INWK
+
+ DEY                    \ Decrement the loop counter
+
+ BPL ShowShips2         \ Loop back for the next byte until we have copied the
+                        \ last byte from INF to INWK
+
+ LDA TYPE               \ If the ship type is negative then this indicates a
+ BMI ShowShips3         \ planet or sun, so jump down to ShowShips3, as the next bit
+                        \ sets up a pointer to the ship blueprint, and then
+                        \ checks for energy bomb damage, and neither of these
+                        \ apply to planets and suns
+
+ ASL A                  \ Set Y = ship type * 2
+ TAY
+
+ LDA XX21-2,Y           \ The ship blueprints at XX21 start with a lookup
+ STA XX0                \ table that points to the individual ship blueprints,
+                        \ so this fetches the low byte of this particular ship
+                        \ type's blueprint and stores it in XX0
+
+ LDA XX21-1,Y           \ Fetch the high byte of this particular ship type's
+ STA XX0+1              \ blueprint and store it in XX0+1
+
+.ShowShips3
+
+ JSR MVEIT              \ Call MVEIT to move the ship we are processing in space
+
+                        \ Now that we are done processing this ship, we need to
+                        \ copy the ship data back from INWK to the correct place
+                        \ in the K% workspace. We already set INF in part 4 to
+                        \ point to the ship's data block in K%, so we can simply
+                        \ do the reverse of the copy we did before, this time
+                        \ copying from INWK to INF
+
+ LDY #(NI%-1)           \ Set a counter in Y so we can loop through the NI%
+                        \ bytes in the ship data block
+
+.ShowShips4
+
+ LDA INWK,Y             \ Load the Y-th byte of INWK and store it in the Y-th
+ STA (INF),Y            \ byte of INF
+
+ DEY                    \ Decrement the loop counter
+
+ BPL ShowShips4         \ Loop back for the next byte, until we have copied the
+                        \ last byte from INWK back to INF
+
+ JSR LL9                \ Call LL9 to draw the ship we're processing on-screen
+
+ LDY #31                \ Fetch the ship's explosion/killed state from byte #31
+ LDA INWK+31            \ and copy it to byte #31 in INF (so the ship's data in
+ STA (INF),Y            \ K% gets updated)
+
+ LDX XSAV               \ We're done processing this ship, so fetch the ship's
+                        \ slot number, which we saved in XSAV back at the start
+                        \ of the loop
+
+ INX                    \ Increment the slot number to move on to the next slot
+
+ JMP ShowShips1         \ And jump back up to the beginning of the loop to get
+                        \ the next ship in the local bubble for processing
+
+.ShowShips5
+
+ JSR RDKEY              \ Scan the keyboard for a key press
+
+ BEQ ShowLoop           \ If no key was pressed, loop back up to move/rotate
+                        \ the ship and check again for a key press
+
+ JMP DEATH2             \ Jump to DEATH2 to reset most of the game and restart
+                        \ from the title screen
+
+\ ******************************************************************************
+\
 \       Name: F%
 \       Type: Variable
 \   Category: Utility routines
