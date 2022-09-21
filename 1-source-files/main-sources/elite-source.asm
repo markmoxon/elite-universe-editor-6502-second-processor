@@ -47780,7 +47780,7 @@ ENDIF
 
  JSR mvblock            \ Call mvblock to copy the recursive tokens
 
-                        \ And then we copy the &22 pages of ship blueprints from
+                        \ And then we copy the &28 pages of ship blueprints from
                         \ F% + &0400 to D%
 
  LDA #LO(F%)            \ Set V(1 0) = F% + &0400
@@ -47793,7 +47793,7 @@ ENDIF
  LDA #HI(D%)
  STA SC+1
 
- LDX #&22               \ Set X = &22 to act as a counter for copying &22 pages
+ LDX #&28               \ Set X = &28 to act as a counter for copying &28 pages
 
                         \ Fall through into mvblock to copy the ship blueprints
 
