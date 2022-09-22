@@ -30804,7 +30804,10 @@ ENDIF
  CMP #&79               \ Did we press right arrow? If not, skip the following
  BNE P%+5               \ instruction
 
- JMP SceneEditor        \ We pressed right arror, so jump to SceneEditor 
+ CMP #&20               \ Did we press f0? If not, skip the following
+ BNE P%+5               \ instruction
+
+ JMP SceneEditor        \ We pressed f0, so jump to SceneEditor
 
  CMP #&44               \ Did we press "Y"? If not, jump to QU5, otherwise
  BNE QU5                \ continue on to load a new commander
@@ -51253,14 +51256,20 @@ ENDMACRO
 
 .SceneEditor
 
- LDA #1                 \ Clear the top part of the screen, draw a white border,
- JSR TT66               \ and set the current view type in QQ11 to 1
+ LDA #0                 \ Clear the top part of the screen, draw a white border,
+ JSR TT66               \ and set the current view type in QQ11 to 0 (space
+                        \ view)
+
+ JSR SIGHT              \ Draw the laser crosshairs
 
  JSR RESET              \ Call RESET to initialise most of the game variables
 
- LDA #%10000000
+ LDA #%10000000         \ Stop our ship from moving
  STA ALP2+1
  STA BET2+1
+
+ LDA #2                 \ Set current slot in XSAV to 2 (start of ship slots)
+ STA XSAV
 
  LDA #0                 \ Set ALPHA and ALP1 to 0, so our roll angle (i.e. that
  STA ALPHA              \ of the camera) is 0
@@ -51273,92 +51282,509 @@ ENDMACRO
  STA DELTA              \ Set DELTA to 0, so our current speed (i.e. that of the
                         \ camera) is 0
 
-\ STA scacol+CYL         \ Set the scanner colour for the Cobra Mk III to colour
-                        \ 0 (black), so it doesn't appear on the scanner during
-                        \ the demo
-
  JSR DOVDU19            \ Send a #SETVDU19 0 command to the I/O processor to
                         \ switch to the mode 1 palette for the space view,
                         \ which is yellow (colour 1), red (colour 2) and cyan
                         \ (colour 3)
 
- JSR nWq                \ Call nWq to create a random cloud of stardust
+ JSR SOLAR				\ Add the sun, planet and stardust
 
-                        \ COBRA 1
+ JSR PrintSlotNumber    \ Print the current slot number at text location (0, 1)
+
+.scen1
+
+ LDY #2                 \ Delay for 2 vertical syncs (2/50 = 0.04 seconds) so we
+ JSR DELAY              \ don't take up too much CPU time while looping round
+
+ JSR RDKEY              \ Scan the keyboard for a key press and return the
+                        \ internal key number in X (or 0 for no key press)
+
+ BNE scen1              \ If a key was already being held down when we entered
+                        \ this routine, keep looping back up to scen1 until the
+                        \ key is released
+
+.scen2
+
+ JSR RDKEY              \ Any pre-existing key press is now gone, so we can
+                        \ start scanning the keyboard again, returning the
+                        \ internal key number in X (or 0 for no key press)
+
+ BEQ scen2              \ Keep looping up to scen2 until a key is pressed
+
+.scen3
+
+ JSR ProcessKey         \ Process key press
+
+ JMP scen1              \ Loop back to wait for next key press
+
+\ ******************************************************************************
+\
+\       Name: ProcessKey
+\    Summary: Process key presses
+\
+\ ******************************************************************************
+
+.ProcessKey
+
+ LDX #0                 \ Set X = 0 for the x-axis
+
+ CMP #&79               \ Right arrow (move ship right along the x-axis)
+ BNE P%+7
+ LDY #0
+ JMP MoveShip
+
+ CMP #&19               \ Left arrow (move ship left along the x-axis)
+ BNE P%+7
+ LDY #%10000000
+ JMP MoveShip
+
+ LDX #3                 \ Set X = 3 for the y-axis
+
+ CMP #&39               \ Up arrow (move ship up along the y-axis)
+ BNE P%+7
+ LDY #0
+ JMP MoveShip
+
+ CMP #&29               \ Down arrow (move ship down along the y-axis)
+ BNE P%+7
+ LDY #%10000000
+ JMP MoveShip
+
+ LDX #6                 \ Set X = 6 for the z-axis
+
+ CMP #&68               \ ? (move ship away along the z-axis)
+ BNE P%+7
+ LDY #0
+ JMP MoveShip
+
+ CMP #&62               \ SPACE (move ship closer along the z-axis)
+ BNE P%+7
+ LDY #%10000000
+ JMP MoveShip
+
+ CMP #&49               \ RETURN pressed (add ship)
+ BNE P%+5
+ JMP AddShip
+
+ CMP #&59               \ DELETE pressed (delete ship)
+ BNE P%+5
+ JMP DeleteShip
+
+ CMP #&21               \ W (next slot)
+ BNE P%+5
+ JMP NextSlot
+
+ CMP #&10               \ Q (previous slot)
+ BNE P%+5
+ JMP PreviousSlot
+
+ CMP #&70               \ If ESCAPE is being pressed, jump to pkey1
+ BEQ pkey1
+
+ RTS                    \ Return from the subroutine
+
+.pkey1
+
+ PLA                    \ Quit the scene editor by returning to the caller of
+ PLA                    \ SceneEditor
+ RTS
+
+\ ******************************************************************************
+\
+\       Name: MoveShip
+\    Summary: Move ship in space
+\
+\ ******************************************************************************
+
+.MoveShip
+
+ STX K                  \ Store the axis in K, so we can retrieve it below
+
+ STY K+3                \ Store the sign of the movement in the sign byte of
+                        \ K(3 2 1)
+
+ LDX #0                 \ Set the high byte of K(3 2 1) to 0
+ STX K+2
+
+ JSR DKS4               \ Call DKS4 with X = 0 to check whether the SHIFT key is
+                        \ being pressed
+
+ BMI left1              \ IF SHIFT is being pressed, jump to left1
+
+ LDY #1                 \ Set Y = 1 to use as the delta and jump to left2
+ BNE left2
+
+.left1
+
+ LDY #20                \ Set Y = 10 to use as the delta
+
+.left2
+
+ STY K+1                \ Set the low byte of K(3 2 1) to the delta
+
+ LDX K                  \ Fetch the axis into X (the comments below are for the
+                        \ x-axis)
+
+ JSR MVT3               \ K(3 2 1) = (x_sign x_hi x_lo) + K(3 2 1)
+
+ LDA K+1                \ Set (x_sign x_hi x_lo) = K(3 2 1)
+ STA INWK,X
+ LDA K+2
+ STA INWK+1,X
+ LDA K+3
+ STA INWK+2,X
+
+ JSR LL9                \ Redraw ship
+
+ JSR STORE              \ Call STORE to copy the ship data block at INWK back to
+                        \ the K% workspace at INF
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: AddShip
+\    Summary: Add a new ship
+\
+\ ******************************************************************************
+
+.AddShip
+
+ LDA #0                 \ Set the delay in DLY to 0, so any new in-flight
+ STA DLY                \ messages will be shown instantly
 
  JSR ZINF2              \ Call ZINF2 to reset INWK and the orientation vectors,
                         \ with nosev pointing into the screen
 
- LDA #1                 \ x_hi
- STA INWK+1
+ LDA #2                 \ Set z_hi = 2 so the new ship is a little way in front
+ STA INWK+7             \ of us
 
- LDA #%10000000         \ x_sign = left
- STA INWK+2
+ LDA #185               \ Print text token 25 ("SHIP") followed by a question
+ JSR ShowPrompt         \ mark
 
- LDA #108               \ y_lo = 108
- STA INWK+3
+ JSR BEEP               \ Make a high beep to prompt for the ship type
 
- LDA #%10000000         \ y_sign = bottom
- STA INWK+5
+ JSR TT217              \ Scan the keyboard until a key is pressed, and return
+                        \ the key's ASCII code in A (and X)
 
- LDA #200               \ z_lo
- STA INWK+6
+ CMP #'1'               \ Check key is '1' or higher
+ BCS add0
 
- LDA #2                 \ z_hi
- STA INWK+7
+ BCC add4               \ Key is invalid, so jump to add4 to return from the
+                        \ subroutine (this BCC is effectively a JMP as we just
+                        \ passed through a BCS)
 
- LDA #%00000000         \ z_sign = in front of camera
- STA INWK+8
+.add0
 
- LDA #CYL               \ Set the ship type to a Cobra Mk III
- STA TYPE
+ CMP #'9'+1             \ If key is '1' to '9', jump to add1 to process
+ BCC add1
 
- JSR NWSHP              \ Add a new Cobra Mk III to the local bubble (in this
-                        \ case, the demo screen), pointing INF to the new ship's
-                        \ data block in K%
+ CMP #'a'               \ If key is less than 'A', it is invalid, so jump to
+ BCC add4               \ add4 to return from the subroutine
 
- JSR STORE
+ CMP #'y'               \ If key is 'Y or greater, it is invalid, so jump to
+ BCS add4               \ add4  to return from the subroutine
 
-\ JSR LL9                \ Call LL9 to draw the Cobra on-screen
+                        \ Key is 'A' to 'X'
 
- JSR ZINF2              \ Call ZINF2 to reset INWK and the orientation vectors,
-                        \ with nosev pointing into the screen
+ SBC #'a'-9             \ Otherwise calculate ship type with 'A' = 10 (the C
+                        \ flag is clear for this calculation)
 
- LDA #&E0               \ Set nosev_z_hi = -1 (as &E0 is a negative unit vector
- STA INWK+14            \ length), so the ship points out of the screen, towards
-                        \ us
+ BCS add3               \ Jump to add3 (this BCS is effectively a JMP as the C
+                        \ flag will be set from the subtraction)
 
-\ LDX #15                \ Set the ship's speed to 15
-\ STX INWK+27
+.add1
 
- LDX #2                 \ Set the ship's z_hi to 5, so it's in the distance
- STX INWK+7
+                        \ Key is '1' to '9'
 
- LDA #ADA               \ Set the ship type to an Adder
- STA TYPE
+ CMP #'2'               \ '2' is invalid as it is the space station, so jump to
+ BEQ add4               \ add4 to return from the subroutine
 
- JSR NWSHP              \ Add a new Adder to the local bubble (in this case, the
-                        \ demo screen)
+ SEC                    \ Calculate the ship type from the key pressed
+ SBC #'0'
 
- JSR STORE
+.add3
 
-\ JSR LL9                \ Call LL9 to draw the Adder on-screen
+ STA TYPE               \ Store the new ship type
 
-.ShowLoop
+ JSR NWSHP              \ Add the new ship and store it in K%
 
- LDX #0                 \ We're about to work our way through all the ships in
-                        \ our local bubble of universe, so set a counter in X,
-                        \ starting from 0, to refer to each ship slot in turn
+ BCC add4               \ If ship was not added, return from subroutine
 
-.ShowShips1
+ JSR GetSlotForShip     \ Set X to the slot number of the new ship
 
- STX XSAV               \ Store the current slot number in XSAV
+ BCS add4               \ If we didn't find the slot, return from subroutine
+
+ JSR UpdateSlotNumber   \ Store and print the new slot number in X
+
+ JSR LL9                \ Draw the new ship
+
+ JSR STORE              \ Call STORE to copy the ship data block at INWK back to
+                        \ the K% workspace at INF
+
+.add4
+
+ LDA #185               \ Print text token 25 ("SHIP") followed by a question
+ JSR ShowPrompt         \ mark
+
+ RTS                    \ Back to main loop
+
+\ ******************************************************************************
+\
+\       Name: ShowPrompt
+\    Summary: Show a prompt on-screen
+\
+\ ------------------------------------------------------------------------------
+\
+\ Display an in-flight message in capitals at the bottom of the space view.
+\
+\ Arguments:
+\
+\   A                   The text token to be printed
+\
+\ ******************************************************************************
+
+.ShowPrompt
+
+ PHA                    \ Store token number on the stack
+
+ LDA #YELLOW            \ Send a #SETCOL YELLOW command to the I/O processor to
+ JSR DOCOL              \ switch to colour 1, which is yellow
+
+ LDX #0                 \ Set QQ17 = 0 to switch to ALL CAPS
+ STX QQ17
+
+ LDA #10                \ Move the text cursor to column 10
+ JSR DOXC
+
+ LDA #22                \ Move the text cursor to row 22
+ JSR DOYC
+
+ PLA                    \ Get token number
+
+ JSR prq                \ Print the text token in A, followed by a question mark
+
+ RTS
+\ ******************************************************************************
+\
+\       Name: DeleteShip
+\    Summary: Delete the ship from the current slot
+\
+\ ******************************************************************************
+
+.DeleteShip
+
+ LDX XSAV               \ If the current slot is empty, do nothing
+ LDA FRIN,X
+ BEQ delt1
+
+ JSR LL9                \ Draw the ship to erase it from the screen
+
+ JSR KILLSHP            \ Delete ship
+
+ LDA FRIN,X             \ If slot is still full, we are done
+ BNE delt1
+
+ LDX XSAV               \ If this is slot 0, we are done
+ BEQ delt1
+
+ JSR PreviousSlot       \ Otherwise the slot is empty and isn't slot 0, so
+                        \ go to the previous slot
+
+.delt1
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: UpdateSlotNumber
+\    Summary: Set current slot number to INF ship and update slot number on screen
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   New slot number
+\
+\ Returns:
+\
+\   XSAV                Slot number for ship currently in INF
+\
+\ ******************************************************************************
+
+.UpdateSlotNumber
+
+ TXA                    \ Store the new slot number on the stack
+ PHA
+
+ JSR PrintSlotNumber    \ Erase the current slot number from screen
+
+ PLA                    \ Retrieve the new slot number from the stack
+ TAX
+
+ STX XSAV               \ Set the current slot number to the new slot number
+
+ JSR PrintSlotNumber    \ Print new slot number
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: PrintSlotNumber
+\    Summary: Print the slot number in XSAV on-screen
+\
+\ ******************************************************************************
+
+.PrintSlotNumber
+
+ LDX XSAV               \ Print the current slot number at text location (0, 1)
+ JMP ee3
+
+\ ******************************************************************************
+\
+\       Name: GetSlotForShip
+\    Summary: Fetch the slot number for the ship in INF
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   X                   Slot number for ship in INF
+\
+\   C flag              Clear = success (ship slot found)
+\                       Set = failure (ship slot not found)
+\
+\ ******************************************************************************
+
+.GetSlotForShip
+
+ LDX #2                 \ Start at slot 2 (first ship slot)
+
+.slot1
+
+ LDA FRIN,X             \ If slot is empty, move onto next slot
+ BEQ slot2
+
+ TXA                    \ Set Y = X * 2
+ ASL A
+ TAY
+
+ LDA UNIV,Y             \ If INF(1 0) <> UNIV(1 0), jump to next slot
+ CMP INF
+ BNE slot2
+
+ LDA UNIV+1,Y
+ CMP INF+1
+ BNE slot2
+
+ CLC                    \ Return with C flag clear to indicate success
+ RTS
+
+.slot2
+
+ INX                    \ Otherwise increment X to point to the next slot
+
+ CPX #NOSH              \ If we haven't reached the last slot yet, loop back
+ BCC slot1
+
+ RTS                    \ Return from the subroutine with C flag set to indicate
+                        \ failure
+
+\ ******************************************************************************
+\
+\       Name: NextSlot
+\    Summary: Go to next slot
+\
+\ ******************************************************************************
+
+.NextSlot
+
+ LDX XSAV               \ Fetch the current slot number
+
+ INX                    \ Increment to point to the next slot
+
+ LDA FRIN,X             \ If slot X contains a ship, jump to GetSlot to get the
+ BNE GetSlot            \ ship's data
+
+ LDX #2                 \ Otherwise wrap round to slot 2
+
+ LDA FRIN,X             \ If slot 2 contains a ship, jump to GetSlot to get the
+ BNE GetSlot            \ ship's data
+
+.next1
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: PreviousSlot
+\    Summary: Go to previous slot
+\
+\ ******************************************************************************
+
+.prev2
+
+ LDA FRIN,X             \ If slot 2 contains a ship, jump to GetSlot to get the
+ BNE GetSlot            \ ship's data
+
+ RTS                    \ Return from the subroutine
+
+.PreviousSlot
+
+ LDX XSAV               \ Fetch the current slot number
+
+ DEX                    \ Decrement to point to the previous slot
+
+ CPX #2                 \ If X >= 2, which is a valid ship slot, jump to
+ BCS GetSlot            \ GetSlot to get the ship's data
+
+ LDX #NOSH              \ Otherwise we start at the last slot and work backwards
+                        \ until we find a ship
+
+.prev1
+
+ DEX                    \ Decrement the slot number
+
+ CPX #2                 \ If we have gone through all slots without finding a
+ BEQ prev2              \ ship, jump to next1 to return from the subroutine
+
+ LDA FRIN,X             \ If slot X is empty, loop back to go to previous slot
+ BEQ prev1
+
+                        \ If we get here, we have found the correct slot, so
+                        \ fall through into GetSlot to get the ship's data
+
+\ ******************************************************************************
+\
+\       Name: GetSlot
+\    Summary: Get the ship's data for a new slot
+\
+\ ******************************************************************************
+
+.GetSlot
+
+ JSR UpdateSlotNumber   \ Store and print the new slot number
+
+ JSR GetShipData        \ Get the ship data for the new slot
+
+ JSR ShudderShip        \ Shudder the new ship, so we can see which one it is
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: GetShipData
+\    Summary: Fetch the ship info for the ship in slot XSAV
+\
+\ ******************************************************************************
+
+.GetShipData
+
+ LDX XSAV               \ Fetch the current ship's slot number
 
  LDA FRIN,X             \ Fetch the contents of this slot into A. If it is 0
- BNE P%+5               \ then this slot is empty and we have no more ships to
- JMP ShowShips5         \ process, so jump to ShowShips5 below, otherwise A contains
-                        \ the type of ship that's in this slot, so skip over the
-                        \ JMP ShowShips5 instruction and keep going
+ BEQ gets2              \ then this slot is empty, so jump to gets2 to return
+                        \ from the subroutine
 
  STA TYPE               \ Store the ship type in TYPE
 
@@ -51375,20 +51801,19 @@ ENDMACRO
                         \ the INWK workspace, so we set a counter in Y so we can
                         \ loop through them
 
-.ShowShips2
+.gets1
 
  LDA (INF),Y            \ Load the Y-th byte of INF and store it in the Y-th
  STA INWK,Y             \ byte of INWK
 
  DEY                    \ Decrement the loop counter
 
- BPL ShowShips2         \ Loop back for the next byte until we have copied the
+ BPL gets1              \ Loop back for the next byte until we have copied the
                         \ last byte from INF to INWK
 
  LDA TYPE               \ If the ship type is negative then this indicates a
- BMI ShowShips3         \ planet or sun, so jump down to ShowShips3, as the next bit
-                        \ sets up a pointer to the ship blueprint, and then
-                        \ checks for energy bomb damage, and neither of these
+ BMI gets2              \ planet or sun, so jump down to gets2, as the next bit
+                        \ sets up a pointer to the ship blueprint, which doesn't
                         \ apply to planets and suns
 
  ASL A                  \ Set Y = ship type * 2
@@ -51402,54 +51827,58 @@ ENDMACRO
  LDA XX21-1,Y           \ Fetch the high byte of this particular ship type's
  STA XX0+1              \ blueprint and store it in XX0+1
 
-.ShowShips3
+.gets2
 
- JSR MVEIT              \ Call MVEIT to move the ship we are processing in space
+ RTS                    \ Return from the subroutine
 
-                        \ Now that we are done processing this ship, we need to
-                        \ copy the ship data back from INWK to the correct place
-                        \ in the K% workspace. We already set INF in part 4 to
-                        \ point to the ship's data block in K%, so we can simply
-                        \ do the reverse of the copy we did before, this time
-                        \ copying from INWK to INF
+\ ******************************************************************************
+\
+\       Name: ShudderShip
+\    Summary: Shudder the current ship
+\
+\ ******************************************************************************
 
- LDY #(NI%-1)           \ Set a counter in Y so we can loop through the NI%
-                        \ bytes in the ship data block
+.ShudderShip
 
-.ShowShips4
+ JSR flas1              \ Flash the ship
 
- LDA INWK,Y             \ Load the Y-th byte of INWK and store it in the Y-th
- STA (INF),Y            \ byte of INF
+                        \ Fall through into flas1 to flash the ship again
 
- DEY                    \ Decrement the loop counter
+.flas1
 
- BPL ShowShips4         \ Loop back for the next byte, until we have copied the
-                        \ last byte from INWK back to INF
+ LDX #0                 \ Move right
+ LDY #0
+ JSR MoveShip
 
- JSR LL9                \ Call LL9 to draw the ship we're processing on-screen
+ LDX #0                 \ Move right
+ LDY #0
+ JSR MoveShip
 
- LDY #31                \ Fetch the ship's explosion/killed state from byte #31
- LDA INWK+31            \ and copy it to byte #31 in INF (so the ship's data in
- STA (INF),Y            \ K% gets updated)
+ LDX #0                 \ Move left
+ LDY #%10000000
+ JSR MoveShip
 
- LDX XSAV               \ We're done processing this ship, so fetch the ship's
-                        \ slot number, which we saved in XSAV back at the start
-                        \ of the loop
+ LDX #0                 \ Move left
+ LDY #%10000000
+ JSR MoveShip
 
- INX                    \ Increment the slot number to move on to the next slot
+ LDX #0                 \ Move left
+ LDY #%10000000
+ JSR MoveShip
 
- JMP ShowShips1         \ And jump back up to the beginning of the loop to get
-                        \ the next ship in the local bubble for processing
+ LDX #0                 \ Move left
+ LDY #%10000000
+ JSR MoveShip
 
-.ShowShips5
+ LDX #0                 \ Move right
+ LDY #0
+ JSR MoveShip
 
- JSR RDKEY              \ Scan the keyboard for a key press
+ LDX #0                 \ Move right
+ LDY #0
+ JSR MoveShip
 
- BEQ ShowLoop           \ If no key was pressed, loop back up to move/rotate
-                        \ the ship and check again for a key press
-
- JMP DEATH2             \ Jump to DEATH2 to reset most of the game and restart
-                        \ from the title screen
+ RTS                    \ Return from subroutine
 
 \ ******************************************************************************
 \
