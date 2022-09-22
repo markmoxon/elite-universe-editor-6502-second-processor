@@ -30801,9 +30801,6 @@ ENDIF
 
  JMP DEMON              \ We pressed TAB, so jump to DEMON to show the demo
 
- CMP #&79               \ Did we press right arrow? If not, skip the following
- BNE P%+5               \ instruction
-
  CMP #&20               \ Did we press f0? If not, skip the following
  BNE P%+5               \ instruction
 
@@ -51264,26 +51261,11 @@ ENDMACRO
 
  JSR RESET              \ Call RESET to initialise most of the game variables
 
- LDA #%10000000         \ Stop our ship from moving
- STA ALP2+1
- STA BET2+1
-
  LDA #2                 \ Set current slot in XSAV to 2 (start of ship slots)
  STA XSAV
 
- LDA #0                 \ Set ALPHA and ALP1 to 0, so our roll angle (i.e. that
- STA ALPHA              \ of the camera) is 0
- STA ALP1
- STA BETA
- STA BET1
- STA ALP2
- STA BET2
-
- STA DELTA              \ Set DELTA to 0, so our current speed (i.e. that of the
-                        \ camera) is 0
-
- JSR DOVDU19            \ Send a #SETVDU19 0 command to the I/O processor to
-                        \ switch to the mode 1 palette for the space view,
+ LDA #0                 \ Send a #SETVDU19 0 command to the I/O processor to
+ JSR DOVDU19            \ switch to the mode 1 palette for the space view,
                         \ which is yellow (colour 1), red (colour 2) and cyan
                         \ (colour 3)
 
@@ -51293,23 +51275,14 @@ ENDMACRO
 
 .scen1
 
- LDY #2                 \ Delay for 2 vertical syncs (2/50 = 0.04 seconds) so we
- JSR DELAY              \ don't take up too much CPU time while looping round
-
- JSR RDKEY              \ Scan the keyboard for a key press and return the
-                        \ internal key number in X (or 0 for no key press)
-
- BNE scen1              \ If a key was already being held down when we entered
-                        \ this routine, keep looping back up to scen1 until the
-                        \ key is released
-
-.scen2
+ LDY #4                 \ Delay for 2 vertical syncs (2/50 = 0.04 seconds) to
+ JSR DELAY              \ make the key repeat rate controllable
 
  JSR RDKEY              \ Any pre-existing key press is now gone, so we can
                         \ start scanning the keyboard again, returning the
                         \ internal key number in X (or 0 for no key press)
 
- BEQ scen2              \ Keep looping up to scen2 until a key is pressed
+ BEQ scen1              \ Keep looping up to scen1 until a key is pressed
 
 .scen3
 
@@ -51329,38 +51302,116 @@ ENDMACRO
  LDX #0                 \ Set X = 0 for the x-axis
 
  CMP #&79               \ Right arrow (move ship right along the x-axis)
- BNE P%+7
+ BNE keys1
  LDY #0
  JMP MoveShip
 
+.keys1
+
  CMP #&19               \ Left arrow (move ship left along the x-axis)
- BNE P%+7
+ BNE keys2
  LDY #%10000000
  JMP MoveShip
+
+.keys2
 
  LDX #3                 \ Set X = 3 for the y-axis
 
  CMP #&39               \ Up arrow (move ship up along the y-axis)
- BNE P%+7
+ BNE keys3
  LDY #0
  JMP MoveShip
 
+.keys3
+
  CMP #&29               \ Down arrow (move ship down along the y-axis)
- BNE P%+7
+ BNE keys4
  LDY #%10000000
  JMP MoveShip
+
+.keys4
 
  LDX #6                 \ Set X = 6 for the z-axis
 
  CMP #&68               \ ? (move ship away along the z-axis)
- BNE P%+7
+ BNE keys5
  LDY #0
  JMP MoveShip
 
+.keys5
+
  CMP #&62               \ SPACE (move ship closer along the z-axis)
- BNE P%+7
+ BNE keys6
  LDY #%10000000
  JMP MoveShip
+
+.keys6
+
+ CMP #&46               \ K (rotate ship around the y-axis)
+ BNE keys7
+
+ LDX #0                 \ Rotate (sidev, nosev) by a small positive angle (yaw)
+ STX RAT2
+ LDX #21
+ LDY #9
+ JMP RotateShip
+
+.keys7
+
+ CMP #&56               \ L (rotate ship around the y-axis)
+ BNE keys8
+
+ LDX #%10000000         \ Rotate (sidev, nosev) by a small negative angle (yaw)
+ STX RAT2
+ LDX #21
+ LDY #9
+ JMP RotateShip
+
+.keys8
+
+ CMP #&51               \ S (rotate ship around the x-axis)
+ BNE keys9
+
+ LDX #0                 \ Rotate (roofv, nosev) by a small positive angle
+ STX RAT2               \ (pitch)
+ LDX #15
+ LDY #9
+ JMP RotateShip
+
+.keys9
+
+ CMP #&42               \ X (rotate ship around the x-axis)
+ BNE keys10
+
+ LDX #%10000000         \ Rotate (roofv, nosev) by a small negative angle
+ STX RAT2               \ (pitch)
+ LDX #15
+ LDY #9
+ JMP RotateShip
+
+.keys10
+
+ CMP #&67               \ > (rotate ship around the x-axis)
+ BNE keys11
+
+ LDX #0                 \ Rotate (roofv, sidev) by a small positive angle
+ STX RAT2               \ (pitch)
+ LDX #15
+ LDY #21
+ JMP RotateShip
+
+.keys11
+
+ CMP #&66               \ < (rotate ship around the x-axis)
+ BNE keys12
+
+ LDX #%10000000         \ Rotate (roofv, sidev) by a small negative angle
+ STX RAT2               \ (pitch)
+ LDX #15
+ LDY #21
+ JMP RotateShip
+
+.keys12
 
  CMP #&49               \ RETURN pressed (add ship)
  BNE P%+5
@@ -51391,6 +51442,86 @@ ENDMACRO
 
 \ ******************************************************************************
 \
+\       Name: RotateShip
+\    Summary: Rotate ship in space
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The first vector to rotate:
+\
+\                         * If X = 15, rotate roofv_x
+\                                      then roofv_y
+\                                      then roofv_z
+\
+\                         * If X = 21, rotate sidev_x
+\                                      then sidev_y
+\                                      then sidev_z
+\
+\   Y                   The second vector to rotate:
+\
+\                         * If Y = 9,  rotate nosev_x
+\                                      then nosev_y
+\                                      then nosev_z
+\
+\                         * If Y = 21, rotate sidev_x
+\                                      then sidev_y
+\                                      then sidev_z
+\
+\   RAT2                The direction of the pitch or roll to perform, positive
+\                       or negative (i.e. the sign of the roll or pitch counter
+\                       in bit 7)
+\
+\ ******************************************************************************
+
+.RotateShip
+
+ TXA                    \ Store X and Y on the stack
+ PHA
+ TYA
+ PHA
+
+ JSR MVS5               \ Rotate vector_x by a small angle
+
+ PLA                    \ Retrieve X and Y from the stack and add 2 to each of
+ CLC                    \ them to point to the next axis
+ ADC #2
+ TAY
+ PLA
+ ADC #2
+ TAX
+
+ PHA                    \ Store X and Y on the stack
+ TYA
+ PHA
+
+ JSR MVS5               \ Rotate vector_y by a small angle
+
+ PLA                    \ Retrieve X and Y from the stack and add 2 to each of
+ CLC                    \ them to point to the next axis
+ ADC #2
+ TAY
+ PLA
+ ADC #2
+ TAX
+
+ JSR MVS5              \ Rotate vector_z by a small angle
+
+ JSR TIDY               \ Call TIDY to tidy up the orientation vectors, to
+                        \ prevent the ship from getting elongated and out of
+                        \ shape due to the imprecise nature of trigonometry
+                        \ in assembly language
+
+ JSR LL9                \ Redraw ship
+
+ JSR STORE              \ Call STORE to copy the ship data block at INWK back to
+                        \ the K% workspace at INF
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
 \       Name: MoveShip
 \    Summary: Move ship in space
 \
@@ -51409,16 +51540,16 @@ ENDMACRO
  JSR DKS4               \ Call DKS4 with X = 0 to check whether the SHIFT key is
                         \ being pressed
 
- BMI left1              \ IF SHIFT is being pressed, jump to left1
+ BMI move1              \ IF SHIFT is being pressed, jump to move1
 
- LDY #1                 \ Set Y = 1 to use as the delta and jump to left2
- BNE left2
+ LDY #1                 \ Set Y = 1 to use as the delta and jump to move2
+ BNE move2
 
-.left1
+.move1
 
  LDY #20                \ Set Y = 10 to use as the delta
 
-.left2
+.move2
 
  STY K+1                \ Set the low byte of K(3 2 1) to the delta
 
@@ -51487,7 +51618,7 @@ ENDMACRO
 
                         \ Key is 'A' to 'X'
 
- SBC #'a'-9             \ Otherwise calculate ship type with 'A' = 10 (the C
+ SBC #'a'-11            \ Otherwise calculate ship type with 'A' = 10 (the C
                         \ flag is clear for this calculation)
 
  BCS add3               \ Jump to add3 (this BCS is effectively a JMP as the C
