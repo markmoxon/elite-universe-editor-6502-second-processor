@@ -51261,15 +51261,40 @@ ENDMACRO
 
  JSR RESET              \ Call RESET to initialise most of the game variables
 
- LDA #2                 \ Set current slot in XSAV to 2 (start of ship slots)
- STA XSAV
-
  LDA #0                 \ Send a #SETVDU19 0 command to the I/O processor to
  JSR DOVDU19            \ switch to the mode 1 palette for the space view,
                         \ which is yellow (colour 1), red (colour 2) and cyan
                         \ (colour 3)
 
- JSR SOLAR				\ Add the sun, planet and stardust
+ JSR SOLAR              \ Add the sun, planet and stardust
+
+ LDA #10                \ Set the technology level so we get a Coriolis station
+ STA tek                \ the first time we create a station
+
+ LDA #0                 \ Move the planet in slot 0 to the right of centre
+ STA XSAV
+ JSR GetShipData
+ JSR ZINF2
+ LDA #2                 \ Set z_sign = 2
+ STA INWK+8
+ LDA #%00000001         \ Set x_sign = 1
+ STA INWK+2
+ JSR STORE
+ JSR LL9
+
+ LDA #1                 \ Move the sun/station in slot 1 to the left of centre
+ STA XSAV
+ JSR GetShipData
+ JSR ZINF2
+ LDA #2                 \ Set z_sign = 2
+ STA INWK+8
+ LDA #%10000001         \ Set x_sign = -1
+ STA INWK+2
+ JSR STORE
+ JSR LL9
+
+ LDX #0                 \ Set the current slot to 0 (planet)
+ STX XSAV
 
  JSR PrintSlotNumber    \ Print the current slot number at text location (0, 1)
 
@@ -51278,9 +51303,8 @@ ENDMACRO
  LDY #4                 \ Delay for 2 vertical syncs (2/50 = 0.04 seconds) to
  JSR DELAY              \ make the key repeat rate controllable
 
- JSR RDKEY              \ Any pre-existing key press is now gone, so we can
-                        \ start scanning the keyboard again, returning the
-                        \ internal key number in X (or 0 for no key press)
+ JSR RDKEY              \ Scan the keyboard, returning the internal key number
+                        \ in X (or 0 for no key press)
 
  BEQ scen1              \ Keep looping up to scen1 until a key is pressed
 
@@ -51333,14 +51357,14 @@ ENDMACRO
 
  LDX #6                 \ Set X = 6 for the z-axis
 
- CMP #&68               \ ? (move ship away along the z-axis)
+ CMP #&62               \ SPACE (move ship away along the z-axis)
  BNE keys5
  LDY #0
  JMP MoveShip
 
 .keys5
 
- CMP #&62               \ SPACE (move ship closer along the z-axis)
+ CMP #&68               \ ? (move ship closer along the z-axis)
  BNE keys6
  LDY #%10000000
  JMP MoveShip
@@ -51413,6 +51437,10 @@ ENDMACRO
 
 .keys12
 
+ CMP #&60               \ TAB pressed (toggle station/sun)
+ BNE P%+5
+ JMP SwapStationSun
+
  CMP #&49               \ RETURN pressed (add ship)
  BNE P%+5
  JMP AddShip
@@ -51439,6 +51467,112 @@ ENDMACRO
  PLA                    \ Quit the scene editor by returning to the caller of
  PLA                    \ SceneEditor
  RTS
+
+\ ******************************************************************************
+\
+\       Name: EraseShip
+\    Summary: Erase a ship from the screen
+\
+\ ******************************************************************************
+
+.EraseShip
+
+ LDA shpcol,X           \ Set A to the ship colour for this type, from the X-th
+                        \ entry in the shpcol table
+
+ JSR DOCOL              \ Send a #SETCOL command to the I/O processor to switch
+                        \ to this colour
+
+ JMP EE51               \ Draw the existing space station to erase it
+
+\ ******************************************************************************
+\
+\       Name: SwapStationSun
+\    Summary: Swap the sun for a station
+\
+\ ******************************************************************************
+
+.SwapStationSun
+
+ LDX #1                 \ Fetch the contents of slot 1, which is the station or
+ JSR GetSlot            \ sun
+
+ JSR GetShipData        \ Get the ship data for the sun or station
+
+ LDA TYPE               \ If we already have the sun, jump to swap1 to switch
+ BMI swap1              \ it to a space station
+
+                        \ We already have a space station, so switch it to the
+                        \ sun
+
+ LDX #SST               \ Erase the existing space station
+ JSR EraseShip
+
+ JSR KS4                \ Switch to the sun
+
+ JSR SPBLB              \ Call SPBLB to erase the space station bulb that gets
+                        \ drawn in KS4
+
+ JSR ZINF
+
+ LDA #2                 \ Set z_sign = 2
+ STA INWK+8
+ LDA #%10000001         \ Set x_sign = -1
+ STA INWK+2
+ LDA #0                 \ Set z_hi = 0
+ STA INWK+7
+ JSR STORE
+
+ LDA #129
+ STA TYPE
+
+ JMP swap4
+
+.swap1
+
+ LDA tek
+ CMP #10                \ If we already have a Dodo station, jump to swap4 to
+ BEQ swap2              \ choose a Coriolis station this time
+
+ LDA #10                \ Set tek so we get a Dodo station
+
+ BNE swap3              \ Skip the next instructions
+
+.swap2
+
+ LDA #1                 \ Set tek so we get a Coriolis station
+
+.swap3
+
+ STA tek                \ Update the technology level
+
+ JSR WPLS               \ Call WPLS to remove the sun from the screen, as we
+                        \ can't have both the sun and the space station at the
+                        \ same time
+
+ JSR ZINF
+
+ JSR NWSPS              \ Add a new space station to our local bubble of
+                        \ universe
+
+ LDA #SST
+ STA TYPE
+
+ LDA #10                \ Set z_hi = 10
+ STA INWK+7
+ LDA #0                 \ Set z_sign = 0
+ STA INWK+8
+ LDA #%00000000         \ Set x_sign = 0
+ STA INWK+2
+ JSR STORE
+
+.swap4
+
+ JSR LL9                \ Draw the new space station
+
+ JMP STORE              \ Call STORE to copy the ship data block at INWK back to
+                        \ the K% workspace at INF and return from the subroutine
+                        \ using a tail call
 
 \ ******************************************************************************
 \
@@ -51506,7 +51640,7 @@ ENDMACRO
  ADC #2
  TAX
 
- JSR MVS5              \ Rotate vector_z by a small angle
+ JSR MVS5               \ Rotate vector_z by a small angle
 
  JSR TIDY               \ Call TIDY to tidy up the orientation vectors, to
                         \ prevent the ship from getting elongated and out of
@@ -51524,6 +51658,14 @@ ENDMACRO
 \
 \       Name: MoveShip
 \    Summary: Move ship in space
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   Axis (0, 3, 6 for x, y, z)
+\
+\   Y                   Direction of movement (bit 7)
 \
 \ ******************************************************************************
 
@@ -51547,11 +51689,21 @@ ENDMACRO
 
 .move1
 
- LDY #20                \ Set Y = 10 to use as the delta
+ LDY #20                \ Set Y = 20 to use as the delta
 
 .move2
 
+ LDA TYPE               \ If this is the planet or sun, jump to move3
+ BMI move3
+
  STY K+1                \ Set the low byte of K(3 2 1) to the delta
+ BPL move4
+
+.move3
+
+ STY K+2                \ Set the high byte of K(3 2 1) to the delta
+
+.move4
 
  LDX K                  \ Fetch the axis into X (the comments below are for the
                         \ x-axis)
@@ -51656,7 +51808,7 @@ ENDMACRO
 .add4
 
  LDA #185               \ Print text token 25 ("SHIP") followed by a question
- JSR ShowPrompt         \ mark
+ JSR ShowPrompt         \ mark to remove it from the screen
 
  RTS                    \ Back to main loop
 
@@ -51709,7 +51861,7 @@ ENDMACRO
  LDA FRIN,X
  BEQ delt1
 
- JSR LL9                \ Draw the ship to erase it from the screen
+ JSR EraseShip          \ Erase the existing space station
 
  JSR KILLSHP            \ Delete ship
 
@@ -51837,10 +51989,10 @@ ENDMACRO
  LDA FRIN,X             \ If slot X contains a ship, jump to GetSlot to get the
  BNE GetSlot            \ ship's data
 
- LDX #2                 \ Otherwise wrap round to slot 2
+ LDX #0                 \ Otherwise wrap round to slot 0, the planet
 
- LDA FRIN,X             \ If slot 2 contains a ship, jump to GetSlot to get the
- BNE GetSlot            \ ship's data
+ BEQ GetSlot            \ Jump to GetSlot to get the planet's data (this BEQ is
+                        \ effectively a JMP as X is always 0)
 
 .next1
 
@@ -51853,34 +52005,41 @@ ENDMACRO
 \
 \ ******************************************************************************
 
-.prev2
-
- LDA FRIN,X             \ If slot 2 contains a ship, jump to GetSlot to get the
- BNE GetSlot            \ ship's data
-
- RTS                    \ Return from the subroutine
-
 .PreviousSlot
 
  LDX XSAV               \ Fetch the current slot number
 
  DEX                    \ Decrement to point to the previous slot
 
- CPX #2                 \ If X >= 2, which is a valid ship slot, jump to
- BCS GetSlot            \ GetSlot to get the ship's data
+ BPL GetSlot            \ If X is positive, then this is a valid ship slot, so
+                        \ jump to GetSlot to get the ship's data
 
- LDX #NOSH              \ Otherwise we start at the last slot and work backwards
-                        \ until we find a ship
+                        \ Otherwise we have gone past slot 0, so we need to find
+                        \ the last ship slot
+
+ LDX #1                 \ Start at the first ship slot (slot 2) and work forwards
+                        \ until we find an empty slot
 
 .prev1
 
- DEX                    \ Decrement the slot number
+ INX                    \ Increment the slot number
 
- CPX #2                 \ If we have gone through all slots without finding a
- BEQ prev2              \ ship, jump to next1 to return from the subroutine
+ CPX #NOSH              \ If we haven't reached the last slot, jump to prev2 to
+ BCC prev2              \ skip the following
 
- LDA FRIN,X             \ If slot X is empty, loop back to go to previous slot
- BEQ prev1
+ LDX #1                 \ There are no poulated ship slots, so set X to the slot
+ BNE GetSlot            \ for the station/sun and jump to GetSlot (this BNE is
+                        \ effectively a JMP as X is never 0)
+
+.prev2
+
+ LDA FRIN,X             \ If slot X is populated, loop back to move to the next
+ BNE prev1              \ slot
+
+                        \ If we get here then we hae found the first empty slot
+
+ DEX                    \ Decrement the slot number to the populated slot before
+                        \ the empty one we just found
 
                         \ If we get here, we have found the correct slot, so
                         \ fall through into GetSlot to get the ship's data
@@ -51889,6 +52048,12 @@ ENDMACRO
 \
 \       Name: GetSlot
 \    Summary: Get the ship's data for a new slot
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   New slot number
 \
 \ ******************************************************************************
 
