@@ -51866,12 +51866,12 @@ ENDMACRO
  JSR STORE              \ Call STORE to copy the ship data block at INWK back to
                         \ the K% workspace at INF
 
+ JSR SCAN               \ Draw the ship on the scanner
+
 .add4
 
  LDA #185               \ Print text token 25 ("SHIP") followed by a question
  JSR ShowPrompt         \ mark to remove it from the screen
-
- JSR SCAN               \ Draw the ship on the scanner
 
  RTS                    \ Back to main loop
 
@@ -52127,7 +52127,7 @@ ENDMACRO
 
  JSR GetShipData        \ Get the ship data for the new slot
 
- JSR ShudderShip        \ Shudder the new ship, so we can see which one it is
+ JSR HighlightShip      \ Highlight the new ship, so we can see which one it is
 
  RTS                    \ Return from the subroutine
 
@@ -52193,18 +52193,25 @@ ENDMACRO
 
 \ ******************************************************************************
 \
-\       Name: ShudderShip
+\       Name: HighlightShip
 \    Summary: Shudder the current ship
 \
 \ ******************************************************************************
 
-.ShudderShip
+.HighlightShip
 
- JSR flas1              \ Flash the ship
+ JSR SCAN               \ Hide the ship on the scanner
 
-                        \ Fall through into flas1 to flash the ship again
+ JSR high1              \ Highlight the ship, showing the ship on the scanner
 
-.flas1
+ JSR SCAN               \ Hide the ship on the scanner
+
+                        \ Fall through into high1 to highlight the ship, showing
+                        \ the ship on the scanner
+
+.high1
+
+ JSR SCAN               \ Toggle the ship on the scanner
 
  LDX #0                 \ Move right
  LDY #0
