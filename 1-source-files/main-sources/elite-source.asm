@@ -51271,17 +51271,6 @@ ENDMACRO
  LDA #10                \ Set the technology level so we get a Coriolis station
  STA tek                \ the first time we create a station
 
- LDA #0                 \ Move the planet in slot 0 to the right of centre
- STA XSAV
- JSR GetShipData
- JSR ZINF2
- LDA #2                 \ Set z_sign = 2
- STA INWK+8
- LDA #%00000001         \ Set x_sign = 1
- STA INWK+2
- JSR STORE
- JSR LL9
-
  LDA #1                 \ Move the sun/station in slot 1 to the left of centre
  STA XSAV
  JSR GetShipData
@@ -51291,6 +51280,34 @@ ENDMACRO
  LDA #%10000001         \ Set x_sign = -1
  STA INWK+2
  JSR STORE
+ JSR LL9
+
+ LDA #0                 \ Set up the planet's data in slot 0
+ STA XSAV
+ JSR GetShipData
+ JSR ZINF
+
+ LDX #%10000000         \ Pitch the planet twice so the crater is visible (in
+ STX RAT2               \ case we switch planet types straight away)
+ LDX #15
+ LDY #9
+ JSR RotateShip
+ LDX #15
+ LDY #9
+ JSR RotateShip
+
+                        \ Move the planet to the right of centre
+
+ LDA #2                 \ Set z_sign = 2
+ STA INWK+8
+ LDA #%00000001         \ Set x_sign = 1
+ STA INWK+2
+
+ LDA #128               \ Set the planet to a meridian planet
+ STA FRIN
+ STA TYPE
+
+ JSR STORE              \ Draw the planet
  JSR LL9
 
  LDX #0                 \ Set the current slot to 0 (planet)
@@ -51437,9 +51454,13 @@ ENDMACRO
 
 .keys12
 
- CMP #&60               \ TAB pressed (toggle station/sun)
+ CMP #&36               \ O pressed (toggle station/sun)
  BNE P%+5
  JMP SwapStationSun
+
+ CMP #&37               \ P pressed (toggle planet type)
+ BNE P%+5
+ JMP TogglePlanetType
 
  CMP #&49               \ RETURN pressed (add ship)
  BNE P%+5
@@ -51470,12 +51491,40 @@ ENDMACRO
 
 \ ******************************************************************************
 \
+\       Name: TogglePlanetType
+\    Summary: Toggle the planet between meridian and crater
+\
+\ ******************************************************************************
+
+.TogglePlanetType
+
+ LDX #0                 \ Fetch the contents of slot 0, the planet
+ JSR GetSlot
+
+ LDA TYPE               \ Flip the planet type between 128 and 130
+ EOR #%00000010
+ STA TYPE
+ STA FRIN
+
+ JSR STORE              \ Store the new planet details
+
+ JSR LL9                \ Draw the new planet
+
+ RTS
+
+\ ******************************************************************************
+\
 \       Name: EraseShip
-\    Summary: Erase a ship from the screen
+\    Summary: Erase the current ship from the screen
 \
 \ ******************************************************************************
 
 .EraseShip
+
+ JSR SCAN               \ Draw the current ship on the scanner to remove it
+
+ LDY XSAV               \ Get the current ship type
+ LDX FRIN,Y
 
  LDA shpcol,X           \ Set A to the ship colour for this type, from the X-th
                         \ entry in the shpcol table
@@ -51483,7 +51532,7 @@ ENDMACRO
  JSR DOCOL              \ Send a #SETCOL command to the I/O processor to switch
                         \ to this colour
 
- JMP EE51               \ Draw the existing space station to erase it
+ JMP EE51               \ Draw the existing ship to erase it
 
 \ ******************************************************************************
 \
@@ -51497,21 +51546,19 @@ ENDMACRO
  LDX #1                 \ Fetch the contents of slot 1, which is the station or
  JSR GetSlot            \ sun
 
- JSR GetShipData        \ Get the ship data for the sun or station
+ LDA TYPE               \ If we are showing the sun, jump to swap1 to switch it
+ BMI swap1              \ to a Coriolis space station
 
- LDA TYPE               \ If we already have the sun, jump to swap1 to switch
- BMI swap1              \ it to a space station
+ LDA tek                \ If we are showing a Coriolis station (i.e. tech level
+ CMP #10                \ < 10), jump to swap2 to switch it to a Dodo station
+ BCC swap2
 
-                        \ We already have a space station, so switch it to the
-                        \ sun
+                        \ Otherwise we are showing a Dodo station, so switch it
+                        \ to the sun
 
- LDX #SST               \ Erase the existing space station
- JSR EraseShip
+ JSR EraseShip          \ Erase the existing space station
 
- JSR KS4                \ Switch to the sun
-
- JSR SPBLB              \ Call SPBLB to erase the space station bulb that gets
-                        \ drawn in KS4
+ JSR KS4                \ Switch to the sun, erasing the space station bulb
 
  JSR ZINF
 
@@ -51523,40 +51570,46 @@ ENDMACRO
  STA INWK+7
  JSR STORE
 
- LDA #129
+ LDA #129               \ Set the type for the sun
  STA TYPE
 
- JMP swap4
+ BNE swap5              \ Jump to swap4 (this BNE is effectively a JMP as A is
+                        \ never zero)
 
 .swap1
 
- LDA tek
- CMP #10                \ If we already have a Dodo station, jump to swap4 to
- BEQ swap2              \ choose a Coriolis station this time
-
- LDA #10                \ Set tek so we get a Dodo station
-
- BNE swap3              \ Skip the next instructions
-
-.swap2
-
- LDA #1                 \ Set tek so we get a Coriolis station
-
-.swap3
-
- STA tek                \ Update the technology level
+                        \ Remove sun and show Coriolis
 
  JSR WPLS               \ Call WPLS to remove the sun from the screen, as we
                         \ can't have both the sun and the space station at the
                         \ same time
 
+ LDA #1                 \ Set the tech level for a Coriolis station
+ STA tek
+
+ BNE swap4              \ Jump to swap4 (this BNE is effectively a JMP as A is
+                        \ never zero)
+
+.swap2
+
+                        \ Switch from Coriolis to Dodo
+
+ JSR SPBLB              \ Call SPBLB to show the space station bulb
+
+ JSR EraseShip          \ Erase the existing space station
+
+ LDA #10                \ Set the tech level for a Dodo station
+ STA tek
+
+.swap4
+
+ LDA #SST               \ Set the ship type to the space station
+ STA TYPE
+
  JSR ZINF
 
  JSR NWSPS              \ Add a new space station to our local bubble of
                         \ universe
-
- LDA #SST
- STA TYPE
 
  LDA #10                \ Set z_hi = 10
  STA INWK+7
@@ -51566,9 +51619,9 @@ ENDMACRO
  STA INWK+2
  JSR STORE
 
-.swap4
+.swap5
 
- JSR LL9                \ Draw the new space station
+ JSR LL9                \ Draw the new space station or sun
 
  JMP STORE              \ Call STORE to copy the ship data block at INWK back to
                         \ the K% workspace at INF and return from the subroutine
@@ -51676,6 +51729,8 @@ ENDMACRO
  STY K+3                \ Store the sign of the movement in the sign byte of
                         \ K(3 2 1)
 
+ JSR SCAN               \ Draw the ship on the scanner to remove it
+
  LDX #0                 \ Set the high byte of K(3 2 1) to 0
  STX K+2
 
@@ -51721,6 +51776,8 @@ ENDMACRO
 
  JSR STORE              \ Call STORE to copy the ship data block at INWK back to
                         \ the K% workspace at INF
+
+ JSR SCAN               \ Draw the ship on the scanner
 
  RTS                    \ Return from the subroutine
 
@@ -51794,13 +51851,17 @@ ENDMACRO
 
  BCC add4               \ If ship was not added, return from subroutine
 
- JSR GetSlotForShip     \ Set X to the slot number of the new ship
+ JSR GetCurrentSlot     \ Set X to the slot number of the new ship
 
  BCS add4               \ If we didn't find the slot, return from subroutine
 
  JSR UpdateSlotNumber   \ Store and print the new slot number in X
 
  JSR LL9                \ Draw the new ship
+
+ LDA INWK+31            \ Set bit 4 to keep the ship visible on the scanner
+ ORA #%00010000
+ STA INWK+31
 
  JSR STORE              \ Call STORE to copy the ship data block at INWK back to
                         \ the K% workspace at INF
@@ -51809,6 +51870,8 @@ ENDMACRO
 
  LDA #185               \ Print text token 25 ("SHIP") followed by a question
  JSR ShowPrompt         \ mark to remove it from the screen
+
+ JSR SCAN               \ Draw the ship on the scanner
 
  RTS                    \ Back to main loop
 
@@ -51857,24 +51920,28 @@ ENDMACRO
 
 .DeleteShip
 
- LDX XSAV               \ If the current slot is empty, do nothing
- LDA FRIN,X
+ LDX XSAV               \ Set X to the current slot
+
+ CPX #2                 \ If this is the planet or sun/station, do nothing
+ BCC delt1
+
+ LDA FRIN,X             \ If the current slot is empty, do nothing
  BEQ delt1
 
- JSR EraseShip          \ Erase the existing space station
+ JSR EraseShip          \ Erase the current ship from the screen
 
- JSR KILLSHP            \ Delete ship
+ LDX XSAV               \ Delete the current ship, shuffling the slots down
+ JSR KILLSHP
 
- LDA FRIN,X             \ If slot is still full, we are done
+ LDX XSAV               \ If the current slot is still full, jump to delt1 to
+ LDA FRIN,X             \ keep this as the current slot
  BNE delt1
 
- LDX XSAV               \ If this is slot 0, we are done
- BEQ delt1
-
- JSR PreviousSlot       \ Otherwise the slot is empty and isn't slot 0, so
-                        \ go to the previous slot
+ LDX #0                 \ Otherwise set X = 0 so we switch to the planet
 
 .delt1
+
+ JSR GetSlot            \ Fetch the details for the ship now in slot X
 
  RTS                    \ Return from the subroutine
 
@@ -51925,7 +51992,7 @@ ENDMACRO
 
 \ ******************************************************************************
 \
-\       Name: GetSlotForShip
+\       Name: GetCurrentSlot
 \    Summary: Fetch the slot number for the ship in INF
 \
 \ ------------------------------------------------------------------------------
@@ -51939,7 +52006,7 @@ ENDMACRO
 \
 \ ******************************************************************************
 
-.GetSlotForShip
+.GetCurrentSlot
 
  LDX #2                 \ Start at slot 2 (first ship slot)
 
@@ -51955,7 +52022,6 @@ ENDMACRO
  LDA UNIV,Y             \ If INF(1 0) <> UNIV(1 0), jump to next slot
  CMP INF
  BNE slot2
-
  LDA UNIV+1,Y
  CMP INF+1
  BNE slot2
@@ -51987,16 +52053,14 @@ ENDMACRO
  INX                    \ Increment to point to the next slot
 
  LDA FRIN,X             \ If slot X contains a ship, jump to GetSlot to get the
- BNE GetSlot            \ ship's data
+ BNE GetSlot            \ ship's data and return from the subroutine using a
+                        \ tail call
 
  LDX #0                 \ Otherwise wrap round to slot 0, the planet
 
  BEQ GetSlot            \ Jump to GetSlot to get the planet's data (this BEQ is
-                        \ effectively a JMP as X is always 0)
-
-.next1
-
- RTS                    \ Return from the subroutine
+                        \ effectively a JMP as X is always 0), returning from
+                        \ the subroutine using a tail call
 
 \ ******************************************************************************
 \
