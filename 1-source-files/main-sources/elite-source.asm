@@ -51499,7 +51499,7 @@ ENDMACRO
 .TogglePlanetType
 
  LDX #0                 \ Fetch the contents of slot 0, the planet
- JSR GetSlot
+ JSR SwitchToSlot
 
  LDA TYPE               \ Flip the planet type between 128 and 130
  EOR #%00000010
@@ -51543,8 +51543,8 @@ ENDMACRO
 
 .SwapStationSun
 
- LDX #1                 \ Fetch the contents of slot 1, which is the station or
- JSR GetSlot            \ sun
+ LDX #1                 \ Switch to slot 1, which is the station or sun, and
+ JSR SwitchToSlot       \ highlight the existing contents
 
  LDA TYPE               \ If we are showing the sun, jump to swap1 to switch it
  BMI swap1              \ to a Coriolis space station
@@ -51568,7 +51568,8 @@ ENDMACRO
  STA INWK+2
  LDA #0                 \ Set z_hi = 0
  STA INWK+7
- JSR STORE
+
+ JSR STORE              \ Store the updated sun
 
  LDA #129               \ Set the type for the sun
  STA TYPE
@@ -51606,26 +51607,35 @@ ENDMACRO
  LDA #SST               \ Set the ship type to the space station
  STA TYPE
 
- JSR ZINF
+ JSR ZINF2              \ Reset the station coordinates
 
  JSR NWSPS              \ Add a new space station to our local bubble of
                         \ universe
 
- LDA #10                \ Set z_hi = 10
+ LDA #5                 \ Set z_hi = 5
  STA INWK+7
  LDA #0                 \ Set z_sign = 0
  STA INWK+8
  LDA #%00000000         \ Set x_sign = 0
  STA INWK+2
- JSR STORE
+
+ LDA INWK+31            \ Set bit 4 to keep the station visible on the scanner
+ ORA #%00010000
+ STA INWK+31
+
+ JSR STORE              \ Store the updated station
+
+ JSR SCAN               \ Draw the new station on the scanner
 
 .swap5
 
  JSR LL9                \ Draw the new space station or sun
 
- JMP STORE              \ Call STORE to copy the ship data block at INWK back to
-                        \ the K% workspace at INF and return from the subroutine
-                        \ using a tail call
+ LDA INWK+31            \ Copy INWK+31 to INF, so the "is being drawn" bit is
+ LDY #31                \ correctly stored
+ STA (INF),Y
+
+ RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
@@ -51697,10 +51707,10 @@ ENDMACRO
                         \ shape due to the imprecise nature of trigonometry
                         \ in assembly language
 
- JSR LL9                \ Redraw ship
-
  JSR STORE              \ Call STORE to copy the ship data block at INWK back to
                         \ the K% workspace at INF
+
+ JSR LL9                \ Redraw ship
 
  RTS                    \ Return from the subroutine
 
@@ -51769,12 +51779,12 @@ ENDMACRO
  LDA K+3
  STA INWK+2,X
 
- JSR LL9                \ Redraw ship
-
  JSR STORE              \ Call STORE to copy the ship data block at INWK back to
                         \ the K% workspace at INF
 
  JSR SCAN               \ Draw the ship on the scanner
+
+ JSR LL9                \ Redraw ship
 
  RTS                    \ Return from the subroutine
 
@@ -51854,8 +51864,6 @@ ENDMACRO
 
  JSR UpdateSlotNumber   \ Store and print the new slot number in X
 
- JSR LL9                \ Draw the new ship
-
  LDA INWK+31            \ Set bit 4 to keep the ship visible on the scanner
  ORA #%00010000
  STA INWK+31
@@ -51864,6 +51872,8 @@ ENDMACRO
                         \ the K% workspace at INF
 
  JSR SCAN               \ Draw the ship on the scanner
+
+ JSR LL9                \ Draw the new ship
 
 .add4
 
@@ -51938,7 +51948,7 @@ ENDMACRO
 
 .delt1
 
- JSR GetSlot            \ Fetch the details for the ship now in slot X
+ JSR SwitchToSlot       \ Switch to slot X to load the new ship's data
 
  RTS                    \ Return from the subroutine
 
@@ -52047,14 +52057,14 @@ ENDMACRO
 
  INX                    \ Increment to point to the next slot
 
- LDA FRIN,X             \ If slot X contains a ship, jump to GetSlot to get the
- BNE GetSlot            \ ship's data and return from the subroutine using a
+ LDA FRIN,X             \ If slot X contains a ship, jump to SwitchToSlot to get
+ BNE SwitchToSlot       \ the ship's data and return from the subroutine using a
                         \ tail call
 
  LDX #0                 \ Otherwise wrap round to slot 0, the planet
 
- BEQ GetSlot            \ Jump to GetSlot to get the planet's data (this BEQ is
-                        \ effectively a JMP as X is always 0), returning from
+ BEQ SwitchToSlot       \ Jump to SwitchToSlot to get the planet's data (this BEQ
+                        \ is effectively a JMP as X is always 0), returning from
                         \ the subroutine using a tail call
 
 \ ******************************************************************************
@@ -52070,8 +52080,8 @@ ENDMACRO
 
  DEX                    \ Decrement to point to the previous slot
 
- BPL GetSlot            \ If X is positive, then this is a valid ship slot, so
-                        \ jump to GetSlot to get the ship's data
+ BPL SwitchToSlot       \ If X is positive, then this is a valid ship slot, so
+                        \ jump to SwitchToSlot to get the ship's data
 
                         \ Otherwise we have gone past slot 0, so we need to find
                         \ the last ship slot
@@ -52087,8 +52097,8 @@ ENDMACRO
  BCC prev2              \ skip the following
 
  LDX #1                 \ There are no poulated ship slots, so set X to the slot
- BNE GetSlot            \ for the station/sun and jump to GetSlot (this BNE is
-                        \ effectively a JMP as X is never 0)
+ BNE SwitchToSlot       \ for the station/sun and jump to SwitchToSlot (this BNE
+                        \ is effectively a JMP as X is never 0)
 
 .prev2
 
@@ -52101,12 +52111,13 @@ ENDMACRO
                         \ the empty one we just found
 
                         \ If we get here, we have found the correct slot, so
-                        \ fall through into GetSlot to get the ship's data
+                        \ fall through into SwitchToSlot to get the ship's data
 
 \ ******************************************************************************
 \
-\       Name: GetSlot
-\    Summary: Get the ship's data for a new slot
+\       Name: SwitchToSlot
+\    Summary: Switch to a new specific slot, updating the slot number, fetching
+\             the ship data and highlighting the ship
 \
 \ ------------------------------------------------------------------------------
 \
@@ -52116,7 +52127,7 @@ ENDMACRO
 \
 \ ******************************************************************************
 
-.GetSlot
+.SwitchToSlot
 
  JSR UpdateSlotNumber   \ Store and print the new slot number
 
