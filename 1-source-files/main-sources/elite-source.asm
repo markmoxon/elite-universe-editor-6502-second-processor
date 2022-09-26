@@ -51271,8 +51271,8 @@ ENDMACRO
  LDA #10                \ Set the technology level so we get a Coriolis station
  STA tek                \ the first time we create a station
 
- LDA #1                 \ Move the sun/station in slot 1 to the left of centre
- STA XSAV2
+ LDX #1                 \ Move the sun/station in slot 1 to the left of centre
+ STX XSAV2
  JSR GetShipData
  JSR ZINF2
  LDA #2                 \ Set z_sign = 2
@@ -51282,8 +51282,8 @@ ENDMACRO
  JSR STORE
  JSR LL9
 
- LDA #0                 \ Set up the planet's data in slot 0
- STA XSAV2
+ LDX #0                 \ Set up the planet's data in slot 0
+ STX XSAV2
  JSR GetShipData
  JSR ZINF
 
@@ -52120,7 +52120,8 @@ ENDMACRO
 
  JSR UpdateSlotNumber   \ Store and print the new slot number
 
- JSR GetShipData        \ Get the ship data for the new slot
+ LDX XSAV2              \ Get the ship data for the new slot
+ JSR GetShipData
 
  JSR HighlightShip      \ Highlight the new ship, so we can see which one it is
 
@@ -52129,13 +52130,17 @@ ENDMACRO
 \ ******************************************************************************
 \
 \       Name: GetShipData
-\    Summary: Fetch the ship info for the ship in slot XSAV
+\    Summary: Fetch the ship info for a specified ship slot
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   Slot number of ship data to fetch
 \
 \ ******************************************************************************
 
 .GetShipData
-
- LDX XSAV2              \ Fetch the current ship's slot number
 
  LDA FRIN,X             \ Fetch the contents of this slot into A. If it is 0
  BEQ gets2              \ then this slot is empty, so jump to gets2 to return
