@@ -51272,7 +51272,7 @@ ENDMACRO
  STA tek                \ the first time we create a station
 
  LDA #1                 \ Move the sun/station in slot 1 to the left of centre
- STA XSAV
+ STA XSAV2
  JSR GetShipData
  JSR ZINF2
  LDA #2                 \ Set z_sign = 2
@@ -51283,7 +51283,7 @@ ENDMACRO
  JSR LL9
 
  LDA #0                 \ Set up the planet's data in slot 0
- STA XSAV
+ STA XSAV2
  JSR GetShipData
  JSR ZINF
 
@@ -51311,7 +51311,7 @@ ENDMACRO
  JSR LL9
 
  LDX #0                 \ Set the current slot to 0 (planet)
- STX XSAV
+ STX XSAV2
 
  JSR PrintSlotNumber    \ Print the current slot number at text location (0, 1)
 
@@ -51523,7 +51523,7 @@ ENDMACRO
 
  JSR SCAN               \ Draw the current ship on the scanner to remove it
 
- LDY XSAV               \ Get the current ship type
+ LDY XSAV2              \ Get the current ship type
  LDX FRIN,Y
 
  LDA shpcol,X           \ Set A to the ship colour for this type, from the X-th
@@ -51532,7 +51532,7 @@ ENDMACRO
  JSR DOCOL              \ Send a #SETCOL command to the I/O processor to switch
                         \ to this colour
 
- JMP EE51               \ Draw the existing ship to erase it
+ JMP EE51               \ Draw the existing ship to erase it and mark it as gone
 
 \ ******************************************************************************
 \
@@ -51560,7 +51560,7 @@ ENDMACRO
 
  JSR KS4                \ Switch to the sun, erasing the space station bulb
 
- JSR ZINF
+ JSR ZINF               \ Reset the sun's data block
 
  LDA #2                 \ Set z_sign = 2
  STA INWK+8
@@ -51664,10 +51664,8 @@ ENDMACRO
 
 .RotateShip
 
- TXA                    \ Store X and Y on the stack
- PHA
- TYA
- PHA
+ PHX                    \ Store X and Y on the stack
+ PHY
 
  JSR MVS5               \ Rotate vector_x by a small angle
 
@@ -51679,9 +51677,8 @@ ENDMACRO
  ADC #2
  TAX
 
- PHA                    \ Store X and Y on the stack
- TYA
- PHA
+ PHX                    \ Store X and Y on the stack
+ PHY
 
  JSR MVS5               \ Rotate vector_y by a small angle
 
@@ -51920,7 +51917,7 @@ ENDMACRO
 
 .DeleteShip
 
- LDX XSAV               \ Set X to the current slot
+ LDX XSAV2              \ Set X to the current slot
 
  CPX #2                 \ If this is the planet or sun/station, do nothing
  BCC delt1
@@ -51930,10 +51927,10 @@ ENDMACRO
 
  JSR EraseShip          \ Erase the current ship from the screen
 
- LDX XSAV               \ Delete the current ship, shuffling the slots down
+ LDX XSAV2              \ Delete the current ship, shuffling the slots down
  JSR KILLSHP
 
- LDX XSAV               \ If the current slot is still full, jump to delt1 to
+ LDX XSAV2              \ If the current slot is still full, jump to delt1 to
  LDA FRIN,X             \ keep this as the current slot
  BNE delt1
 
@@ -51958,21 +51955,19 @@ ENDMACRO
 \
 \ Returns:
 \
-\   XSAV                Slot number for ship currently in INF
+\   XSAV2               Slot number for ship currently in INF
 \
 \ ******************************************************************************
 
 .UpdateSlotNumber
 
- TXA                    \ Store the new slot number on the stack
- PHA
+ PHX                    \ Store the new slot number on the stack
 
  JSR PrintSlotNumber    \ Erase the current slot number from screen
 
- PLA                    \ Retrieve the new slot number from the stack
- TAX
+ PLX                    \ Retrieve the new slot number from the stack
 
- STX XSAV               \ Set the current slot number to the new slot number
+ STX XSAV2              \ Set the current slot number to the new slot number
 
  JSR PrintSlotNumber    \ Print new slot number
 
@@ -51981,13 +51976,13 @@ ENDMACRO
 \ ******************************************************************************
 \
 \       Name: PrintSlotNumber
-\    Summary: Print the slot number in XSAV on-screen
+\    Summary: Print the slot number in XSAV2 on-screen
 \
 \ ******************************************************************************
 
 .PrintSlotNumber
 
- LDX XSAV               \ Print the current slot number at text location (0, 1)
+ LDX XSAV2              \ Print the current slot number at text location (0, 1)
  JMP ee3
 
 \ ******************************************************************************
@@ -52048,7 +52043,7 @@ ENDMACRO
 
 .NextSlot
 
- LDX XSAV               \ Fetch the current slot number
+ LDX XSAV2              \ Fetch the current slot number
 
  INX                    \ Increment to point to the next slot
 
@@ -52071,7 +52066,7 @@ ENDMACRO
 
 .PreviousSlot
 
- LDX XSAV               \ Fetch the current slot number
+ LDX XSAV2              \ Fetch the current slot number
 
  DEX                    \ Decrement to point to the previous slot
 
@@ -52140,7 +52135,7 @@ ENDMACRO
 
 .GetShipData
 
- LDX XSAV               \ Fetch the current ship's slot number
+ LDX XSAV2              \ Fetch the current ship's slot number
 
  LDA FRIN,X             \ Fetch the contents of this slot into A. If it is 0
  BEQ gets2              \ then this slot is empty, so jump to gets2 to return
@@ -52194,7 +52189,7 @@ ENDMACRO
 \ ******************************************************************************
 \
 \       Name: HighlightShip
-\    Summary: Shudder the current ship
+\    Summary: Highlight the current ship
 \
 \ ******************************************************************************
 
