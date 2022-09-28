@@ -51533,6 +51533,9 @@ ENDMACRO
  JSR LOOK1              \ Otherwise this is a new view, so call LOOK1 to switch
                         \ to view X and draw the stardust
 
+ JSR NWSTARS            \ Set up a new stardust field (not sure why LOOK1
+                        \ doesn't draw the stardust - it should)
+
  JSR PrintSlotNumber    \ Print the current slot number at text location (0, 1)
 
  JSR DrawShips          \ Draw all ships
@@ -51562,8 +51565,6 @@ ENDMACRO
 
  JSR GetShipData        \ Fetch the details for the ship in slot X
 
- JSR SCAN               \ Display the ship on the scanner
-
  JSR DrawShip           \ Draw the ship
 
  PLX                    \ Retrieve the counter from the stack
@@ -51574,9 +51575,6 @@ ENDMACRO
  BCC draw1
 
 .draw2
-
- LDX XSAV2              \ Get the ship data for the current slot, as otherwise
- JSR GetShipData        \ we will leave the last slot's ship as the current ship
 
  RTS                    \ Return from the subroutine
 
@@ -51589,15 +51587,19 @@ ENDMACRO
 
 .DrawShip
 
+ JSR MV5                \ Draw the ship on the scanner
+
  JSR PLUT               \ Call PLUT to update the geometric axes in INWK to
                         \ match the view (front, rear, left, right)
 
  JSR LL9                \ Draw the ship
 
-\ LDY #31                \ Set bits 3 and 4 in the ship's byte #31, which
-\ LDA (INF),Y            \ draws the ship on-screen (bit 3), and shows it
-\ ORA #%00011000         \ on the scanner (bit 4)
-\ STA (INF),Y
+ LDY #31                \ Fetch the ship's explosion/killed state from byte #31
+ LDA INWK+31            \ and copy it to byte #31 in INF (so the ship's data in
+ STA (INF),Y            \ K% gets updated)
+
+ LDX XSAV2              \ Get the ship data for the current slot, as otherwise
+ JSR GetShipData        \ we will leave the wrong axes in INWK
 
  RTS                    \ Return from the subroutine
 
@@ -51621,9 +51623,6 @@ ENDMACRO
  JSR STORE              \ Store the new planet details
 
  JSR DrawShip           \ Draw the ship
-
- LDX XSAV2              \ Get the ship data for the current slot, as otherwise
- JSR GetShipData        \ we will leave the last slot's ship as the current ship
 
  RTS                    \ Return from the subroutine
 
@@ -51740,14 +51739,9 @@ ENDMACRO
 
  JSR STORE              \ Store the updated station
 
- JSR SCAN               \ Draw the new station on the scanner
-
 .swap5
 
  JSR DrawShip           \ Draw the ship
-
- LDX XSAV2              \ Get the ship data for the current slot, as otherwise
- JSR GetShipData        \ we will leave the last slot's ship as the current ship
 
  RTS                    \ Return from the subroutine
 
@@ -51826,9 +51820,6 @@ ENDMACRO
 
  JSR DrawShip           \ Draw the ship
 
- LDX XSAV2              \ Get the ship data for the current slot, as otherwise
- JSR GetShipData        \ we will leave the last slot's ship as the current ship
-
  RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
@@ -51899,12 +51890,7 @@ ENDMACRO
  JSR STORE              \ Call STORE to copy the ship data block at INWK back to
                         \ the K% workspace at INF
 
- JSR SCAN               \ Draw the ship on the scanner
-
  JSR DrawShip           \ Draw the ship
-
- LDX XSAV2              \ Get the ship data for the current slot, as otherwise
- JSR GetShipData        \ we will leave the last slot's ship as the current ship
 
  RTS                    \ Return from the subroutine
 
@@ -51991,19 +51977,7 @@ ENDMACRO
  JSR STORE              \ Call STORE to copy the ship data block at INWK back to
                         \ the K% workspace at INF
 
- JSR SCAN               \ Draw the ship on the scanner
-
- JSR PLUT               \ Call PLUT to update the geometric axes in INWK to
-                        \ match the view (front, rear, left, right)
-
- JSR LL9                \ Draw the new ship
-
- LDA INWK+31            \ Copy INWK+31 to INF, so the "is being drawn" bit is
- LDY #31                \ correctly stored
- STA (INF),Y
-
- LDX XSAV2              \ Get the ship data for the current slot, as otherwise
- JSR GetShipData        \ we will leave the last slot's ship as the current ship
+ JSR DrawShip           \ Draw the ship
 
 .add4
 
