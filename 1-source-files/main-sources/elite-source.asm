@@ -51317,19 +51317,35 @@ ENDMACRO
 
 .scen1
 
- LDY #4                 \ Delay for 2 vertical syncs (2/50 = 0.04 seconds) to
- JSR DELAY              \ make the key repeat rate controllable
+ JSR RDKEY              \ Scan the keyboard for a key press and return the
+                        \ internal key number in X (or 0 for no key press)
+
+ BNE scen1              \ If a key was already being held down when we entered
+                        \ this routine, keep looping back up to scen1, until
+                        \ the key is released
+
+.scen2
+
+ LDY #2                 \ Delay for 2 vertical syncs (2/50 = 0.04 seconds) to
+ JSR DELAY              \ make the rate of key repeat manageable
 
  JSR RDKEY              \ Scan the keyboard, returning the internal key number
                         \ in X (or 0 for no key press)
 
- BEQ scen1              \ Keep looping up to scen1 until a key is pressed
+ BEQ scen2              \ Keep looping up to scen2 until a key is pressed
 
 .scen3
 
  JSR ProcessKey         \ Process key press
 
- JMP scen1              \ Loop back to wait for next key press
+ LDA YSAV2              \ Fetch the type of key press (0 = non-repeatable,
+                        \ 1 = repeatable)
+
+ BNE scen2              \ Loop back to wait for next key press (for repeatable
+                        \ keys)
+
+ BEQ scen1              \ Loop back to wait for next key press (non-repeatable
+                        \ keys)
 
 \ ******************************************************************************
 \
@@ -51339,6 +51355,9 @@ ENDMACRO
 \ ******************************************************************************
 
 .ProcessKey
+
+ LDX #1                 \ Set YSAV2 = 1 to indicate that the following keys are
+ STX YSAV2              \ repeating keys
 
  LDX #0                 \ Set X = 0 for the x-axis
 
@@ -51453,6 +51472,9 @@ ENDMACRO
  JMP RotateShip
 
 .keys12
+
+ LDX #0                 \ Set repeat = 0 to indicate that the following keys are
+ STX YSAV2              \ non-repeating keys
 
  CMP #f0                \ f0 pressed (front view)
  BEQ keys13
