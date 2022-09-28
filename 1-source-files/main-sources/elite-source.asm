@@ -51454,6 +51454,24 @@ ENDMACRO
 
 .keys12
 
+ CMP #f0                \ f0 pressed (front view)
+ BEQ keys13
+
+ CMP #f1                \ f1 pressed (rear view)
+ BEQ keys13
+
+ CMP #f2                \ f2 pressed (left view)
+ BEQ keys13
+
+ CMP #f3                \ f3 pressed (right view)
+ BNE keys14
+
+.keys13
+
+ JMP ChangeView         \ Process a change of view
+
+.keys14
+
  CMP #&36               \ O pressed (toggle station/sun)
  BNE P%+5
  JMP SwapStationSun
@@ -51491,6 +51509,100 @@ ENDMACRO
 
 \ ******************************************************************************
 \
+\       Name: ChangeView
+\    Summary: Change view to front, rear, left or right
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   Internal key number for f0, f1, f2 or f3
+\
+\ ******************************************************************************
+
+.ChangeView
+
+ AND #3                 \ If we get here then we have pressed f0-f3, so extract
+ TAX                    \ bits 0-1 to set X = 0, 1, 2, 3 for f0, f1, f2, f3
+
+ CPX VIEW               \ If we are already on this view, jump to view1 to
+ BEQ view1              \ ignore the key press and return from the subroutine
+
+                        \ Otherwise this is a new view, so set it up
+
+ JSR LOOK1              \ Otherwise this is a new view, so call LOOK1 to switch
+                        \ to view X and draw the stardust
+
+ JSR PrintSlotNumber    \ Print the current slot number at text location (0, 1)
+
+ JSR DrawShips          \ Draw all ships
+
+.view1
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: DrawShips
+\    Summary: Draw all ships, planets, stations etc.
+\
+\ ******************************************************************************
+
+.DrawShips
+
+ LDX #0                 \ We count through all the occupied ship slots, from
+                        \ slot 0 and up
+
+.draw1
+
+ LDA FRIN,X             \ If the slot is empty, return from the subroutine as
+ BEQ draw2              \ we are done
+
+ PHX                    \ Store the counter on the stack
+
+ JSR GetShipData        \ Fetch the details for the ship in slot X
+
+ JSR SCAN               \ Display the ship on the scanner
+
+ JSR DrawShip           \ Draw the ship
+
+ PLX                    \ Retrieve the counter from the stack
+
+ INX                    \ Move to the next slot
+
+ CPX #NOSH              \ Loop back until we have drawn all the ships
+ BCC draw1
+
+.draw2
+
+ LDX XSAV2              \ Get the ship data for the current slot, as otherwise
+ JSR GetShipData        \ we will leave the last slot's ship as the current ship
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: DrawShip
+\    Summary: Draw a single ship
+\
+\ ******************************************************************************
+
+.DrawShip
+
+ JSR PLUT               \ Call PLUT to update the geometric axes in INWK to
+                        \ match the view (front, rear, left, right)
+
+ JSR LL9                \ Draw the ship
+
+\ LDY #31                \ Set bits 3 and 4 in the ship's byte #31, which
+\ LDA (INF),Y            \ draws the ship on-screen (bit 3), and shows it
+\ ORA #%00011000         \ on the scanner (bit 4)
+\ STA (INF),Y
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
 \       Name: TogglePlanetType
 \    Summary: Toggle the planet between meridian and crater
 \
@@ -51508,9 +51620,12 @@ ENDMACRO
 
  JSR STORE              \ Store the new planet details
 
- JSR LL9                \ Draw the new planet
+ JSR DrawShip           \ Draw the ship
 
- RTS
+ LDX XSAV2              \ Get the ship data for the current slot, as otherwise
+ JSR GetShipData        \ we will leave the last slot's ship as the current ship
+
+ RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
@@ -51629,11 +51744,10 @@ ENDMACRO
 
 .swap5
 
- JSR LL9                \ Draw the new space station or sun
+ JSR DrawShip           \ Draw the ship
 
- LDA INWK+31            \ Copy INWK+31 to INF, so the "is being drawn" bit is
- LDY #31                \ correctly stored
- STA (INF),Y
+ LDX XSAV2              \ Get the ship data for the current slot, as otherwise
+ JSR GetShipData        \ we will leave the last slot's ship as the current ship
 
  RTS                    \ Return from the subroutine
 
@@ -51710,7 +51824,10 @@ ENDMACRO
  JSR STORE              \ Call STORE to copy the ship data block at INWK back to
                         \ the K% workspace at INF
 
- JSR LL9                \ Redraw ship
+ JSR DrawShip           \ Draw the ship
+
+ LDX XSAV2              \ Get the ship data for the current slot, as otherwise
+ JSR GetShipData        \ we will leave the last slot's ship as the current ship
 
  RTS                    \ Return from the subroutine
 
@@ -51784,7 +51901,10 @@ ENDMACRO
 
  JSR SCAN               \ Draw the ship on the scanner
 
- JSR LL9                \ Redraw ship
+ JSR DrawShip           \ Draw the ship
+
+ LDX XSAV2              \ Get the ship data for the current slot, as otherwise
+ JSR GetShipData        \ we will leave the last slot's ship as the current ship
 
  RTS                    \ Return from the subroutine
 
@@ -51873,7 +51993,17 @@ ENDMACRO
 
  JSR SCAN               \ Draw the ship on the scanner
 
+ JSR PLUT               \ Call PLUT to update the geometric axes in INWK to
+                        \ match the view (front, rear, left, right)
+
  JSR LL9                \ Draw the new ship
+
+ LDA INWK+31            \ Copy INWK+31 to INF, so the "is being drawn" bit is
+ LDY #31                \ correctly stored
+ STA (INF),Y
+
+ LDX XSAV2              \ Get the ship data for the current slot, as otherwise
+ JSR GetShipData        \ we will leave the last slot's ship as the current ship
 
 .add4
 
