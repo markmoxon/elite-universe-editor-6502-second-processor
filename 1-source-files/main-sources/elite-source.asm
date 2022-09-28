@@ -51354,21 +51354,42 @@ ENDMACRO
 \
 \ ******************************************************************************
 
+.keyTable
+
+ EQUB &79, &19          \ Front view: x-plus, x-minus, z-plus, z-minus
+ EQUB &62, &68
+
+ EQUB &19, &79          \ Rear view: x-plus, x-minus, z-plus, z-minus
+ EQUB &68, &62
+
+ EQUB &62, &68          \ Left view: x-plus, x-minus, z-plus, z-minus
+ EQUB &79, &19
+
+ EQUB &68, &62          \ Rear view: x-plus, x-minus, z-plus, z-minus
+ EQUB &19, &79
+
 .ProcessKey
 
  LDX #1                 \ Set YSAV2 = 1 to indicate that the following keys are
  STX YSAV2              \ repeating keys
 
+ PHA                    \ Set Y = VIEW * 4, to act as an index into keyTable
+ LDA VIEW
+ ASL A
+ ASL A
+ TAY
+ PLA
+
  LDX #0                 \ Set X = 0 for the x-axis
 
- CMP #&79               \ Right arrow (move ship right along the x-axis)
+ CMP keyTable,Y         \ Right arrow (move ship right along the x-axis)
  BNE keys1
  LDY #0
  JMP MoveShip
 
 .keys1
 
- CMP #&19               \ Left arrow (move ship left along the x-axis)
+ CMP keyTable+1,Y       \ Left arrow (move ship left along the x-axis)
  BNE keys2
  LDY #%10000000
  JMP MoveShip
@@ -51393,14 +51414,14 @@ ENDMACRO
 
  LDX #6                 \ Set X = 6 for the z-axis
 
- CMP #&62               \ SPACE (move ship away along the z-axis)
+ CMP keyTable+2,Y       \ SPACE (move ship away along the z-axis)
  BNE keys5
  LDY #0
  JMP MoveShip
 
 .keys5
 
- CMP #&68               \ ? (move ship closer along the z-axis)
+ CMP keyTable+3,Y       \ ? (move ship closer along the z-axis)
  BNE keys6
  LDY #%10000000
  JMP MoveShip
