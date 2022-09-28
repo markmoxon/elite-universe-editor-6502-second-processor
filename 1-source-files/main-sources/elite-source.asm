@@ -51539,6 +51539,10 @@ ENDMACRO
  BNE P%+5
  JMP PreviousSlot
 
+ CMP #&33               \ R (reset ship)
+ BNE P%+5
+ JMP ResetShip
+
  CMP #&70               \ If ESCAPE is being pressed, jump to pkey1
  BEQ pkey1
 
@@ -51549,6 +51553,35 @@ ENDMACRO
  PLA                    \ Quit the scene editor by returning to the caller of
  PLA                    \ SceneEditor
  RTS
+
+\ ******************************************************************************
+\
+\       Name: ResetShip
+\    Summary: Reset the position of the current ship
+\
+\ ******************************************************************************
+
+.ResetShip
+
+ LDX XSAV2              \ Get the ship data for the current ship
+ JSR GetShipData
+
+ LDA #26                \ Modify ZINF2 so it only resets the coordinates and
+ STA ZINF2+3            \ orientation vectors
+
+ JSR ZINF2              \ Reset the coordinates and orientation vectors
+
+ LDA #NI%-1             \ Undo the modification
+ STA ZINF2+3
+
+ JSR InitialiseShip     \ Initialise the ship coordinates
+
+ JSR STORE              \ Call STORE to copy the ship data block at INWK back to
+                        \ the K% workspace at INF
+
+ JSR DrawShip           \ Draw the ship
+
+ RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
@@ -51939,6 +51972,50 @@ ENDMACRO
 
 \ ******************************************************************************
 \
+\       Name: InitialiseShip
+\    Summary: Set the coordinates for a ship just in front of us
+\
+\ ******************************************************************************
+
+.InitialiseShip
+
+ LDA #2                 \ Set A = 2 to store as the high-byte distance for the
+                        \ new ship, so it's is a little way in front of us
+
+ LDX VIEW               \ If this is the front view, jump to init2 to set z_hi
+ CPX #1
+ BCC init2
+
+ BEQ init1              \ If this is the rear view, jump to init1 to set z_sign
+                        \ and z_hi
+
+ STA INWK+1             \ This is the left or right view, so set store the
+                        \ distance in x_hi
+
+ CPX #2                 \ If this is the right view, skip the following
+ BNE init3
+
+ LDX #%10000000         \ This is the left view, so negate y_sign
+ STX INWK+2
+
+ BNE init3              \ Jump to init3 (this BNE is effectively a JMP as X is
+                        \ never zero)
+
+.init1
+
+ LDX #%10000000         \ This is the rear view, so negate z_sign
+ STX INWK+8
+
+.init2
+
+ STA INWK+7             \ Store the distance in z_hi
+
+.init3
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
 \       Name: AddShip
 \    Summary: Add a new ship
 \
@@ -51952,8 +52029,7 @@ ENDMACRO
  JSR ZINF2              \ Call ZINF2 to reset INWK and the orientation vectors,
                         \ with nosev pointing into the screen
 
- LDA #2                 \ Set z_hi = 2 so the new ship is a little way in front
- STA INWK+7             \ of us
+ JSR InitialiseShip     \ Initialise the ship coordinates
 
  LDA #185               \ Print text token 25 ("SHIP") followed by a question
  JSR ShowPrompt         \ mark
@@ -51964,16 +52040,16 @@ ENDMACRO
                         \ the key's ASCII code in A (and X)
 
  CMP #'1'               \ Check key is '1' or higher
- BCS add0
+ BCS add1
 
  BCC add4               \ Key is invalid, so jump to add4 to return from the
                         \ subroutine (this BCC is effectively a JMP as we just
                         \ passed through a BCS)
 
-.add0
+.add1
 
- CMP #'9'+1             \ If key is '1' to '9', jump to add1 to process
- BCC add1
+ CMP #'9'+1             \ If key is '1' to '9', jump to add2 to process
+ BCC add2
 
  CMP #'a'               \ If key is less than 'A', it is invalid, so jump to
  BCC add4               \ add4 to return from the subroutine
@@ -51989,7 +52065,7 @@ ENDMACRO
  BCS add3               \ Jump to add3 (this BCS is effectively a JMP as the C
                         \ flag will be set from the subtraction)
 
-.add1
+.add2
 
                         \ Key is '1' to '9'
 
@@ -52027,7 +52103,7 @@ ENDMACRO
  LDA #185               \ Print text token 25 ("SHIP") followed by a question
  JSR ShowPrompt         \ mark to remove it from the screen
 
- RTS                    \ Back to main loop
+ RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
@@ -52064,7 +52140,8 @@ ENDMACRO
 
  JSR prq                \ Print the text token in A, followed by a question mark
 
- RTS
+ RTS                    \ Return from the subroutine
+
 \ ******************************************************************************
 \
 \       Name: DeleteShip
