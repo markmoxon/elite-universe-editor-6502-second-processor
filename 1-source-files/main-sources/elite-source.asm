@@ -51349,32 +51349,61 @@ ENDMACRO
 
 \ ******************************************************************************
 \
-\       Name: ProcessKey
-\    Summary: Process key presses
+\       Name: keyTable
+\    Summary: Movement key table for each of the four views
 \
 \ ******************************************************************************
 
 .keyTable
 
- EQUB &79, &19          \ Front view: x-plus, x-minus, z-plus, z-minus
- EQUB &62, &68
+                        \ x-plus        x-minus
+                        \ z-plus        z-minus
+                        \ xrot-plus     xrot-minus
+                        \ zrot-plus     zrot-minus
 
- EQUB &19, &79          \ Rear view: x-plus, x-minus, z-plus, z-minus
- EQUB &68, &62
+                        \ Front view
 
- EQUB &62, &68          \ Left view: x-plus, x-minus, z-plus, z-minus
- EQUB &79, &19
+ EQUB &79, &19          \ Right arrow   Left arrow
+ EQUB &62, &68          \ SPACE         ?
+ EQUB &51, &42          \ S             X
+ EQUB &67, &66          \ >             <
 
- EQUB &68, &62          \ Rear view: x-plus, x-minus, z-plus, z-minus
- EQUB &19, &79
+                        \ Rear view
+
+ EQUB &19, &79          \ Left arrow    Right arrow
+ EQUB &68, &62          \ ?             SPACE
+ EQUB &51, &42          \ S             X
+ EQUB &67, &66          \ >             <
+
+                        \ Left view
+
+ EQUB &68, &62          \ ?             SPACE
+ EQUB &79, &19          \ Right arrow   Left arrow
+ EQUB &51, &42          \ S             X
+ EQUB &67, &66          \ >             <
+
+                        \ Right view
+
+ EQUB &62, &68          \ SPACE         ?
+ EQUB &19, &79          \ Left arrow    Right arrow
+ EQUB &51, &42          \ S             X
+ EQUB &67, &66          \ >             <
+
+\ ******************************************************************************
+\
+\       Name: ProcessKey
+\    Summary: Process key presses
+\
+\ ******************************************************************************
 
 .ProcessKey
 
  LDX #1                 \ Set YSAV2 = 1 to indicate that the following keys are
  STX YSAV2              \ repeating keys
 
- PHA                    \ Set Y = VIEW * 4, to act as an index into keyTable
+ PHA                    \ Set Y = VIEW * 8, to act as an index into keyTable
  LDA VIEW
+ ASL A
  ASL A
  ASL A
  TAY
@@ -51450,7 +51479,7 @@ ENDMACRO
 
 .keys8
 
- CMP #&51               \ S (rotate ship around the x-axis)
+ CMP keyTable+4,Y       \ S (rotate ship around the x-axis)
  BNE keys9
 
  LDX #0                 \ Rotate (roofv, nosev) by a small positive angle
@@ -51461,7 +51490,7 @@ ENDMACRO
 
 .keys9
 
- CMP #&42               \ X (rotate ship around the x-axis)
+ CMP keyTable+5,Y       \ X (rotate ship around the x-axis)
  BNE keys10
 
  LDX #%10000000         \ Rotate (roofv, nosev) by a small negative angle
@@ -51472,7 +51501,7 @@ ENDMACRO
 
 .keys10
 
- CMP #&67               \ > (rotate ship around the x-axis)
+ CMP keyTable+6,Y       \ > (rotate ship around the x-axis)
  BNE keys11
 
  LDX #0                 \ Rotate (roofv, sidev) by a small positive angle
@@ -51483,7 +51512,7 @@ ENDMACRO
 
 .keys11
 
- CMP #&66               \ < (rotate ship around the x-axis)
+ CMP keyTable+7,Y       \ < (rotate ship around the x-axis)
  BNE keys12
 
  LDX #%10000000         \ Rotate (roofv, sidev) by a small negative angle
@@ -51979,38 +52008,92 @@ ENDMACRO
 
 .InitialiseShip
 
+                        \ This routine is called following ZINF2, so the
+                        \ orientation vectors are set as follows:
+                        \
+                        \   sidev = (1,  0,  0)
+                        \   roofv = (0,  1,  0)
+                        \   nosev = (0,  0,  1)
+
  LDA #2                 \ Set A = 2 to store as the high-byte distance for the
                         \ new ship, so it's is a little way in front of us
 
- LDX VIEW               \ If this is the front view, jump to init2 to set z_hi
- CPX #1
- BCC init2
+ LDX VIEW               \ If this is the front view, jump to init3 to set z_hi
+ CPX #1                 \ only
+ BCC init3
 
- BEQ init1              \ If this is the rear view, jump to init1 to set z_sign
-                        \ and z_hi
+ BEQ init2              \ If this is the rear view, jump to init2 to set z_sign
+                        \ and z_hi and point the ship away from us
 
- STA INWK+1             \ This is the left or right view, so set store the
-                        \ distance in x_hi
+ STA INWK+1             \ This is the left or right view, so set the distance
+                        \ in x_hi
 
- CPX #2                 \ If this is the right view, skip the following
- BNE init3
+ CPX #2                 \ If this is the right view, jump to init1
+ BNE init1
+
+                        \ This is the left view, so spawn the ship to the left
+                        \ (negative y_sign) and pointing away from us:
+                        \
+                        \   sidev = (0,  0,  1)
+                        \   roofv = (0,  1,  0)
+                        \   nosev = (-1, 0,  0)
 
  LDX #%10000000         \ This is the left view, so negate y_sign
  STX INWK+2
 
- BNE init3              \ Jump to init3 (this BNE is effectively a JMP as X is
+ LDX #0                 \ Set byte #22 = sidev_x_hi = 0
+ STX INWK+22
+
+ STX INWK+14            \ Set byte #14 = nosev_z_hi = 0
+
+ LDX #96                \ Set byte #26 = sidev_z_hi = 96 = 1
+ STX INWK+26
+
+ LDX #128+96            \ Set byte #10 = nosev_x_hi = -96 = -1
+ STX INWK+10
+
+ BNE init4              \ Jump to init4 (this BNE is effectively a JMP as X is
                         \ never zero)
 
 .init1
 
- LDX #%10000000         \ This is the rear view, so negate z_sign
- STX INWK+8
+                        \ This is the right view, so spawn the ship pointing
+                        \ away from us:
+                        \
+                        \   sidev = (0,  0, -1)
+                        \   roofv = (0,  1,  0)
+                        \   nosev = (1,  0,  0)
+
+ LDX #0                 \ Set byte #22 = sidev_x_hi = 0
+ STX INWK+22
+
+ STX INWK+14            \ Set byte #14 = nosev_z_hi = 0
+
+ LDX #128+96            \ Set byte #26 = sidev_z_hi = -96 = -1
+ STX INWK+26
+
+ LDX #96                \ Set byte #10 = nosev_x_hi = 96 = 1
+ STX INWK+10
+
+ BNE init4              \ Jump to init4 (this BNE is effectively a JMP as X is
+                        \ never zero)
 
 .init2
 
- STA INWK+7             \ Store the distance in z_hi
+                        \ This is the rear view, so spawn the ship behind us
+                        \ (negative z_sign) and pointing away from us
+
+ LDX #%10000000         \ This is the rear view, so negate z_sign
+ STX INWK+8
+
+ LDX #128+96            \ Set byte #14 = nosev_z_hi = -96 = -1
+ STX INWK+14
 
 .init3
+
+ STA INWK+7             \ Store the distance in z_hi
+
+.init4
 
  RTS                    \ Return from the subroutine
 
