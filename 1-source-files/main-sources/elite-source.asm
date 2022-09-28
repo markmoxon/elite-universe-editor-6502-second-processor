@@ -51268,18 +51268,17 @@ ENDMACRO
 
  JSR SOLAR              \ Add the sun, planet and stardust
 
- LDA #10                \ Set the technology level so we get a Coriolis station
- STA tek                \ the first time we create a station
-
  LDX #1                 \ Move the sun/station in slot 1 to the left of centre
  STX XSAV2
  JSR GetShipData
  JSR ZINF2
+
  LDA #2                 \ Set z_sign = 2
  STA INWK+8
  LDA #%10000001         \ Set x_sign = -1
  STA INWK+2
- JSR STORE
+
+ JSR STORE              \ Draw the sun
  JSR LL9
 
  LDX #0                 \ Set up the planet's data in slot 0
@@ -51336,7 +51335,7 @@ ENDMACRO
 
 .scen3
 
- JSR ProcessKey         \ Process key press
+ JSR ProcessKey         \ Process the key press
 
  LDA YSAV2              \ Fetch the type of key press (0 = non-repeatable,
                         \ 1 = repeatable)
@@ -51560,6 +51559,10 @@ ENDMACRO
  BNE P%+5
  JMP DeleteShip
 
+ CMP #&69               \ COPY pressed (copy ship)
+ BNE P%+5
+ JMP CopyShip
+
  CMP #&21               \ W (next slot)
  BNE P%+5
  JMP NextSlot
@@ -51595,6 +51598,8 @@ ENDMACRO
  LDX XSAV2              \ Get the ship data for the current ship
  JSR GetShipData
 
+ JSR SCAN               \ Draw the current ship on the scanner to remove it
+
  LDA #26                \ Modify ZINF2 so it only resets the coordinates and
  STA ZINF2+3            \ orientation vectors
 
@@ -51603,14 +51608,57 @@ ENDMACRO
  LDA #NI%-1             \ Undo the modification
  STA ZINF2+3
 
+ LDA TYPE               \ If this is a ship, jump to rest1 to set a distance of
+ BPL rest1              \ 2 or 5
+
+ LDA #2                 \ This is a planet/sun, so set A = 2
+
+ LDX VIEW               \ If this is the left or right view, jump to rest9
+ CPX #2
+ BCC rest9
+
+ STA INWK+2             \ This is the front or rear view, so set x_sign = 2
+
+ BCS resta              \ Jump to resta (this BCC is effectively a JMP as we
+                        \ just passed through a BCS)
+
+.rest9
+
+ STA INWK+8             \ This is the left or right view, so set z_sign = 2
+
+.resta
+
+ LDA #0                 \ Set A = 0 to store as the high-byte distance for the
+                        \ planet/sun
+
+ BEQ rest3              \ Jump to rest3 (this BEQ is effectively a JMP as A is
+                        \ always zero)
+
+.rest1
+
+ CMP #SST               \ If this is a space station, jump to rest2 to set a
+ BEQ rest2              \ distance of 5
+
+ LDA #2                 \ Set A = 2 to store as the high-byte distance for the
+                        \ new ship, so it's is a little way in front of us
+
+ BNE rest3              \ Jump to rest3 (this BNE is effectively a JMP as A is
+                        \ never zero)
+
+.rest2
+
+ LDA #5                 \ Set A = 5 to store as the high-byte distance for the
+                        \ new station, so it's is a little way in front of us
+
+.rest3
+
  JSR InitialiseShip     \ Initialise the ship coordinates
 
  JSR STORE              \ Call STORE to copy the ship data block at INWK back to
                         \ the K% workspace at INF
 
- JSR DrawShip           \ Draw the ship
-
- RTS                    \ Return from the subroutine
+ JMP DrawShip           \ Draw the ship and return from the subroutine using a
+                        \ tail call
 
 \ ******************************************************************************
 \
@@ -51704,9 +51752,8 @@ ENDMACRO
  STA (INF),Y            \ K% gets updated)
 
  LDX XSAV2              \ Get the ship data for the current slot, as otherwise
- JSR GetShipData        \ we will leave the wrong axes in INWK
-
- RTS                    \ Return from the subroutine
+ JMP GetShipData        \ we will leave the wrong axes in INWK, and return from
+                        \ the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -51727,9 +51774,8 @@ ENDMACRO
 
  JSR STORE              \ Store the new planet details
 
- JSR DrawShip           \ Draw the ship
-
- RTS                    \ Return from the subroutine
+ JMP DrawShip           \ Draw the ship and return from the subroutine using a
+                        \ tail call
 
 \ ******************************************************************************
 \
@@ -51752,6 +51798,7 @@ ENDMACRO
                         \ to this colour
 
  JMP EE51               \ Draw the existing ship to erase it and mark it as gone
+                        \ and return from the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -51846,9 +51893,8 @@ ENDMACRO
 
 .swap5
 
- JSR DrawShip           \ Draw the ship
-
- RTS                    \ Return from the subroutine
+ JMP DrawShip           \ Draw the ship and return from the subroutine using a
+                        \ tail call
 
 \ ******************************************************************************
 \
@@ -51923,9 +51969,8 @@ ENDMACRO
  JSR STORE              \ Call STORE to copy the ship data block at INWK back to
                         \ the K% workspace at INF
 
- JSR DrawShip           \ Draw the ship
-
- RTS                    \ Return from the subroutine
+ JMP DrawShip           \ Draw the ship and return from the subroutine using a
+                        \ tail call
 
 \ ******************************************************************************
 \
@@ -51995,14 +52040,19 @@ ENDMACRO
  JSR STORE              \ Call STORE to copy the ship data block at INWK back to
                         \ the K% workspace at INF
 
- JSR DrawShip           \ Draw the ship
-
- RTS                    \ Return from the subroutine
+ JMP DrawShip           \ Draw the ship and return from the subroutine using a
+                        \ tail call
 
 \ ******************************************************************************
 \
 \       Name: InitialiseShip
 \    Summary: Set the coordinates for a ship just in front of us
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   Distance in front of us where ship is spawned
 \
 \ ******************************************************************************
 
@@ -52014,9 +52064,6 @@ ENDMACRO
                         \   sidev = (1,  0,  0)
                         \   roofv = (0,  1,  0)
                         \   nosev = (0,  0,  1)
-
- LDA #2                 \ Set A = 2 to store as the high-byte distance for the
-                        \ new ship, so it's is a little way in front of us
 
  LDX VIEW               \ If this is the front view, jump to init3 to set z_hi
  CPX #1                 \ only
@@ -52038,8 +52085,9 @@ ENDMACRO
                         \   roofv = (0,  1,  0)
                         \   nosev = (-1, 0,  0)
 
- LDX #%10000000         \ This is the left view, so negate y_sign
- STX INWK+2
+ LDA INWK+2             \ This is the left view, so negate x_sign
+ ORA #%10000000
+ STA INWK+2
 
  LDX #0                 \ Set byte #22 = sidev_x_hi = 0
  STX INWK+22
@@ -52083,8 +52131,13 @@ ENDMACRO
                         \ This is the rear view, so spawn the ship behind us
                         \ (negative z_sign) and pointing away from us
 
- LDX #%10000000         \ This is the rear view, so negate z_sign
- STX INWK+8
+ PHA                    \ Store the distance on the stack
+
+ LDA INWK+8             \ This is the rear view, so negate z_sign
+ ORA #%10000000
+ STA INWK+8
+
+ PLA                    \ Retrieve the distance from the stack
 
  LDX #128+96            \ Set byte #14 = nosev_z_hi = -96 = -1
  STX INWK+14
@@ -52111,6 +52164,9 @@ ENDMACRO
 
  JSR ZINF2              \ Call ZINF2 to reset INWK and the orientation vectors,
                         \ with nosev pointing into the screen
+
+ LDA #2                 \ Set A = 2 to store as the high-byte distance for the
+                        \ new ship, so it's is a little way in front of us
 
  JSR InitialiseShip     \ Initialise the ship coordinates
 
@@ -52162,13 +52218,32 @@ ENDMACRO
 
  STA TYPE               \ Store the new ship type
 
+ JSR CreateShip         \ Create the new ship
+
+.add4
+
+ LDA #185               \ Print text token 25 ("SHIP") followed by a question
+ JMP ShowPrompt         \ mark to remove it from the screen, and return from the
+                        \ subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: CreateShip
+\    Summary: Create a ship
+\
+\ ******************************************************************************
+
+.CreateShip
+
  JSR NWSHP              \ Add the new ship and store it in K%
 
- BCC add4               \ If ship was not added, return from subroutine
+ BCC crea1              \ If ship was not added, make an error beep and return
+                        \ from the subroutine
 
  JSR GetCurrentSlot     \ Set X to the slot number of the new ship
 
- BCS add4               \ If we didn't find the slot, return from subroutine
+ BCS crea1              \ If we didn't find the slot, make an error beep and
+                        \ return from the subroutine
 
  JSR UpdateSlotNumber   \ Store and print the new slot number in X
 
@@ -52179,14 +52254,14 @@ ENDMACRO
  JSR STORE              \ Call STORE to copy the ship data block at INWK back to
                         \ the K% workspace at INF
 
- JSR DrawShip           \ Draw the ship
+ JMP DrawShip           \ Draw the ship, returning from the subroutine using a
+                        \ tail call
 
-.add4
+.crea1
 
- LDA #185               \ Print text token 25 ("SHIP") followed by a question
- JSR ShowPrompt         \ mark to remove it from the screen
-
- RTS                    \ Return from the subroutine
+ LDA #40                \ Call the NOISE routine with A = 40 to make a low,
+ JMP NOISE              \ long beep to indicate the missile is now disarmed,
+                        \ returning from the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -52221,9 +52296,30 @@ ENDMACRO
 
  PLA                    \ Get token number
 
- JSR prq                \ Print the text token in A, followed by a question mark
+ JMP prq                \ Print the text token in A, followed by a question mark
+                        \ and return from the subroutine using a tail call
 
- RTS                    \ Return from the subroutine
+\ ******************************************************************************
+\
+\       Name: CopyShip
+\    Summary: Delete the ship from the current slot
+\
+\ ******************************************************************************
+
+.CopyShip
+
+ LDX XSAV2              \ Get the ship data for the current ship
+ JSR GetShipData
+
+ LDA INWK+3             \ Move it up a bit
+ CLC
+ ADC #10
+ STA INWK+3
+ BCC P%+4
+ INC INWK+3
+
+ LDA TYPE               \ Create a new ship of the same type, returning from the
+ JMP CreateShip         \ subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -52255,9 +52351,8 @@ ENDMACRO
 
 .delt1
 
- JSR SwitchToSlot       \ Switch to slot X to load the new ship's data
-
- RTS                    \ Return from the subroutine
+ JMP SwitchToSlot       \ Switch to slot X to load the new ship's data,
+                        \ returning from the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -52286,9 +52381,8 @@ ENDMACRO
 
  STX XSAV2              \ Set the current slot number to the new slot number
 
- JSR PrintSlotNumber    \ Print new slot number
-
- RTS                    \ Return from the subroutine
+ JMP PrintSlotNumber    \ Print new slot number and return from the subroutine
+                        \ using a tail call
 
 \ ******************************************************************************
 \
@@ -52300,7 +52394,7 @@ ENDMACRO
 .PrintSlotNumber
 
  LDX XSAV2              \ Print the current slot number at text location (0, 1)
- JMP ee3
+ JMP ee3                \ and return from the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -52403,9 +52497,9 @@ ENDMACRO
  CPX #NOSH              \ If we haven't reached the last slot, jump to prev2 to
  BCC prev2              \ skip the following
 
- LDX #1                 \ There are no poulated ship slots, so set X to the slot
- BNE SwitchToSlot       \ for the station/sun and jump to SwitchToSlot (this BNE
-                        \ is effectively a JMP as X is never 0)
+ LDX #NOSH-1            \ There are no empty ship slots, so set X to the last
+ BNE SwitchToSlot       \ slot and jump to SwitchToSlot (this BNE is effectively
+                        \ a JMP as X is never 0)
 
 .prev2
 
@@ -52441,9 +52535,8 @@ ENDMACRO
  LDX XSAV2              \ Get the ship data for the new slot
  JSR GetShipData
 
- JSR HighlightShip      \ Highlight the new ship, so we can see which one it is
-
- RTS                    \ Return from the subroutine
+ JMP HighlightShip      \ Highlight the new ship, so we can see which one it is,
+                        \ and return from the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -52559,11 +52652,9 @@ ENDMACRO
  LDY #0
  JSR MoveShip
 
- LDX #0                 \ Move right
- LDY #0
- JSR MoveShip
-
- RTS                    \ Return from subroutine
+ LDX #0                 \ Move right, returning from the subroutine using a tail
+ LDY #0                 \ call
+ JMP MoveShip
 
 \ ******************************************************************************
 \
