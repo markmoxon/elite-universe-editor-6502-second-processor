@@ -51991,9 +51991,9 @@ ENDMACRO
  LDA TYPE               \ If this is a ship, jump to init3 to set a distance of
  BPL init3              \ 2 or 5
 
- LDA #%10000000         \ Pitch the planet so the crater is visible (in case we
+ LDA #0                 \ Pitch the planet so the crater is visible (in case we
  JSR TWIST2             \ switch planet types straight away)
- LDA #%10000000
+ LDA #0
  JSR TWIST2
 
  LDA #2                 \ This is a planet/sun, so set A = 2 to store as the
