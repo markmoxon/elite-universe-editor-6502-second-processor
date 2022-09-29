@@ -51819,6 +51819,9 @@ ENDMACRO
  JSR NWSPS              \ Add a new space station to our local bubble of
                         \ universe
 
+ LDX #10                \ Flip the station around nosev to reverse the flip
+ JSR FlipShip           \ that's done in NWSPS
+
  JSR InitialiseShip     \ Initialise the station so it's in front of us
 
  LDA INWK+31            \ Set bit 4 to keep the station visible on the scanner
@@ -51831,6 +51834,35 @@ ENDMACRO
 
  JMP DrawShip           \ Draw the ship and return from the subroutine using a
                         \ tail call
+
+\ ******************************************************************************
+\
+\       Name: FlipShip
+\    Summary: Flip ship around in space
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The orientation vector to flip:
+\
+\                         * 10 = negate nosev
+\
+\ ******************************************************************************
+
+.FlipShip
+
+ PHA
+
+ JSR NwS1               \ Call NwS1 to flip the sign of nosev_x_hi (byte #10)
+
+ JSR NwS1               \ And again to flip the sign of nosev_y_hi (byte #12)
+
+ JSR NwS1               \ And again to flip the sign of nosev_z_hi (byte #14)
+
+ PLA
+
+ RTS
 
 \ ******************************************************************************
 \
@@ -51995,8 +52027,15 @@ ENDMACRO
 
 .InitialiseShip
 
- LDA TYPE               \ If this is a ship, jump to init3 to set a distance of
- BPL init3              \ 2 or 5
+                        \ This routine is called following ZINF2, so the
+                        \ orientation vectors are set as follows:
+                        \
+                        \   sidev = (1,  0,  0)
+                        \   roofv = (0,  1,  0)
+                        \   nosev = (0,  0,  1)
+
+ LDA TYPE               \ If this is a ship or station, jump to init3 to set a
+ BPL init3              \ distance of 2 or 5
 
  LDA #0                 \ Pitch the planet so the crater is visible (in case we
  JSR TWIST2             \ switch planet types straight away)
@@ -52041,7 +52080,7 @@ ENDMACRO
 .init4
 
  LDA #5                 \ Set A = 5 to store as the high-byte distance for the
-                        \ new station, so it's is a little way in front of us
+                        \ new station, so it's a little way in front of us
 
 .init5
 
@@ -52052,18 +52091,18 @@ ENDMACRO
                         \   roofv = (0,  1,  0)
                         \   nosev = (0,  0,  1)
 
- LDX VIEW               \ If this is the front view, jump to init10 to set z_hi
- CPX #1                 \ only
- BCC init10
+ LDX VIEW               \ If this is the front view, jump to init11 to set z_hi
+ CPX #1
+ BCC init11
 
- BEQ init9              \ If this is the rear view, jump to init9 to set z_sign
+ BEQ init7              \ If this is the rear view, jump to init7 to set z_sign
                         \ and z_hi and point the ship away from us
 
  STA INWK+1             \ This is the left or right view, so set the distance
                         \ in x_hi
 
- CPX #2                 \ If this is the right view, jump to init8
- BNE init8
+ CPX #3                 \ If this is the right view, jump to init6
+ BEQ init6
 
                         \ This is the left view, so spawn the ship to the left
                         \ (negative y_sign) and pointing away from us:
@@ -52087,10 +52126,20 @@ ENDMACRO
  LDX #128+96            \ Set byte #10 = nosev_x_hi = -96 = -1
  STX INWK+10
 
- BNE init11             \ Jump to init11 (this BNE is effectively a JMP as X is
+ LDA TYPE               \ If this is not the station, jump to init10
+ CMP #SST
+ BNE init10
+
+                        \ This is the station, so flip it around so the slot is
+                        \ pointing at us
+
+ LDX #96                \ Set byte #10 = nosev_x_hi = 96 = 1
+ STX INWK+10
+
+ BNE init10             \ Jump to init10 (this BNE is effectively a JMP as X is
                         \ never zero)
 
-.init8
+.init6
 
                         \ This is the right view, so spawn the ship pointing
                         \ away from us:
@@ -52110,10 +52159,20 @@ ENDMACRO
  LDX #96                \ Set byte #10 = nosev_x_hi = 96 = 1
  STX INWK+10
 
- BNE init11             \ Jump to init11 (this BNE is effectively a JMP as X is
+ LDA TYPE               \ If this is not the station, jump to init10
+ CMP #SST
+ BNE init10
+
+                        \ This is the station, so flip it around so the slot is
+                        \ pointing at us
+
+ LDX #128+96            \ Set byte #10 = nosev_x_hi = -96 = -1
+ STX INWK+10
+
+ BNE init10             \ Jump to init10 (this BNE is effectively a JMP as X is
                         \ never zero)
 
-.init9
+.init7
 
                         \ This is the rear view, so spawn the ship behind us
                         \ (negative z_sign) and pointing away from us
@@ -52124,18 +52183,45 @@ ENDMACRO
  ORA #%10000000
  STA INWK+8
 
- PLA                    \ Retrieve the distance from the stack
-
  LDX #128+96            \ Set byte #14 = nosev_z_hi = -96 = -1
  STX INWK+14
 
-.init10
+ LDA TYPE               \ If this is not the station, jump to init8
+ CMP #SST
+ BNE init8
+
+                        \ This is the station, so flip it around so the slot is
+                        \ pointing at us
+
+ LDX #96                \ Set byte #14 = nosev_z_hi = 96 = 1
+ STX INWK+14
+
+.init8
+
+ PLA                    \ Retrieve the distance from the stack
+
+.init9
 
  STA INWK+7             \ Store the distance in z_hi
 
-.init11
+.init10
 
  RTS                    \ Return from the subroutine
+
+.init11
+
+ LDX TYPE               \ If this is not the station, jump to init9
+ CPX #SST
+ BNE init9
+
+                        \ This is the station, so flip it around so the slot is
+                        \ pointing at us
+
+ LDX #10                \ Flip the station around nosev to point it towards us
+ JSR FlipShip
+
+ BNE init9              \ Jump to init9 (this BNE is effectively a JMP as X is
+                        \ never zero)
 
 \ ******************************************************************************
 \
