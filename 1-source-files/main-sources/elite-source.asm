@@ -51608,49 +51608,49 @@ ENDMACRO
  LDA #NI%-1             \ Undo the modification
  STA ZINF2+3
 
- LDA TYPE               \ If this is a ship, jump to rest1 to set a distance of
- BPL rest1              \ 2 or 5
+ LDA TYPE               \ If this is a ship, jump to rest3 to set a distance of
+ BPL rest3              \ 2 or 5
 
  LDA #2                 \ This is a planet/sun, so set A = 2
 
- LDX VIEW               \ If this is the left or right view, jump to rest9
+ LDX VIEW               \ If this is the left or right view, jump to rest1
  CPX #2
- BCC rest9
+ BCC rest1
 
  STA INWK+2             \ This is the front or rear view, so set x_sign = 2
 
- BCS resta              \ Jump to resta (this BCC is effectively a JMP as we
+ BCS rest2              \ Jump to rest2 (this BCC is effectively a JMP as we
                         \ just passed through a BCS)
 
-.rest9
+.rest1
 
  STA INWK+8             \ This is the left or right view, so set z_sign = 2
 
-.resta
+.rest2
 
  LDA #0                 \ Set A = 0 to store as the high-byte distance for the
                         \ planet/sun
 
- BEQ rest3              \ Jump to rest3 (this BEQ is effectively a JMP as A is
+ BEQ rest5              \ Jump to rest5 (this BEQ is effectively a JMP as A is
                         \ always zero)
 
-.rest1
+.rest3
 
- CMP #SST               \ If this is a space station, jump to rest2 to set a
- BEQ rest2              \ distance of 5
+ CMP #SST               \ If this is a space station, jump to rest4 to set a
+ BEQ rest4              \ distance of 5
 
  LDA #2                 \ Set A = 2 to store as the high-byte distance for the
                         \ new ship, so it's is a little way in front of us
 
- BNE rest3              \ Jump to rest3 (this BNE is effectively a JMP as A is
+ BNE rest5              \ Jump to rest5 (this BNE is effectively a JMP as A is
                         \ never zero)
 
-.rest2
+.rest4
 
  LDA #5                 \ Set A = 5 to store as the high-byte distance for the
                         \ new station, so it's is a little way in front of us
 
-.rest3
+.rest5
 
  JSR InitialiseShip     \ Initialise the ship coordinates
 
@@ -51882,7 +51882,7 @@ ENDMACRO
  STA INWK+7
  LDA #0                 \ Set z_sign = 0
  STA INWK+8
- LDA #%00000000         \ Set x_sign = 0
+ LDA #0                 \ Set x_sign = 0
  STA INWK+2
 
  LDA INWK+31            \ Set bit 4 to keep the station visible on the scanner
