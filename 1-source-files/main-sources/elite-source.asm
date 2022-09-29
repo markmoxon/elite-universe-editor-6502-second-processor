@@ -51872,6 +51872,13 @@ ENDMACRO
  PHX                    \ Store X and Y on the stack
  PHY
 
+ JSR SCAN               \ Draw the ship on the scanner to remove it
+
+ PLY                    \ Store X and Y on the stack
+ PLX
+ PHX
+ PHY
+
  JSR MVS5               \ Rotate vector_x by a small angle
 
  PLA                    \ Retrieve X and Y from the stack and add 2 to each of
