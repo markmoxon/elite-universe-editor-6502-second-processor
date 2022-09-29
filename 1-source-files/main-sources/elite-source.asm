@@ -51266,48 +51266,38 @@ ENDMACRO
                         \ which is yellow (colour 1), red (colour 2) and cyan
                         \ (colour 3)
 
- JSR SOLAR              \ Add the sun, planet and stardust
+ JSR SOLAR              \ Add the sun, planet and stardust, according to the
+                        \ current system seeds
 
- LDX #1                 \ Move the sun/station in slot 1 to the left of centre
+ LDX #1                 \ Get the details for the sun from slot 1
  STX XSAV2
  JSR GetShipData
- JSR ZINF2
 
- LDA #2                 \ Set z_sign = 2
+ JSR ZINF2              \ Initialise the sun so it's in front of us
+ JSR InitialiseShip
+
+ LDA INWK+8             \ Move the sun behind us
+ EOR #%10000000
  STA INWK+8
- LDA #%10000001         \ Set x_sign = -1
- STA INWK+2
 
- JSR STORE              \ Draw the sun
- JSR LL9
+ JSR STORE              \ Store the updated sun
 
- LDX #0                 \ Set up the planet's data in slot 0
+ JSR LL9                \ Draw the sun
+
+ LDX #0                 \ Get the details for the planet from slot 0
  STX XSAV2
  JSR GetShipData
- JSR ZINF
-
- LDX #%10000000         \ Pitch the planet twice so the crater is visible (in
- STX RAT2               \ case we switch planet types straight away)
- LDX #15
- LDY #9
- JSR RotateShip
- LDX #15
- LDY #9
- JSR RotateShip
-
-                        \ Move the planet to the right of centre
-
- LDA #2                 \ Set z_sign = 2
- STA INWK+8
- LDA #%00000001         \ Set x_sign = 1
- STA INWK+2
 
  LDA #128               \ Set the planet to a meridian planet
  STA FRIN
  STA TYPE
 
- JSR STORE              \ Draw the planet
- JSR LL9
+ JSR ZINF2              \ Initialise the planet so it's in front of us
+ JSR InitialiseShip
+
+ JSR STORE              \ Store the updated planet
+
+ JSR LL9                \ Draw the planet
 
  LDX #0                 \ Set the current slot to 0 (planet)
  STX XSAV2
@@ -51601,56 +51591,12 @@ ENDMACRO
  JSR SCAN               \ Draw the current ship on the scanner to remove it
 
  LDA #26                \ Modify ZINF2 so it only resets the coordinates and
- STA ZINF2+3            \ orientation vectors
+ STA ZINF2+3            \ orientation vectors (and keeps other ship settings)
 
  JSR ZINF2              \ Reset the coordinates and orientation vectors
 
  LDA #NI%-1             \ Undo the modification
  STA ZINF2+3
-
- LDA TYPE               \ If this is a ship, jump to rest3 to set a distance of
- BPL rest3              \ 2 or 5
-
- LDA #2                 \ This is a planet/sun, so set A = 2
-
- LDX VIEW               \ If this is the left or right view, jump to rest1
- CPX #2
- BCC rest1
-
- STA INWK+2             \ This is the front or rear view, so set x_sign = 2
-
- BCS rest2              \ Jump to rest2 (this BCC is effectively a JMP as we
-                        \ just passed through a BCS)
-
-.rest1
-
- STA INWK+8             \ This is the left or right view, so set z_sign = 2
-
-.rest2
-
- LDA #0                 \ Set A = 0 to store as the high-byte distance for the
-                        \ planet/sun
-
- BEQ rest5              \ Jump to rest5 (this BEQ is effectively a JMP as A is
-                        \ always zero)
-
-.rest3
-
- CMP #SST               \ If this is a space station, jump to rest4 to set a
- BEQ rest4              \ distance of 5
-
- LDA #2                 \ Set A = 2 to store as the high-byte distance for the
-                        \ new ship, so it's is a little way in front of us
-
- BNE rest5              \ Jump to rest5 (this BNE is effectively a JMP as A is
-                        \ never zero)
-
-.rest4
-
- LDA #5                 \ Set A = 5 to store as the high-byte distance for the
-                        \ new station, so it's is a little way in front of us
-
-.rest5
 
  JSR InitialiseShip     \ Initialise the ship coordinates
 
@@ -51826,19 +51772,14 @@ ENDMACRO
 
  JSR KS4                \ Switch to the sun, erasing the space station bulb
 
- JSR ZINF               \ Reset the sun's data block
-
- LDA #2                 \ Set z_sign = 2
- STA INWK+8
- LDA #%10000001         \ Set x_sign = -1
- STA INWK+2
- LDA #0                 \ Set z_hi = 0
- STA INWK+7
-
- JSR STORE              \ Store the updated sun
+ JSR ZINF2              \ Reset the sun's data block
 
  LDA #129               \ Set the type for the sun
  STA TYPE
+
+ JSR InitialiseShip     \ Initialise the sun so it's in front of us
+
+ JSR STORE              \ Store the updated sun
 
  BNE swap5              \ Jump to swap4 (this BNE is effectively a JMP as A is
                         \ never zero)
@@ -51878,12 +51819,7 @@ ENDMACRO
  JSR NWSPS              \ Add a new space station to our local bubble of
                         \ universe
 
- LDA #5                 \ Set z_hi = 5
- STA INWK+7
- LDA #0                 \ Set z_sign = 0
- STA INWK+8
- LDA #0                 \ Set x_sign = 0
- STA INWK+2
+ JSR InitialiseShip     \ Initialise the station so it's in front of us
 
  LDA INWK+31            \ Set bit 4 to keep the station visible on the scanner
  ORA #%00010000
@@ -52046,17 +51982,61 @@ ENDMACRO
 \ ******************************************************************************
 \
 \       Name: InitialiseShip
-\    Summary: Set the coordinates for a ship just in front of us
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   A                   Distance in front of us where ship is spawned
+\    Summary: Set the coordinates and orientation for a ship just in front of us
 \
 \ ******************************************************************************
 
 .InitialiseShip
+
+ LDA TYPE               \ If this is a ship, jump to init3 to set a distance of
+ BPL init3              \ 2 or 5
+
+ LDA #%10000000         \ Pitch the planet so the crater is visible (in case we
+ JSR TWIST2             \ switch planet types straight away)
+ LDA #%10000000
+ JSR TWIST2
+
+ LDA #2                 \ This is a planet/sun, so set A = 2 to store as the
+                        \ sign-byte distance
+
+ LDX VIEW               \ If this is the left or right view, jump to init1
+ CPX #2
+ BCC init1
+
+ STA INWK+2             \ This is the front or rear view, so set x_sign = 2
+
+ BCS init2              \ Jump to init2 (this BCC is effectively a JMP as we
+                        \ just passed through a BCS)
+
+.init1
+
+ STA INWK+8             \ This is the left or right view, so set z_sign = 2
+
+.init2
+
+ LDA #0                 \ Set A = 0 to store as the high-byte distance for the
+                        \ planet/sun
+
+ BEQ init5              \ Jump to init5 (this BEQ is effectively a JMP as A is
+                        \ always zero)
+
+.init3
+
+ CMP #SST               \ If this is a space station, jump to init4 to set a
+ BEQ init4              \ distance of 5
+
+ LDA #2                 \ Set A = 2 to store as the high-byte distance for the
+                        \ new ship, so it's is a little way in front of us
+
+ BNE init5              \ Jump to init5 (this BNE is effectively a JMP as A is
+                        \ never zero)
+
+.init4
+
+ LDA #5                 \ Set A = 5 to store as the high-byte distance for the
+                        \ new station, so it's is a little way in front of us
+
+.init5
 
                         \ This routine is called following ZINF2, so the
                         \ orientation vectors are set as follows:
@@ -52065,18 +52045,18 @@ ENDMACRO
                         \   roofv = (0,  1,  0)
                         \   nosev = (0,  0,  1)
 
- LDX VIEW               \ If this is the front view, jump to init3 to set z_hi
+ LDX VIEW               \ If this is the front view, jump to init10 to set z_hi
  CPX #1                 \ only
- BCC init3
+ BCC init10
 
- BEQ init2              \ If this is the rear view, jump to init2 to set z_sign
+ BEQ init9              \ If this is the rear view, jump to init9 to set z_sign
                         \ and z_hi and point the ship away from us
 
  STA INWK+1             \ This is the left or right view, so set the distance
                         \ in x_hi
 
- CPX #2                 \ If this is the right view, jump to init1
- BNE init1
+ CPX #2                 \ If this is the right view, jump to init8
+ BNE init8
 
                         \ This is the left view, so spawn the ship to the left
                         \ (negative y_sign) and pointing away from us:
@@ -52100,10 +52080,10 @@ ENDMACRO
  LDX #128+96            \ Set byte #10 = nosev_x_hi = -96 = -1
  STX INWK+10
 
- BNE init4              \ Jump to init4 (this BNE is effectively a JMP as X is
+ BNE init11             \ Jump to init11 (this BNE is effectively a JMP as X is
                         \ never zero)
 
-.init1
+.init8
 
                         \ This is the right view, so spawn the ship pointing
                         \ away from us:
@@ -52123,10 +52103,10 @@ ENDMACRO
  LDX #96                \ Set byte #10 = nosev_x_hi = 96 = 1
  STX INWK+10
 
- BNE init4              \ Jump to init4 (this BNE is effectively a JMP as X is
+ BNE init11             \ Jump to init11 (this BNE is effectively a JMP as X is
                         \ never zero)
 
-.init2
+.init9
 
                         \ This is the rear view, so spawn the ship behind us
                         \ (negative z_sign) and pointing away from us
@@ -52142,11 +52122,11 @@ ENDMACRO
  LDX #128+96            \ Set byte #14 = nosev_z_hi = -96 = -1
  STX INWK+14
 
-.init3
+.init10
 
  STA INWK+7             \ Store the distance in z_hi
 
-.init4
+.init11
 
  RTS                    \ Return from the subroutine
 
@@ -52161,14 +52141,6 @@ ENDMACRO
 
  LDA #0                 \ Set the delay in DLY to 0, so any new in-flight
  STA DLY                \ messages will be shown instantly
-
- JSR ZINF2              \ Call ZINF2 to reset INWK and the orientation vectors,
-                        \ with nosev pointing into the screen
-
- LDA #2                 \ Set A = 2 to store as the high-byte distance for the
-                        \ new ship, so it's is a little way in front of us
-
- JSR InitialiseShip     \ Initialise the ship coordinates
 
  LDA #185               \ Print text token 25 ("SHIP") followed by a question
  JSR ShowPrompt         \ mark
@@ -52218,6 +52190,11 @@ ENDMACRO
 
  STA TYPE               \ Store the new ship type
 
+ JSR ZINF2              \ Call ZINF2 to reset INWK and the orientation vectors,
+                        \ with nosev pointing into the screen
+
+ JSR InitialiseShip     \ Initialise the ship coordinates
+
  JSR CreateShip         \ Create the new ship
 
 .add4
@@ -52234,6 +52211,8 @@ ENDMACRO
 \ ******************************************************************************
 
 .CreateShip
+
+ LDA TYPE               \ Fetch the type of ship to create
 
  JSR NWSHP              \ Add the new ship and store it in K%
 
@@ -52308,8 +52287,13 @@ ENDMACRO
 
 .CopyShip
 
- LDX XSAV2              \ Get the ship data for the current ship
- JSR GetShipData
+ LDX XSAV2              \ Get the current slot number
+
+ CPX #2                 \ If this is the station or planet, do nothing
+ BCC copy1
+
+ JSR GetShipData        \ Get the ship data for the current ship (including the
+                        \ ship type, which we pass to CreateShip below)
 
  LDA INWK+3             \ Move it up a bit
  CLC
@@ -52318,8 +52302,13 @@ ENDMACRO
  BCC P%+4
  INC INWK+3
 
- LDA TYPE               \ Create a new ship of the same type, returning from the
- JMP CreateShip         \ subroutine using a tail call
+ JSR CreateShip         \ Create a new ship of the same type
+
+ JSR HighlightShip      \ Highlight the new ship, so we can see which one it is
+
+.copy1
+
+ RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
@@ -52347,7 +52336,8 @@ ENDMACRO
  LDA FRIN,X             \ keep this as the current slot
  BNE delt1
 
- LDX #0                 \ Otherwise set X = 0 so we switch to the planet
+ DEX                    \ If we get here we just emptied the last slot, so
+                        \ switch to the previous slot
 
 .delt1
 
