@@ -3173,7 +3173,7 @@ WP workspace from  &D00  to &E3C
      1072   A9 10      LDA #&10
      1074   85 01      STA &01
      1076   85 06      STA &06
-     1078   A9 8E      LDA #&8E
+     1078   A9 90      LDA #&90
      107A   85 02      STA &02
      107C   A9 81      LDA #&81
      107E   85 03      STA &03
@@ -3200,7 +3200,7 @@ WP workspace from  &D00  to &E3C
      10BE   00         BRK
      10BF   A5 05      LDA &05
      10C1   65 02      ADC &02
-     10C3   CD 8E 81   CMP &818E
+     10C3   CD 90 81   CMP &8190
      10C6   D0 FC      BNE &10C4
      10C8   34 75 54 07
      10CC   65 23 45 00
@@ -26706,7 +26706,7 @@ End macro ECHR
      8155   78
      8156   7D
 .COLD
-     8157   A9 8F      LDA #&8F
+     8157   A9 91      LDA #&91
      8159   85 21      STA &21
      815B   A9 81      LDA #&81
      815D   85 22      STA &22
@@ -26715,8 +26715,8 @@ End macro ECHR
      8163   A9 04      LDA #&04
      8165   85 06      STA &06
      8167   A2 04      LDX #&04
-     8169   20 7E 81   JSR &817E
-     816C   A9 8F      LDA #&8F
+     8169   20 80 81   JSR &8180
+     816C   A9 91      LDA #&91
      816E   85 21      STA &21
      8170   A9 85      LDA #&85
      8172   85 22      STA &22
@@ -26724,28 +26724,29 @@ End macro ECHR
      8176   85 05      STA &05
      8178   A9 D0      LDA #&D0
      817A   85 06      STA &06
-     817C   A2 28      LDX #&28
+     817C   A2 22      LDX #&22
+     817E   A2 28      LDX #&28
 .mvblock
-     817E   A0 00      LDY #&00
+     8180   A0 00      LDY #&00
 .mvbllop
-     8180   B1 21      LDA (&21),Y
-     8182   91 05      STA (&05),Y
-     8184   C8         INY
-     8185   D0 F9      BNE &8180
-     8187   E6 22      INC &22
-     8189   E6 06      INC &06
-     818B   CA         DEX
-     818C   D0 F2      BNE &8180
-     818E   60         RTS
+     8182   B1 21      LDA (&21),Y
+     8184   91 05      STA (&05),Y
+     8186   C8         INY
+     8187   D0 F9      BNE &8182
+     8189   E6 22      INC &22
+     818B   E6 06      INC &06
+     818D   CA         DEX
+     818E   D0 F2      BNE &8182
+     8190   60         RTS
 .F%
-     818F
+     8191
 ELITE J
 Assembled at &738D 
-Ends at &818F 
-Code size is &E02 
+Ends at &8191 
+Code size is &E04 
 Execute at &1000 
 Reload at &738D 
-S.ELTJ &738D  &818F  &1000  &738D 
+S.ELTJ &738D  &8191  &1000  &738D 
 Saving file '3-assembled-output/ELTJ.bin'
 .XX21
      D000   66 D0
@@ -38485,7 +38486,7 @@ Macro FACE:
      F100   00
      F101   C4
 End macro FACE
-.SceneEditor
+.UniverseEditor
      F102   A9 00      LDA #&00
      F104   20 CE 6C   JSR &6CCE
      F107   20 AB 6C   JSR &6CAB
@@ -39151,6 +39152,7 @@ End macro FACE
      F5EC   A2 00      LDX #&00
      F5EE   A0 00      LDY #&00
      F5F0   4C A6 F3   JMP &F3A6
+.endUniverseEditor
 SHIPS
 Assembled at &D000 
 Ends at &F5F3 
@@ -39159,8 +39161,8 @@ Execute at &D000
 Reload at &D000 
 S.SHIPS &D000  &F5F3  &D000  &D000 
 Saving file '3-assembled-output/SHIPS.bin'
-ELITE game code &71  bytes free
-F% = &818F 
+ELITE game code &6F  bytes free
+F% = &8191 
 Ends at &F5F3 
 .elitea
 elitea = &100C 
@@ -39182,15 +39184,15 @@ eliteh = &6877
 elitei = &6E0A 
 .elitej
 elitej = &738D 
-F% = &818F 
-P% = &818F 
+F% = &8191 
+P% = &8191 
 .words
-words = &818F 
+words = &8191 
 .ships
-ships = &858F 
+ships = &8591 
 .end
-P% = &AC76 
-S.P.CODE &1000 &AD8F  &1000 &1000 
+P% = &AC78 
+S.P.CODE &1000 &AD91  &1000 &1000 
 Saving file '3-assembled-output/P.CODE.unprot.bin'
 .ZP
      0080
