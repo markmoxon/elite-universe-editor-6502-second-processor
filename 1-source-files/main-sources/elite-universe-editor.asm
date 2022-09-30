@@ -9,6 +9,10 @@
 
 .UniverseEditor
 
+ LDA #&24               \ Disable the TRB XX1+31 instruction in part 9 of LL9
+ STA LL74+20            \ that disables the laser once it has fired, so that
+                        \ lasers remain on-screen while in the editor
+
  LDA #0                 \ Clear the top part of the screen, draw a white border,
  JSR TT66               \ and set the current view type in QQ11 to 0 (space
                         \ view)
@@ -32,9 +36,12 @@
  JSR ZINF2              \ Initialise the sun so it's in front of us
  JSR InitialiseShip
 
- LDA INWK+8             \ Move the sun behind us
- EOR #%10000000
- STA INWK+8
+ LDA #%10000001         \ Set x_sign = -1, so the sun is to the left
+ STA INWK+2
+
+\ LDA INWK+8             \ Move the sun behind us
+\ EOR #%10000000
+\ STA INWK+8
 
  JSR STORE              \ Store the updated sun
 
@@ -50,6 +57,9 @@
 
  JSR ZINF2              \ Initialise the planet so it's in front of us
  JSR InitialiseShip
+
+ LDA #%00000001         \ Set x_sign = 1, so the planet is to the right
+ STA INWK+2
 
  JSR STORE              \ Store the updated planet
 
@@ -82,6 +92,9 @@
 .scen3
 
  JSR ProcessKey         \ Process the key press
+
+ LDX XSAV2              \ Get the ship data for the current ship, so we know the
+ JSR GetShipData        \ current ship data is always in INWK for the main loop
 
  LDA YSAV2              \ Fetch the type of key press (0 = non-repeatable,
                         \ 1 = repeatable)
@@ -305,14 +318,6 @@
  BNE P%+5
  JMP AddShip
 
- CMP #&59               \ DELETE pressed (delete ship)
- BNE P%+5
- JMP DeleteShip
-
- CMP #&69               \ COPY pressed (copy ship)
- BNE P%+5
- JMP CopyShip
-
  CMP #&21               \ W (next slot)
  BNE P%+5
  JMP NextSlot
@@ -321,20 +326,104 @@
  BNE P%+5
  JMP PreviousSlot
 
- CMP #&33               \ R (reset ship)
+ CMP #&33               \ R (reset current ship)
  BNE P%+5
  JMP ResetShip
 
- CMP #&70               \ If ESCAPE is being pressed, jump to pkey1
- BEQ pkey1
+                        \ The following controls only apply to ships in slots 2
+                        \ and up, and do not apply to the planet, sun or station
 
- RTS                    \ Return from the subroutine
+ LDX XSAV2              \ Get the current slot number
+
+ CPX #2                 \ If this is the station or planet, do nothing
+ BCC pkey1
+
+ CMP #&59               \ DELETE pressed (delete ship)
+ BNE P%+5
+ JMP DeleteShip
+
+ CMP #&69               \ COPY pressed (copy ship)
+ BNE P%+5
+ JMP CopyShip
+
+ CMP #&41               \ A (fire laser)
+ BNE P%+5
+ JMP FireLaser
+
+ CMP #&22               \ E (explode ship)
+ BNE P%+5
+ JMP ExplodeShip
+
+ CMP #&70               \ If ESCAPE is being pressed, jump to QuitEditor to quit
+ BEQ QuitEditor         \ the universe editor
 
 .pkey1
 
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: QuitEditor
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Quit the universe editor
+\
+\ ******************************************************************************
+
+.QuitEditor
+
+ LDA #&14               \ Re-enable the TRB XX1+31 instruction in part 9 of LL9
+ STA LL74+20
+
  PLA                    \ Quit the scene editor by returning to the caller of
- PLA                    \ SceneEditor
+ PLA                    \ UniverseEditor
  RTS
+
+\ ******************************************************************************
+\
+\       Name: FireLaser
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Fire the current ship's laser
+\
+\ ******************************************************************************
+
+.FireLaser
+
+ LDA INWK+31            \ Toggle bit 6 in byte #31 to denote that the ship is
+ EOR #%01000000         \ firing its laser at us (or to switch it off)
+ STA INWK+31
+
+ JMP DrawShip+3         \ Draw the ship (but not on the scanner), returning from
+                        \ the subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: ExplodeShip
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Explode the current ship
+\
+\ ******************************************************************************
+
+.ExplodeShip
+
+ LDA INWK+31            \ If bit 5 of byte #31 is set, then the ship is already
+ AND #%00100000         \ exploding, so jump to expl1 to move the explosion on
+ BNE expl1              \ by one step
+
+ LDA INWK+31            \ Set bit 7 and clear bit 5 in byte #31 to denote that
+ ORA #%10000000         \ the ship is exploding
+ AND #%11101111
+ STA INWK+31
+
+ JSR DrawShip+3         \ Draw the ship (but not on the scanner)
+
+.expl1
+
+ JSR DrawShip+3         \ Draw the ship (but not on the scanner)
+
+ RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
@@ -347,10 +436,7 @@
 
 .ResetShip
 
- LDX XSAV2              \ Get the ship data for the current ship
- JSR GetShipData
-
- JSR SCAN               \ Draw the current ship on the scanner to remove it
+ JSR MV5                \ Draw the current ship on the scanner to remove it
 
  LDA #26                \ Modify ZINF2 so it only resets the coordinates and
  STA ZINF2+3            \ orientation vectors (and keeps other ship settings)
@@ -450,6 +536,12 @@
 \   Category: Universe editor
 \    Summary: Draw a single ship
 \
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   DrawShip+3          Do not draw the ship on the scanner
+\
 \ ******************************************************************************
 
 .DrawShip
@@ -480,8 +572,8 @@
 
 .TogglePlanetType
 
- LDX #0                 \ Fetch the contents of slot 0, the planet
- JSR SwitchToSlot
+ LDX #0                 \ Switch to slot 0, which is the planet, and highlight
+ JSR SwitchToSlot       \ the existing contents
 
  LDA TYPE               \ Flip the planet type between 128 and 130
  EOR #%00000010
@@ -504,7 +596,7 @@
 
 .EraseShip
 
- JSR SCAN               \ Draw the current ship on the scanner to remove it
+ JSR MV5                \ Draw the current ship on the scanner to remove it
 
  LDY XSAV2              \ Get the current ship type
  LDX FRIN,Y
@@ -515,7 +607,7 @@
  JSR DOCOL              \ Send a #SETCOL command to the I/O processor to switch
                         \ to this colour
 
- JMP EE51               \ Draw the existing ship to erase it and mark it as gone
+ JMP LL14               \ Draw the existing ship to erase it and mark it as gone
                         \ and return from the subroutine using a tail call
 
 \ ******************************************************************************
@@ -595,10 +687,6 @@
  JSR FlipShip           \ that's done in NWSPS
 
  JSR InitialiseShip     \ Initialise the station so it's in front of us
-
- LDA INWK+31            \ Set bit 4 to keep the station visible on the scanner
- ORA #%00010000
- STA INWK+31
 
  JSR STORE              \ Store the updated station
 
@@ -680,7 +768,7 @@
  PHX                    \ Store X and Y on the stack
  PHY
 
- JSR SCAN               \ Draw the ship on the scanner to remove it
+ JSR MV5                \ Draw the ship on the scanner to remove it
 
  PLY                    \ Store X and Y on the stack
  PLX
@@ -747,7 +835,7 @@
  STY K+3                \ Store the sign of the movement in the sign byte of
                         \ K(3 2 1)
 
- JSR SCAN               \ Draw the ship on the scanner to remove it
+ JSR MV5                \ Draw the ship on the scanner to remove it
 
  LDX #0                 \ Set the high byte of K(3 2 1) to 0
  STX K+2
@@ -1103,10 +1191,6 @@
 
  JSR UpdateSlotNumber   \ Store and print the new slot number in X
 
- LDA INWK+31            \ Set bit 4 to keep the ship visible on the scanner
- ORA #%00010000
- STA INWK+31
-
  JSR STORE              \ Call STORE to copy the ship data block at INWK back to
                         \ the K% workspace at INF
 
@@ -1168,16 +1252,8 @@
 
 .CopyShip
 
- LDX XSAV2              \ Get the current slot number
-
- CPX #2                 \ If this is the station or planet, do nothing
- BCC copy1
-
- JSR GetShipData        \ Get the ship data for the current ship (including the
-                        \ ship type, which we pass to CreateShip below)
-
- LDA INWK+3             \ Move it up a bit
- CLC
+ LDA INWK+3             \ Move the current away from the origin a bit so the new
+ CLC                    \ ship doesn't overlap the original ship
  ADC #10
  STA INWK+3
  BCC P%+4
@@ -1185,11 +1261,8 @@
 
  JSR CreateShip         \ Create a new ship of the same type
 
- JSR HighlightShip      \ Highlight the new ship, so we can see which one it is
-
-.copy1
-
- RTS                    \ Return from the subroutine
+ JMP HighlightShip      \ Highlight the new ship, so we can see which one it is,
+                        \ returning from the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -1201,14 +1274,6 @@
 \ ******************************************************************************
 
 .DeleteShip
-
- LDX XSAV2              \ Set X to the current slot
-
- CPX #2                 \ If this is the planet or sun/station, do nothing
- BCC delt1
-
- LDA FRIN,X             \ If the current slot is empty, do nothing
- BEQ delt1
 
  JSR EraseShip          \ Erase the current ship from the screen
 
@@ -1437,6 +1502,10 @@
 \
 \   X                   Slot number of ship data to fetch
 \
+\ Returns:
+\
+\   X                   X is unchanged
+\
 \ ******************************************************************************
 
 .GetShipData
@@ -1501,18 +1570,18 @@
 
 .HighlightShip
 
- JSR SCAN               \ Hide the ship on the scanner
+ JSR MV5                \ Hide the ship on the scanner
 
  JSR high1              \ Highlight the ship, showing the ship on the scanner
 
- JSR SCAN               \ Hide the ship on the scanner
+ JSR MV5                \ Hide the ship on the scanner
 
                         \ Fall through into high1 to highlight the ship, showing
                         \ the ship on the scanner
 
 .high1
 
- JSR SCAN               \ Toggle the ship on the scanner
+ JSR MV5                \ Toggle the ship on the scanner
 
  LDX #0                 \ Move right
  LDY #0
