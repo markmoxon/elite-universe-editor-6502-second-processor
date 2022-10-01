@@ -412,6 +412,8 @@
  AND #%00100000         \ exploding, so jump to expl1 to move the explosion on
  BNE expl1              \ by one step
 
+ JSR MV5                \ Draw the current ship on the scanner to remove it
+
  LDA INWK+31            \ Set bit 7 and clear bit 5 in byte #31 to denote that
  ORA #%10000000         \ the ship is exploding
  AND #%11101111
@@ -613,7 +615,9 @@
 \ ******************************************************************************
 \
 \       Name: SwapStationSun
-\    Summary: Swap the sun for a station
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Toggle through the sun and two types of station
 \
 \ ******************************************************************************
 
