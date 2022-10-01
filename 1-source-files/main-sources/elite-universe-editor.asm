@@ -13,6 +13,9 @@
  STA LL74+20            \ that disables the laser once it has fired, so that
                         \ lasers remain on-screen while in the editor
 
+ LDA #&60               \ Disable DOEXP so that by default it draws an explosion
+ STA DOEXP+9            \ cloud but doesn't recalculate it
+
  LDA #0                 \ Clear the top part of the screen, draw a white border,
  JSR TT66               \ and set the current view type in QQ11 to 0 (space
                         \ view)
@@ -375,6 +378,9 @@
  LDA #&14               \ Re-enable the TRB XX1+31 instruction in part 9 of LL9
  STA LL74+20
 
+ LDA #&A5               \ Re-enable DOEXP
+ STA DOEXP+9
+
  PLA                    \ Quit the scene editor by returning to the caller of
  PLA                    \ UniverseEditor
  RTS
@@ -408,6 +414,9 @@
 
 .ExplodeShip
 
+ LDA #&A5               \ Re-enable DOEXP
+ STA DOEXP+9
+
  LDA INWK+31            \ If bit 5 of byte #31 is set, then the ship is already
  AND #%00100000         \ exploding, so jump to expl1 to move the explosion on
  BNE expl1              \ by one step
@@ -419,11 +428,16 @@
  AND #%11101111
  STA INWK+31
 
- JSR DrawShip+3         \ Draw the ship (but not on the scanner)
+ JSR DrawShip+3         \ Draw the explosion (but not on the scanner) to get it
+                        \ going (as only calling this once at the start of a new
+                        \ explosion doesn't show a lot)
 
 .expl1
 
- JSR DrawShip+3         \ Draw the ship (but not on the scanner)
+ JSR DrawShip+3         \ Draw the explosion (but not on the scanner)
+
+ LDA #&60               \ Disable DOEXP again
+ STA DOEXP+9
 
  RTS                    \ Return from the subroutine
 
@@ -518,7 +532,27 @@
 
  JSR GetShipData        \ Fetch the details for the ship in slot X
 
+ LDA INWK+31            \ If bit 5 of byte #31 is clear, then the ship is not
+ AND #%00100000         \ exploding, so jump to draw3 to skip the following
+ BEQ draw3
+
+                        \ The ship is exploding
+
+\ LDA #&A5               \ Re-enable DOEXP
+\ STA DOEXP+9
+
+ JSR DrawShip+3         \ Draw the ship (but not on the scanner)
+
+\ LDA #&60               \ Disable DOEXP again
+\ STA DOEXP+9
+
+ BNE draw4
+
+.draw3
+
  JSR DrawShip           \ Draw the ship
+
+.draw4
 
  PLX                    \ Retrieve the counter from the stack
 
@@ -597,6 +631,22 @@
 \ ******************************************************************************
 
 .EraseShip
+
+ LDA INWK+31            \ If bit 5 of byte #31 is clear, then the ship is not
+ AND #%00100000         \ exploding, so jump to eras2
+ BEQ eras2
+
+ LDA INWK+31            \ If bit 3 of byte #31 is clear, then the explosion is
+ AND #%00001000         \ not already being shown on-screen, so jump to eras2
+ BEQ eras1              \ to return from the subroutine
+
+ JSR LL14               \ Call LL14 to draw the existing cloud to remove it
+
+.eras1
+
+ RTS                    \ Return from the subroutine
+
+.eras2
 
  JSR MV5                \ Draw the current ship on the scanner to remove it
 
