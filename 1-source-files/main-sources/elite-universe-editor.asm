@@ -333,6 +333,13 @@
  BNE P%+5
  JMP ResetShip
 
+ CMP #&47               \ @ (save, load, run)
+ BNE P%+5
+ JMP ShowDiscMenu
+
+ CMP #&70               \ If ESCAPE is being pressed, jump to QuitEditor to quit
+ BEQ QuitEditor         \ the universe editor
+
                         \ The following controls only apply to ships in slots 2
                         \ and up, and do not apply to the planet, sun or station
 
@@ -356,9 +363,6 @@
  CMP #&22               \ E (explode ship)
  BNE P%+5
  JMP ExplodeShip
-
- CMP #&70               \ If ESCAPE is being pressed, jump to QuitEditor to quit
- BEQ QuitEditor         \ the universe editor
 
 .pkey1
 
@@ -482,6 +486,11 @@
 \ Arguments:
 \
 \   A                   Internal key number for f0, f1, f2 or f3
+\
+\ Other entry points:
+\
+\   ChangeView+8        Change to view X, even if we are already on that view
+\                       (so this redraws the view)
 \
 \ ******************************************************************************
 
@@ -1668,5 +1677,336 @@
  LDX #0                 \ Move right, returning from the subroutine using a tail
  LDY #0                 \ call
  JMP MoveShip
+
+\ ******************************************************************************
+\
+\       Name: ShowToken
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Print an extended recursive token from the UniverseToken table
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The recursive token to be printed, in the range 0-255
+\
+\ Returns:
+\
+\   A                   A is preserved
+\
+\   Y                   Y is preserved
+\
+\   V(1 0)              V(1 0) is preserved
+\
+\ ******************************************************************************
+
+.ShowToken
+
+ PHA                    \ Store A on the stack, so we can retrieve it later
+
+ TAX                    \ Copy the token number from A into X
+
+ TYA                    \ Store Y on the stack
+ PHA
+
+ LDA V                  \ Store V(1 0) on the stack
+ PHA
+ LDA V+1
+ PHA
+
+ LDA #LO(UniverseToken) \ Set V to the low byte of UniverseToken
+ STA V
+
+ LDA #HI(UniverseToken) \ Set A to the high byte of UniverseToken
+
+ JMP DTEN               \ Call DTEN to print token number X from the
+                        \ UniverseToken table and restore the values of A, Y and
+                        \ V(1 0) from the stack, returning from the subroutine
+                        \ using a tail call
+
+\ ******************************************************************************
+\
+\       Name: UniverseTokens
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: Extended recursive token table for the universe editor
+\
+\ ******************************************************************************
+
+.UniverseToken
+
+ EQUB VE                \ Token 0:      ""
+                        \
+                        \ Encoded as:   ""
+
+ EJMP 9                 \ Token 1:      "{clear screen}
+ EJMP 11                \                {draw box around title}
+ EJMP 30                \                {white}
+ EJMP 1                 \                {all caps}
+ EJMP 8                 \                {tab 6} DISK ACCESS MENU{crlf}
+ ECHR ' '               \                {lf}
+ ETWO 'D', 'I'          \                {sentence case}
+ ECHR 'S'               \                1. LOAD UNIVERSE{crlf}
+ ECHR 'K'               \                2. SAVE UNIVERSE {commander name}{crlf}
+ ECHR ' '               \                3. CATALOGUE{crlf}
+ ECHR 'A'               \                4. DELETE A FILE{crlf}
+ ECHR 'C'               \                5. PLAY UNIVERSE{crlf}
+ ETWO 'C', 'E'          \                6. EXIT{crlf}
+ ECHR 'S'               \               "
+ ECHR 'S'
+ ECHR ' '
+ ECHR 'M'
+ ECHR 'E'
+ ETWO 'N', 'U'
+ ETWO '-', '-'
+ EJMP 10
+ EJMP 2
+ ECHR '1'
+ ECHR '.'
+ ECHR ' '
+ ETWO 'L', 'O'
+ ECHR 'A'
+ ECHR 'D'
+ ECHR ' '
+ ECHR 'U'
+ ECHR 'N'
+ ECHR 'I'
+ ETWO 'V', 'E'
+ ECHR 'R'
+ ETWO 'S', 'E'
+ ETWO '-', '-'
+ ECHR '2'
+ ECHR '.'
+ ECHR ' '
+ ECHR 'S'
+ ECHR 'A'
+ ETWO 'V', 'E'
+ ECHR ' '
+ ECHR 'U'
+ ECHR 'N'
+ ECHR 'I'
+ ETWO 'V', 'E'
+ ECHR 'R'
+ ETWO 'S', 'E'
+ ECHR ' '
+ EJMP 4
+ ETWO '-', '-'
+ ECHR '3'
+ ECHR '.'
+ ECHR ' '
+ ECHR 'C'
+ ETWO 'A', 'T'
+ ECHR 'A'
+ ETWO 'L', 'O'
+ ECHR 'G'
+ ECHR 'U'
+ ECHR 'E'
+ ETWO '-', '-'
+ ECHR '4'
+ ECHR '.'
+ ECHR ' '
+ ECHR 'D'
+ ECHR 'E'
+ ECHR 'L'
+ ETWO 'E', 'T'
+ ECHR 'E'
+ ETOK 208
+ ECHR 'F'
+ ECHR 'I'
+ ETWO 'L', 'E'
+ ETWO '-', '-'
+ ECHR '5'
+ ECHR '.'
+ ECHR ' '
+ ECHR 'P'
+ ETWO 'L', 'A'
+ ECHR 'Y'
+ ECHR ' '
+ ECHR 'U'
+ ECHR 'N'
+ ECHR 'I'
+ ETWO 'V', 'E'
+ ECHR 'R'
+ ETWO 'S', 'E'
+ ETWO '-', '-'
+ ECHR '6'
+ ECHR '.'
+ ECHR ' '
+ ECHR 'E'
+ ECHR 'X'
+ ETWO 'I', 'T'
+ ETWO '-', '-'
+ EQUB VE
+
+\ ******************************************************************************
+\
+\       Name: ShowDiscMenu
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Show the universe disc menu
+\
+\ ******************************************************************************
+
+.ShowDiscMenu
+
+ JSR ZEBC               \ Call ZEBC to zero-fill pages &B and &C
+
+ TSX                    \ Transfer the stack pointer to X and store it in stack,
+ STX stack              \ so we can restore it in the MEBRK routine
+
+ LDA #LO(MEBRK)         \ Set BRKV to point to the MEBRK routine, disabling
+ SEI                    \ while we make the change and re-enabling them once we
+ STA BRKV               \ are done. MEBRK is the BRKV handler for disc access
+ LDA #HI(MEBRK)         \ operations, and replaces the standard BRKV handler in
+ STA BRKV+1             \ BRBR while disc access operations are happening
+ CLI
+
+ LDA #1                 \ Print extended token 1, the disc access menu, which
+ JSR ShowToken          \ presents these options:
+                        \
+                        \   1. Load Universe
+                        \   2. Save Universe {universe name}
+                        \   3. Catalogue
+                        \   4. Delete A File
+                        \   5. Play Universe
+                        \   6. Exit
+
+ JSR t                  \ Scan the keyboard until a key is pressed, returning
+                        \ the ASCII code in A and X
+
+ CMP #'1'               \ If A < ASCII "1", jump to disc9 to exit as the key
+ BCC disc9              \ press doesn't match a menu option
+
+ CMP #'4'               \ If "4" was not pressed, jump to disc1
+ BNE disc1
+
+                        \ Option 4: Delete
+
+ LDA #&60               \ Modify SVE so jumping to SVE actually does an RTS back
+ STA SVE                \ here
+
+ JSR DELT
+
+ LDA #&20               \ Reverse the modification
+ STA SVE
+
+ JMP ShowDiscMenu       \ SHow the disc menu again
+
+.disc1
+
+ CMP #'5'               \ If "5" was not pressed, jump to disc2 to skip the
+ BNE disc2              \ following
+
+                        \ Option 5: Play universe
+
+ JSR PlayUniverse       \ Play the current universe file
+
+ SEC                    \ Set the C flag to indicate we loaded a new universe
+ BCS disc9+1            \ file, and return from the subroutine (as disc9+1
+                        \ contains an RTS)
+
+.disc2
+
+ BCS disc9              \ If A >= ASCII "5", jump to disc9 to exit as the key
+                        \ press is either option 6 (exit), or it doesn't match a
+                        \ menu option (as we already checked for "5" above)
+
+ CMP #'2'               \ If A >= ASCII "2" (i.e. save or catalogue), skip to
+ BCS disc8              \ disc8
+
+                        \ Option 1: Load
+
+ JSR GTNMEW             \ If we get here then option 1 (load) was chosen, so
+                        \ call GTNMEW to fetch the name of the commander file
+                        \ to load (including drive number and directory) into
+                        \ INWK
+
+ JSR LoadUniverse       \ Call LoadUniverse to load the commander file
+
+\ JSR TRNME              \ Transfer the commander filename from INWK to NA%
+
+ SEC                    \ Set the C flag to indicate we loaded a new universe
+ BCS disc9+1            \ file, and return from the subroutine (as disc9+1
+                        \ contains an RTS)
+
+.disc8
+
+ BEQ disc7              \ We get here following the CMP #'2' above, so this
+                        \ jumps to disc7 if option 2 (save) was chosen
+
+                        \ Option 3: Catalogue
+
+ JSR CATS               \ Call CATS to ask for a drive number, catalogue that
+                        \ disc and update the catalogue command at CTLI
+
+ JSR t                  \ Scan the keyboard until a key is pressed, returning
+                        \ the ASCII code in A and X
+
+ JMP ShowDiscMenu       \ Show the disc menu again
+
+.disc7
+
+                        \ Option 2: Save
+
+ JSR SaveUniverse       \ Save the universe file
+
+ JMP ShowDiscMenu       \ Show the disc menu again
+
+.disc9
+
+                        \ Option 6: Exit
+
+ CLC                    \ Clear the C flag to indicate we didn't just load a new
+                        \ commander file
+
+ LDX #0                 \ Draw the front view, returning from the subroutine
+ STX VIEW               \ using a tail call
+ JSR ChangeView+8
+
+ JMP BRKBK              \ Jump to BRKBK to set BRKV back to the standard BRKV
+                        \ handler for the game, and return from the subroutine
+                        \ using a tail call
+
+\ ******************************************************************************
+\
+\       Name: PlayUniverse
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Play a universe file
+\
+\ ******************************************************************************
+
+.PlayUniverse
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: LoadUniverse
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Load a universe file
+\
+\ ******************************************************************************
+
+.LoadUniverse
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: SaveUniverse
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Save a universe file
+\
+\ ******************************************************************************
+
+.SaveUniverse
+
+                        \ Inject instead of save?
+
+ RTS                    \ Return from the subroutine
 
 .endUniverseEditor
