@@ -2072,11 +2072,7 @@
 
                         \ Option 5: Play universe
 
- JSR PlayUniverse       \ Play the current universe file
-
- SEC                    \ Set the C flag to indicate we loaded a new universe
- BCS disc9+1            \ file, and return from the subroutine (as disc9+1
-                        \ contains an RTS)
+ JMP PlayUniverse       \ Play the current universe file
 
 .disc2
 
@@ -2130,8 +2126,19 @@
 
                         \ Option 6: Exit
 
- CLC                    \ Clear the C flag to indicate we didn't just load a new
-                        \ commander file
+ JMP ExitDiscMenu       \ Exit the disc access menu, returning from the
+                        \ subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: ExitDiscMenu
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Exit the disc access menu
+\
+\ ******************************************************************************
+
+.ExitDiscMenu
 
  LDX #0                 \ Draw the front view, returning from the subroutine
  STX VIEW               \ using a tail call
@@ -2200,8 +2207,6 @@
                         \ entered during the call to QUS1 and the file wasn't
                         \ loaded, so jump to LOR to return from the subroutine
 
-                        
-
  LDA #HI(K%+&2E4)       \ Copy NOSH + 1 bytes from K%+&2E4 to FRIN
  STA P+1
  LDA #LO(K%+&2E4)
@@ -2226,17 +2231,6 @@
 
  LDA K%+&2E4+NOSH+1+NTY+1 \ Copy 1 byte from K%+&2E4+NOSH+1+NTY+1 to JUNK
  STA JUNK
-
-\ LDA #HI(FRIN)          \ Copy JUNK-FRIN bytes from K%+&2E4 to FRIN
-\ STA Q+1
-\ LDA #LO(FRIN)
-\ STA Q
-\ LDA #HI(K%+&2E4)
-\ STA P+1
-\ LDA #LO(K%+&2E4)
-\ STA P
-\ LDY #JUNK-FRIN
-\ JSR CopyBlock
 
 .load1
 

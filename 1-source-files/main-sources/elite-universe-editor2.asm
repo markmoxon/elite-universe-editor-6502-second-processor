@@ -83,17 +83,6 @@
  STA K%+&2E4+20+1+34+1  \ always save for NOSH = 20 and NTY = 34, even if they
                         \ are less
 
-\ LDA #HI(FRIN)          \ Copy JUNK-FRIN bytes from FRIN to K%+&2E4
-\ STA P+1
-\ LDA #LO(FRIN)
-\ STA P
-\ LDA #HI(K%+&2E4)
-\ STA Q+1
-\ LDA #LO(K%+&2E4)
-\ STA Q
-\ LDY #JUNK-FRIN
-\ JSR CopyBlock
-
  LDA #1                 \ Set file format byte (1 = 6502sp)
  STA K%-1
 
@@ -245,6 +234,118 @@
 
 .PlayUniverse
 
- RTS                    \ Return from the subroutine
+ JSR ExitDiscMenu       \ Revert the changes made for the disc access menu
+
+                        \ Do the following from DEATH2:
+
+ LDA #&2C               \ Disable JSR ZERO and JSR DIALS in RES2
+ STA yu+3
+
+ LDA #&60               \ Turn JSR DIALS in RES2 into an RTS
+ STA yu+16
+
+ JSR RES2               \ Reset a number of flight variables and workspaces
+
+ LDA #&20               \ Re-enable JSR ZERO and JSR DIALS in RES2
+ STA yu+3
+
+ STA yu+16              \ Re-enable JSR DIALS in RES2
+
+                        \ We now do what ZERO would have done, but leaving
+                        \ the ship slots alone, and we then call DIALS and ZINF
+                        \ as we disabled them above
+
+ LDX #(de-auto)         \ We're going to zero the UP workspace variables from
+                        \ auto to de, so set a counter in X for the correct
+                        \ number of bytes
+
+ LDA #0                 \ Set A = 0 so we can zero the variables
+
+.play1
+
+ STA auto,X             \ Zero the X-th byte of FRIN to de
+
+ DEX                    \ Decrement the loop counter
+
+ BPL play1              \ Loop back to zero the next variable until we have done
+                        \ them all
+
+ JSR DIALS              \ Update the dashboard to zero all the above values
+
+ JSR ZINF               \ Call ZINF to reset the INWK ship workspace
+
+                        \ Do the following from BR1 (part 1):
+
+ JSR ZEKTRAN            \ Reset the key logger buffer that gets returned from
+                        \ the I/O processor
+
+ LDA #3                 \ Move the text cursor to column 3
+ JSR DOXC
+
+ LDX #3                 \ Set X = 3 for the call to FX200
+
+ JSR FX200              \ Disable the ESCAPE key and clear memory if the BREAK
+                        \ key is pressed (*FX 200,3)
+
+ JSR DFAULT             \ Call DFAULT to reset the current commander data block
+                        \ to the last saved commander
+
+                        \ Do the following from BR1 (part 2):
+
+ JSR msblob             \ Reset the dashboard's missile indicators so none of
+                        \ them are targeted
+
+ JSR ping               \ Set the target system coordinates (QQ9, QQ10) to the
+                        \ current system coordinates (QQ0, QQ1) we just loaded
+
+ JSR TT111              \ Select the system closest to galactic coordinates
+                        \ (QQ9, QQ10)
+
+ JSR jmp                \ Set the current system to the selected system
+
+ LDX #5                 \ We now want to copy the seeds for the selected system
+                        \ in QQ15 into QQ2, where we store the seeds for the
+                        \ current system, so set up a counter in X for copying
+                        \ 6 bytes (for three 16-bit seeds)
+
+.play2
+
+ LDA QQ15,X             \ Copy the X-th byte in QQ15 to the X-th byte in QQ2,
+ STA QQ2,X
+
+ DEX                    \ Decrement the counter
+
+ BPL play2              \ Loop back to play2 if we still have more bytes to
+                        \ copy
+
+ INX                    \ Set X = 0 (as we ended the above loop with X = &FF)
+
+ STX EV                 \ Set EV, the extra vessels spawning counter, to 0, as
+                        \ we are entering a new system with no extra vessels
+                        \ spawned
+
+ LDA QQ3                \ Set the current system's economy in QQ28 to the
+ STA QQ28               \ selected system's economy from QQ3
+
+ LDA QQ5                \ Set the current system's tech level in tek to the
+ STA tek                \ selected system's economy from QQ5
+
+ LDA QQ4                \ Set the current system's government in gov to the
+ STA gov                \ selected system's government from QQ4
+
+                        \ Do the following from BAY:
+
+ LDA #0                 \ Set QQ12 = 0 (the docked flag) to indicate that we
+ STA QQ12               \ are not docked
+
+                        \ We are done setting up, so now we play the game:
+
+ LDX #0                 \ Force-load the front space view
+ JSR LOOK1+14
+
+ LDA #1                 \ Reset DELTA (speed) to 1, so we go as slowly as
+ STA DELTA              \ possible at the start
+
+ JMP TT100              \ Jump to TT100 to restart the main loop from the start
 
 .endUniverseEditor2
