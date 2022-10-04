@@ -30807,7 +30807,7 @@ ENDIF
 
                         \ --- And replaced by: -------------------------------->
 
- CMP #&20               \ Did we press f0? If not, skip the following
+ CMP #f0                \ Did we press f0? If not, skip the following
  BNE P%+5               \ instruction
 
  JMP UniverseEditor     \ We pressed f0, so jump to UniverseEditor to start the
@@ -41741,6 +41741,9 @@ LOAD_I% = LOAD% + P% - CODE%
                         \ DEMON to SPEECH
 
                         \ --- And replaced by: -------------------------------->
+
+_6502SP_VERSION = TRUE
+_MASTER_VERSION = FALSE
 
 INCLUDE "1-source-files/main-sources/elite-universe-editor2.asm"
 
