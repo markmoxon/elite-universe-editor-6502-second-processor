@@ -1,5 +1,33 @@
 \ ******************************************************************************
 \
+\ 6502 SECOND PROCESSOR ELITE UNIVERSE EDITOR
+\
+\ The Universe Editor is an extended version of BBC Micro Elite by Mark Moxon
+
+\ The original 6502 Second Processor Elite was written by Ian Bell and David
+\ Braben and is copyright Acornsoft 1985, and the extra code in the Universe
+\ Editor is copyright Mark Moxon
+\
+\ The code on this site is identical to the source discs released on Ian Bell's
+\ personal website at http://www.elitehomepage.org/ (it's just been reformatted
+\ to be more readable)
+\
+\ The commentary is copyright Mark Moxon, and any misunderstandings or mistakes
+\ in the documentation are entirely my fault
+\
+\ The terminology and notations used in this commentary are explained at
+\ https://www.bbcelite.com/about_site/terminology_used_in_this_commentary.html
+\
+\ The deep dive articles referred to in this commentary can be found at
+\ https://www.bbcelite.com/deep_dives
+\
+\ ******************************************************************************
+
+currentSlot = XSAV2     \ XSAV2 and YSAV2 are unused in the original game, so we
+repeatingKey = YSAV2    \ can reuse them
+
+\ ******************************************************************************
+\
 \       Name: UniverseEditor
 \       Type: Subroutine
 \   Category: Universe editor
@@ -44,7 +72,7 @@
                         \ current system seeds
 
  LDX #1                 \ Get the details for the sun from slot 1
- STX XSAV2
+ STX currentSlot
  JSR GetShipData
 
  JSR ZINF2              \ Initialise the sun so it's in front of us
@@ -62,7 +90,7 @@
  JSR LL9                \ Draw the sun
 
  LDX #0                 \ Get the details for the planet from slot 0
- STX XSAV2
+ STX currentSlot
  JSR GetShipData
 
  LDA #128               \ Set the planet to a meridian planet
@@ -80,7 +108,7 @@
  JSR LL9                \ Draw the planet
 
  LDX #0                 \ Set the current slot to 0 (planet)
- STX XSAV2
+ STX currentSlot
 
  JSR PrintSlotNumber    \ Print the current slot number at text location (0, 1)
 
@@ -107,10 +135,10 @@
 
  JSR ProcessKey         \ Process the key press
 
- LDX XSAV2              \ Get the ship data for the current ship, so we know the
+ LDX currentSlot        \ Get the ship data for the current ship, so we know the
  JSR GetShipData        \ current ship data is always in INWK for the main loop
 
- LDA YSAV2              \ Fetch the type of key press (0 = non-repeatable,
+ LDA repeatingKey       \ Fetch the type of key press (0 = non-repeatable,
                         \ 1 = repeatable)
 
  BNE scen2              \ Loop back to wait for next key press (for repeatable
@@ -201,8 +229,8 @@
 
 .ProcessKey
 
- LDX #1                 \ Set YSAV2 = 1 to indicate that the following keys are
- STX YSAV2              \ repeating keys
+ LDX #1                 \ Set repeatingKey = 1 to indicate that the following
+ STX repeatingKey       \ keys are repeating keys
 
  PHA                    \ Set Y = VIEW * 8, to act as an index into keyTable
  LDA VIEW
@@ -326,8 +354,8 @@
 
 .keys12
 
- LDX #0                 \ Set repeat = 0 to indicate that the following keys are
- STX YSAV2              \ non-repeating keys
+ LDX #0                 \ Set repeatingKey = 0 to indicate that the following
+ STX repeatingKey       \ keys are non-repeating keys
 
  CMP #f0                \ f0 pressed (front view)
  BEQ keys13
@@ -381,7 +409,7 @@
                         \ The following controls only apply to ships in slots 2
                         \ and up, and do not apply to the planet, sun or station
 
- LDX XSAV2              \ Get the current slot number
+ LDX currentSlot        \ Get the current slot number
 
  CPX #2                 \ If this is the station or planet, do nothing
  BCC pkey1
@@ -619,7 +647,7 @@
  LDA INWK+31            \ and copy it to byte #31 in INF (so the ship's data in
  STA (INF),Y            \ K% gets updated)
 
- LDX XSAV2              \ Get the ship data for the current slot, as otherwise
+ LDX currentSlot        \ Get the ship data for the current slot, as otherwise
  JMP GetShipData        \ we will leave the wrong axes in INWK, and return from
                         \ the subroutine using a tail call
 
@@ -676,7 +704,7 @@
 
  JSR MV5                \ Draw the current ship on the scanner to remove it
 
- LDY XSAV2              \ Get the current ship type
+ LDY currentSlot        \ Get the current ship type
  LDX FRIN,Y
 
  LDA shpcol,X           \ Set A to the ship colour for this type, from the X-th
@@ -1357,10 +1385,10 @@
 
  JSR EraseShip          \ Erase the current ship from the screen
 
- LDX XSAV2              \ Delete the current ship, shuffling the slots down
+ LDX currentSlot        \ Delete the current ship, shuffling the slots down
  JSR KILLSHP
 
- LDX XSAV2              \ If the current slot is still full, jump to delt1 to
+ LDX currentSlot        \ If the current slot is still full, jump to delt1 to
  LDA FRIN,X             \ keep this as the current slot
  BNE delt1
 
@@ -1388,7 +1416,7 @@
 \
 \ Returns:
 \
-\   XSAV2               Slot number for ship currently in INF
+\   currentSlot         Slot number for ship currently in INF
 \
 \ ******************************************************************************
 
@@ -1400,7 +1428,7 @@
 
  PLX                    \ Retrieve the new slot number from the stack
 
- STX XSAV2              \ Set the current slot number to the new slot number
+ STX currentSlot        \ Set the current slot number to the new slot number
 
  JMP PrintSlotNumber    \ Print new slot number and return from the subroutine
                         \ using a tail call
@@ -1410,13 +1438,13 @@
 \       Name: PrintSlotNumber
 \       Type: Subroutine
 \   Category: Universe editor
-\    Summary: Print the slot number in XSAV2 on-screen
+\    Summary: Print the current slot number
 \
 \ ******************************************************************************
 
 .PrintSlotNumber
 
- LDX XSAV2              \ Print the current slot number at text location (0, 1)
+ LDX currentSlot        \ Print the current slot number at text location (0, 1)
  JMP ee3                \ and return from the subroutine using a tail call
 
 \ ******************************************************************************
@@ -1481,7 +1509,7 @@
 
 .NextSlot
 
- LDX XSAV2              \ Fetch the current slot number
+ LDX currentSlot        \ Fetch the current slot number
 
  INX                    \ Increment to point to the next slot
 
@@ -1506,7 +1534,7 @@
 
 .PreviousSlot
 
- LDX XSAV2              \ Fetch the current slot number
+ LDX currentSlot        \ Fetch the current slot number
 
  DEX                    \ Decrement to point to the previous slot
 
@@ -1563,7 +1591,7 @@
 
  JSR UpdateSlotNumber   \ Store and print the new slot number
 
- LDX XSAV2              \ Get the ship data for the new slot
+ LDX currentSlot        \ Get the ship data for the new slot
  JSR GetShipData
 
  JMP HighlightShip      \ Highlight the new ship, so we can see which one it is,
