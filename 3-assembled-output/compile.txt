@@ -38338,9 +38338,9 @@ End macro FACE
 .InitialiseShip
      F463   A5 8B      LDA &8B
      F465   10 1D      BPL &F484
-     F467   A9 00      LDA #&00
+     F467   A9 80      LDA #&80
      F469   20 1D 6E   JSR &6E1D
-     F46C   A9 00      LDA #&00
+     F46C   A9 80      LDA #&80
      F46E   20 1D 6E   JSR &6E1D
      F471   A9 02      LDA #&02
      F473   AE 91 08   LDX &0891
