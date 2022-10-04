@@ -1,12 +1,16 @@
 \ ******************************************************************************
 \
-\ 6502 SECOND PROCESSOR ELITE UNIVERSE EDITOR
+\ ELITE UNIVERSE EDITOR (PART 1)
 \
 \ The Universe Editor is an extended version of BBC Micro Elite by Mark Moxon
-
+\
 \ The original 6502 Second Processor Elite was written by Ian Bell and David
-\ Braben and is copyright Acornsoft 1985, and the extra code in the Universe
-\ Editor is copyright Mark Moxon
+\ Braben and is copyright Acornsoft 1985
+\
+\ The original BBC Master Elite was written by Ian Bell and David Braben and is
+\ copyright Acornsoft 1986
+\
+\ The extra code in the Universe Editor is copyright Mark Moxon
 \
 \ The code on this site is identical to the source discs released on Ian Bell's
 \ personal website at http://www.elitehomepage.org/ (it's just been reformatted
@@ -23,8 +27,57 @@
 \
 \ ******************************************************************************
 
+IF _6502SP_VERSION
+
 currentSlot = XSAV2     \ XSAV2 and YSAV2 are unused in the original game, so we
 repeatingKey = YSAV2    \ can reuse them
+
+keyA = &41
+keyE = &22
+keyK = &46
+keyL = &56
+keyO = &36
+keyP = &37
+keyQ = &10
+keyR = &33
+keyW = &21
+
+keyAt = &47
+keyCopy = &69
+keyDelete = &59
+keyDown = &29
+keyEscape = &70
+keyReturn = &49
+keyUp = &39
+
+ELIF _MASTER_VERSION
+
+currentSlot = &0001     \ &0001 and &0002 are unused in the original game, so we
+repeatingKey = &0002    \ can reuse them
+
+OSFILE = &FFDD          \ The address for the OSFILE routine
+
+STORE = NWL3-3
+
+keyA = &41              \ See TRANTABLE for key values
+keyE = &45
+keyK = &4B
+keyL = &4C
+keyO = &4F
+keyP = &50
+keyQ = &51
+keyR = &52
+keyW = &57
+
+keyAt = &40
+keyCopy = &8B
+keyDelete = &7F
+keyDown = &8E
+keyEscape = &1B
+keyReturn = &0D
+keyUp = &8F
+
+ENDIF
 
 \ ******************************************************************************
 \
@@ -75,7 +128,7 @@ repeatingKey = YSAV2    \ can reuse them
  STX currentSlot
  JSR GetShipData
 
- JSR ZINF2              \ Initialise the sun so it's in front of us
+ JSR ZINF               \ Initialise the sun so it's in front of us
  JSR InitialiseShip
 
  LDA #%10000001         \ Set x_sign = -1, so the sun is to the left
@@ -97,7 +150,7 @@ repeatingKey = YSAV2    \ can reuse them
  STA FRIN
  STA TYPE
 
- JSR ZINF2              \ Initialise the planet so it's in front of us
+ JSR ZINF               \ Initialise the planet so it's in front of us
  JSR InitialiseShip
 
  LDA #%00000001         \ Set x_sign = 1, so the planet is to the right
@@ -190,6 +243,8 @@ repeatingKey = YSAV2    \ can reuse them
                         \ xrot-plus     xrot-minus
                         \ zrot-plus     zrot-minus
 
+IF _6502SP_VERSION
+
                         \ Front view
 
  EQUB &79, &19          \ Right arrow   Left arrow
@@ -217,6 +272,38 @@ repeatingKey = YSAV2    \ can reuse them
  EQUB &19, &79          \ Left arrow    Right arrow
  EQUB &51, &42          \ S             X
  EQUB &67, &66          \ >             <
+
+ELIF _MASTER_VERSION
+
+                        \ Front view
+
+ EQUB &8D, &8C          \ Right arrow   Left arrow
+ EQUB &20, &2F          \ SPACE         ?
+ EQUB &53, &58          \ S             X
+ EQUB &2E, &2C          \ >             <
+
+                        \ Rear view
+
+ EQUB &8C, &8D          \ Left arrow    Right arrow
+ EQUB &2F, &20          \ ?             SPACE
+ EQUB &53, &58          \ S             X
+ EQUB &2E, &2C          \ >             <
+
+                        \ Left view
+
+ EQUB &2F, &20          \ ?             SPACE
+ EQUB &8D, &8C          \ Right arrow   Left arrow
+ EQUB &53, &58          \ S             X
+ EQUB &2E, &2C          \ >             <
+
+                        \ Right view
+
+ EQUB &20, &2F          \ SPACE         ?
+ EQUB &8C, &8D          \ Left arrow    Right arrow
+ EQUB &53, &58          \ S             X
+ EQUB &2E, &2C          \ >             <
+
+ENDIF
 
 \ ******************************************************************************
 \
@@ -258,14 +345,14 @@ repeatingKey = YSAV2    \ can reuse them
 
  LDX #3                 \ Set X = 3 for the y-axis
 
- CMP #&39               \ Up arrow (move ship up along the y-axis)
+ CMP #keyUp             \ Up arrow (move ship up along the y-axis)
  BNE keys3
  LDY #0
  JMP MoveShip
 
 .keys3
 
- CMP #&29               \ Down arrow (move ship down along the y-axis)
+ CMP #keyDown           \ Down arrow (move ship down along the y-axis)
  BNE keys4
  LDY #%10000000
  JMP MoveShip
@@ -288,7 +375,7 @@ repeatingKey = YSAV2    \ can reuse them
 
 .keys6
 
- CMP #&46               \ K (rotate ship around the y-axis)
+ CMP #keyK              \ K (rotate ship around the y-axis)
  BNE keys7
 
  LDX #0                 \ Rotate (sidev, nosev) by a small positive angle (yaw)
@@ -299,7 +386,7 @@ repeatingKey = YSAV2    \ can reuse them
 
 .keys7
 
- CMP #&56               \ L (rotate ship around the y-axis)
+ CMP #keyL              \ L (rotate ship around the y-axis)
  BNE keys8
 
  LDX #%10000000         \ Rotate (sidev, nosev) by a small negative angle (yaw)
@@ -375,35 +462,35 @@ repeatingKey = YSAV2    \ can reuse them
 
 .keys14
 
- CMP #&36               \ O pressed (toggle station/sun)
+ CMP #keyO              \ O pressed (toggle station/sun)
  BNE P%+5
  JMP SwapStationSun
 
- CMP #&37               \ P pressed (toggle planet type)
+ CMP #keyP              \ P pressed (toggle planet type)
  BNE P%+5
  JMP TogglePlanetType
 
- CMP #&49               \ RETURN pressed (add ship)
+ CMP #keyReturn         \ RETURN pressed (add ship)
  BNE P%+5
  JMP AddShip
 
- CMP #&21               \ W (next slot)
+ CMP #keyW              \ W (next slot)
  BNE P%+5
  JMP NextSlot
 
- CMP #&10               \ Q (previous slot)
+ CMP #keyQ              \ Q (previous slot)
  BNE P%+5
  JMP PreviousSlot
 
- CMP #&33               \ R (reset current ship)
+ CMP #keyR              \ R (reset current ship)
  BNE P%+5
  JMP ResetShip
 
- CMP #&47               \ @ (show disc access menu)
+ CMP #keyAt             \ @ (show disc access menu)
  BNE P%+5
  JMP ShowDiscMenu
 
- CMP #&70               \ If ESCAPE is being pressed, jump to QuitEditor to quit
+ CMP #keyEscape         \ If ESCAPE is being pressed, jump to QuitEditor to quit
  BNE P%+5               \ the universe editor
  JMP QuitEditor
                         \ The following controls only apply to ships in slots 2
@@ -414,19 +501,19 @@ repeatingKey = YSAV2    \ can reuse them
  CPX #2                 \ If this is the station or planet, do nothing
  BCC pkey1
 
- CMP #&59               \ DELETE pressed (delete ship)
+ CMP #keyDelete         \ DELETE pressed (delete ship)
  BNE P%+5
  JMP DeleteShip
 
- CMP #&69               \ COPY pressed (copy ship)
+ CMP #keyCopy           \ COPY pressed (copy ship)
  BNE P%+5
  JMP CopyShip
 
- CMP #&41               \ A (fire laser)
+ CMP #keyA              \ A (fire laser)
  BNE P%+5
  JMP FireLaser
 
- CMP #&22               \ E (explode ship)
+ CMP #keyE              \ E (explode ship)
  BNE P%+5
  JMP ExplodeShip
 
@@ -503,13 +590,13 @@ repeatingKey = YSAV2    \ can reuse them
 
  JSR MV5                \ Draw the current ship on the scanner to remove it
 
- LDA #26                \ Modify ZINF2 so it only resets the coordinates and
- STA ZINF2+3            \ orientation vectors (and keeps other ship settings)
+ LDA #26                \ Modify ZINF so it only resets the coordinates and
+ STA ZINF+1             \ orientation vectors (and keeps other ship settings)
 
- JSR ZINF2              \ Reset the coordinates and orientation vectors
+ JSR ZINF               \ Reset the coordinates and orientation vectors
 
  LDA #NI%-1             \ Undo the modification
- STA ZINF2+3
+ STA ZINF+1
 
  JSR InitialiseShip     \ Initialise the ship coordinates
 
@@ -710,8 +797,16 @@ repeatingKey = YSAV2    \ can reuse them
  LDA shpcol,X           \ Set A to the ship colour for this type, from the X-th
                         \ entry in the shpcol table
 
+IF _6502SP_VERSION
+
  JSR DOCOL              \ Send a #SETCOL command to the I/O processor to switch
                         \ to this colour
+
+ELIF _MASTER_VERSION
+
+ STA COL                \ Switch to this colour
+
+ENDIF
 
  JMP LL14               \ Draw the existing ship to erase it and mark it as gone
                         \ and return from the subroutine using a tail call
@@ -744,7 +839,7 @@ repeatingKey = YSAV2    \ can reuse them
 
  JSR KS4                \ Switch to the sun, erasing the space station bulb
 
- JSR ZINF2              \ Reset the sun's data block
+ JSR ZINF               \ Reset the sun's data block
 
  LDA #129               \ Set the type for the sun
  STA TYPE
@@ -786,13 +881,13 @@ repeatingKey = YSAV2    \ can reuse them
  LDA #SST               \ Set the ship type to the space station
  STA TYPE
 
- JSR ZINF2              \ Reset the station coordinates
+ JSR ZINF               \ Reset the station coordinates
 
  JSR NWSPS              \ Add a new space station to our local bubble of
                         \ universe
 
- LDX #10                \ Flip the station around nosev to reverse the flip
- JSR FlipShip           \ that's done in NWSPS
+\ LDX #10                \ Flip the station around nosev to reverse the flip
+\ JSR FlipShip           \ that's done in NWSPS
 
  JSR InitialiseShip     \ Initialise the station so it's in front of us
 
@@ -1003,12 +1098,12 @@ repeatingKey = YSAV2    \ can reuse them
 
 .InitialiseShip
 
-                        \ This routine is called following ZINF2, so the
+                        \ This routine is called following ZINF, so the
                         \ orientation vectors are set as follows:
                         \
                         \   sidev = (1,  0,  0)
                         \   roofv = (0,  1,  0)
-                        \   nosev = (0,  0,  1)
+                        \   nosev = (0,  0, -1)
 
  LDA TYPE               \ If this is a ship or station, jump to init3 to set a
  BPL init3              \ distance of 2 or 5
@@ -1060,12 +1155,12 @@ repeatingKey = YSAV2    \ can reuse them
 
 .init5
 
-                        \ This routine is called following ZINF2, so the
+                        \ This routine is called following ZINF, so the
                         \ orientation vectors are set as follows:
                         \
                         \   sidev = (1,  0,  0)
                         \   roofv = (0,  1,  0)
-                        \   nosev = (0,  0,  1)
+                        \   nosev = (0,  0, -1)
 
  LDX VIEW               \ If this is the front view, jump to init11 to set z_hi
  CPX #1
@@ -1083,9 +1178,9 @@ repeatingKey = YSAV2    \ can reuse them
                         \ This is the left view, so spawn the ship to the left
                         \ (negative y_sign) and pointing away from us:
                         \
-                        \   sidev = (0,  0,  1)
-                        \   roofv = (0,  1,  0)
-                        \   nosev = (-1, 0,  0)
+                        \   sidev = (0,   0,  1)
+                        \   roofv = (0,   1,  0)
+                        \   nosev = (-1,  0,  0)
 
  LDA INWK+2             \ This is the left view, so negate x_sign
  ORA #%10000000
@@ -1186,18 +1281,13 @@ repeatingKey = YSAV2    \ can reuse them
 
 .init11
 
- LDX TYPE               \ If this is not the station, jump to init9
- CPX #SST
- BNE init9
+                        \ This is the front view, so flip the ship around so it
+                        \ is pointing at us
 
-                        \ This is the station, so flip it around so the slot is
-                        \ pointing at us
-
- LDX #10                \ Flip the station around nosev to point it towards us
+ LDX #10                \ Flip the ship around nosev to point it towards us
  JSR FlipShip
 
- BNE init9              \ Jump to init9 (this BNE is effectively a JMP as X is
-                        \ never zero)
+ JMP init9              \ Jump to init9
 
 \ ******************************************************************************
 \
@@ -1261,8 +1351,7 @@ repeatingKey = YSAV2    \ can reuse them
 
  STA TYPE               \ Store the new ship type
 
- JSR ZINF2              \ Call ZINF2 to reset INWK and the orientation vectors,
-                        \ with nosev pointing into the screen
+ JSR ZINF               \ Call ZINF to reset INWK and the orientation vectors
 
  JSR InitialiseShip     \ Initialise the ship coordinates
 
@@ -1332,8 +1421,17 @@ repeatingKey = YSAV2    \ can reuse them
 
  PHA                    \ Store token number on the stack
 
+IF _6502SP_VERSION
+
  LDA #YELLOW            \ Send a #SETCOL YELLOW command to the I/O processor to
  JSR DOCOL              \ switch to colour 1, which is yellow
+
+ELIF _MASTER_VERSION
+
+ LDA #YELLOW            \ Switch to colour 1, which is yellow
+ STA COL
+
+ENDIF
 
  LDX #0                 \ Set QQ17 = 0 to switch to ALL CAPS
  STX QQ17
@@ -1770,6 +1868,256 @@ repeatingKey = YSAV2    \ can reuse them
                         \ V(1 0) from the stack, returning from the subroutine
                         \ using a tail call
 
+IF _MASTER_VERSION
+
+\ ******************************************************************************
+\
+\       Name: EJMP
+\       Type: Macro
+\   Category: Text
+\    Summary: Macro definition for jump tokens in the extended token table
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used when building the extended token table:
+\
+\   EJMP n              Insert a jump to address n in the JMTB table
+\
+\ See the deep dive on "Printing extended text tokens" for details on how jump
+\ tokens are stored in the extended token table.
+\
+\ Arguments:
+\
+\   n                   The jump number to insert into the table
+\
+\ ******************************************************************************
+
+MACRO EJMP n
+
+  EQUB n EOR VE
+
+ENDMACRO
+
+\ ******************************************************************************
+\
+\       Name: ECHR
+\       Type: Macro
+\   Category: Text
+\    Summary: Macro definition for characters in the extended token table
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used when building the extended token table:
+\
+\   ECHR 'x'            Insert ASCII character "x"
+\
+\ To include an apostrophe, use a backtick character, as in ECHR '`'.
+\
+\ See the deep dive on "Printing extended text tokens" for details on how
+\ characters are stored in the extended token table.
+\
+\ Arguments:
+\
+\   'x'                 The character to insert into the table
+\
+\ ******************************************************************************
+
+MACRO ECHR x
+
+  IF x = '`'
+    EQUB 39 EOR VE
+  ELSE
+    EQUB x EOR VE
+  ENDIF
+
+ENDMACRO
+
+\ ******************************************************************************
+\
+\       Name: ETOK
+\       Type: Macro
+\   Category: Text
+\    Summary: Macro definition for recursive tokens in the extended token table
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used when building the extended token table:
+\
+\   ETOK n              Insert extended recursive token [n]
+\
+\ See the deep dive on "Printing extended text tokens" for details on how
+\ recursive tokens are stored in the extended token table.
+\
+\ Arguments:
+\
+\   n                   The number of the recursive token to insert into the
+\                       table, in the range 129 to 214
+\
+\ ******************************************************************************
+
+MACRO ETOK n
+
+  EQUB n EOR VE
+
+ENDMACRO
+
+\ ******************************************************************************
+\
+\       Name: ETWO
+\       Type: Macro
+\   Category: Text
+\    Summary: Macro definition for two-letter tokens in the extended token table
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used when building the extended token table:
+\
+\   ETWO 'x', 'y'       Insert two-letter token "xy"
+\
+\ The newline token can be entered using ETWO '-', '-'.
+\
+\ See the deep dive on "Printing extended text tokens" for details on how
+\ two-letter tokens are stored in the extended token table.
+\
+\ Arguments:
+\
+\   'x'                 The first letter of the two-letter token to insert into
+\                       the table
+\
+\   'y'                 The second letter of the two-letter token to insert into
+\                       the table
+\
+\ ******************************************************************************
+
+MACRO ETWO t, k
+
+  IF t = '-' AND k = '-' : EQUB 215 EOR VE : ENDIF
+  IF t = 'A' AND k = 'B' : EQUB 216 EOR VE : ENDIF
+  IF t = 'O' AND k = 'U' : EQUB 217 EOR VE : ENDIF
+  IF t = 'S' AND k = 'E' : EQUB 218 EOR VE : ENDIF
+  IF t = 'I' AND k = 'T' : EQUB 219 EOR VE : ENDIF
+  IF t = 'I' AND k = 'L' : EQUB 220 EOR VE : ENDIF
+  IF t = 'E' AND k = 'T' : EQUB 221 EOR VE : ENDIF
+  IF t = 'S' AND k = 'T' : EQUB 222 EOR VE : ENDIF
+  IF t = 'O' AND k = 'N' : EQUB 223 EOR VE : ENDIF
+  IF t = 'L' AND k = 'O' : EQUB 224 EOR VE : ENDIF
+  IF t = 'N' AND k = 'U' : EQUB 225 EOR VE : ENDIF
+  IF t = 'T' AND k = 'H' : EQUB 226 EOR VE : ENDIF
+  IF t = 'N' AND k = 'O' : EQUB 227 EOR VE : ENDIF
+
+  IF t = 'A' AND k = 'L' : EQUB 228 EOR VE : ENDIF
+  IF t = 'L' AND k = 'E' : EQUB 229 EOR VE : ENDIF
+  IF t = 'X' AND k = 'E' : EQUB 230 EOR VE : ENDIF
+  IF t = 'G' AND k = 'E' : EQUB 231 EOR VE : ENDIF
+  IF t = 'Z' AND k = 'A' : EQUB 232 EOR VE : ENDIF
+  IF t = 'C' AND k = 'E' : EQUB 233 EOR VE : ENDIF
+  IF t = 'B' AND k = 'I' : EQUB 234 EOR VE : ENDIF
+  IF t = 'S' AND k = 'O' : EQUB 235 EOR VE : ENDIF
+  IF t = 'U' AND k = 'S' : EQUB 236 EOR VE : ENDIF
+  IF t = 'E' AND k = 'S' : EQUB 237 EOR VE : ENDIF
+  IF t = 'A' AND k = 'R' : EQUB 238 EOR VE : ENDIF
+  IF t = 'M' AND k = 'A' : EQUB 239 EOR VE : ENDIF
+  IF t = 'I' AND k = 'N' : EQUB 240 EOR VE : ENDIF
+  IF t = 'D' AND k = 'I' : EQUB 241 EOR VE : ENDIF
+  IF t = 'R' AND k = 'E' : EQUB 242 EOR VE : ENDIF
+  IF t = 'A' AND k = '?' : EQUB 243 EOR VE : ENDIF
+  IF t = 'E' AND k = 'R' : EQUB 244 EOR VE : ENDIF
+  IF t = 'A' AND k = 'T' : EQUB 245 EOR VE : ENDIF
+  IF t = 'E' AND k = 'N' : EQUB 246 EOR VE : ENDIF
+  IF t = 'B' AND k = 'E' : EQUB 247 EOR VE : ENDIF
+  IF t = 'R' AND k = 'A' : EQUB 248 EOR VE : ENDIF
+  IF t = 'L' AND k = 'A' : EQUB 249 EOR VE : ENDIF
+  IF t = 'V' AND k = 'E' : EQUB 250 EOR VE : ENDIF
+  IF t = 'T' AND k = 'I' : EQUB 251 EOR VE : ENDIF
+  IF t = 'E' AND k = 'D' : EQUB 252 EOR VE : ENDIF
+  IF t = 'O' AND k = 'R' : EQUB 253 EOR VE : ENDIF
+  IF t = 'Q' AND k = 'U' : EQUB 254 EOR VE : ENDIF
+  IF t = 'A' AND k = 'N' : EQUB 255 EOR VE : ENDIF
+
+ENDMACRO
+
+\ ******************************************************************************
+\
+\       Name: ERND
+\       Type: Macro
+\   Category: Text
+\    Summary: Macro definition for random tokens in the extended token table
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used when building the extended token table:
+\
+\   ERND n              Insert recursive token [n]
+\
+\                         * Tokens 0-123 get stored as n + 91
+\
+\ See the deep dive on "Printing extended text tokens" for details on how
+\ random tokens are stored in the extended token table.
+\
+\ Arguments:
+\
+\   n                   The number of the random token to insert into the
+\                       table, in the range 0 to 37
+\
+\ ******************************************************************************
+
+MACRO ERND n
+
+  EQUB (n + 91) EOR VE
+
+ENDMACRO
+
+\ ******************************************************************************
+\
+\       Name: TOKN
+\       Type: Macro
+\   Category: Text
+\    Summary: Macro definition for standard tokens in the extended token table
+\  Deep dive: Printing text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used when building the recursive token table:
+\
+\   TOKN n              Insert recursive token [n]
+\
+\                         * Tokens 0-95 get stored as n + 160
+\
+\                         * Tokens 128-145 get stored as n - 114
+\
+\                         * Tokens 96-127 get stored as n
+\
+\ See the deep dive on "Printing text tokens" for details on how recursive
+\ tokens are stored in the recursive token table.
+\
+\ Arguments:
+\
+\   n                   The number of the recursive token to insert into the
+\                       table, in the range 0 to 145
+\
+\ ******************************************************************************
+
+MACRO TOKN n
+
+  IF n >= 0 AND n <= 95
+    t = n + 160
+  ELIF n >= 128
+    t = n - 114
+  ELSE
+    t = n
+  ENDIF
+
+  EQUB t EOR VE
+
+ENDMACRO
+
+ENDIF
+
 \ ******************************************************************************
 \
 \       Name: UniverseTokens
@@ -1950,9 +2298,20 @@ repeatingKey = YSAV2    \ can reuse them
  LDX #LO(DELI)          \ Set (Y X) to point to the OS command at DELI, which
  LDY #HI(DELI)          \ contains the DFS command for deleting this file
 
+IF _6502SP_VERSION
+
  JSR SCLI2              \ Call SCLI2 to execute the OS command at (Y X), which
                         \ deletes the file, setting the SVN flag while it's
                         \ running to indicate disc access is in progress
+
+ELIF _MASTER_VERSION
+
+ JSR OSCLI              \ Call OSCLI to execute the OS command at (Y X), which
+                        \ catalogues the disc
+
+ JSR SWAPZP             \ Call SWAPZP to restore the top part of zero page
+
+ENDIF
 
  JMP ShowDiscMenu       \ Jump to ShowDiscMenu to display the disc access menu
                         \ and return from the subroutine using a tail call
@@ -1993,26 +2352,54 @@ repeatingKey = YSAV2    \ can reuse them
                         \ before we set BRKV to point to MEBRK in the SVE
                         \ routine
 
+IF _6502SP_VERSION
+
  JSR backtonormal       \ Disable the keyboard and set the SVN flag to 0
 
  TAY                    \ The call to backtonormal sets A to 0, so this sets Y
                         \ to 0, which we use as a loop counter below
+
+
+ELIF _MASTER_VERSION
+
+ JSR SWAPZP             \ Call SWAPZP to restore the top part of zero page
+
+ STZ CATF               \ Set the CATF flag to 0, so the TT26 routine reverts to
+                        \ standard formatting
+
+ LDY #0                 \ Set Y to 0, which we use as a loop counter below
+
+ENDIF
 
  LDA #7                 \ Set A = 7 to generate a beep before we print the error
                         \ message
 
 .dbrk1
 
+IF _6502SP_VERSION
+
  JSR OSWRCH             \ Print the character in A (which contains a beep on the
                         \ first loop iteration), and then any non-zero
                         \ characters we fetch from the error message
 
+ELIF _MASTER_VERSION
+
+ JSR CHPR               \ Print the character in A, which contains a line feed
+                        \ on the first loop iteration, and then any non-zero
+                        \ characters we fetch from the error message
+
+ENDIF
+
  INY                    \ Increment the loop counter
+
+IF _6502SP_VERSION
 
  BEQ dbrk2              \ If Y = 0 then we have worked our way through a whole
                         \ page, so jump to retry to wait for a key press and
                         \ display the disc access menu (this BEQ is effectively
                         \ a JMP, as we didn't take the BNE branch above)
+
+ENDIF
 
  LDA (&FD),Y            \ Fetch the Y-th byte of the block pointed to by
                         \ (&FD &FE), so that's the Y-th character of the message
@@ -2058,7 +2445,11 @@ repeatingKey = YSAV2    \ can reuse them
  JSR OSCLI              \ Call OSCLI to run the OS command in dirCommand, which
                         \ changes the disc directory to E
 
+IF _6502SP_VERSION
+
  JSR ZEBC               \ Call ZEBC to zero-fill pages &B and &C
+
+ENDIF
 
  TSX                    \ Transfer the stack pointer to X and store it in stack,
  STX stack              \ so we can restore it in the MEBRK routine
@@ -2203,7 +2594,11 @@ repeatingKey = YSAV2    \ can reuse them
 
 .LoadUniverse
 
+IF _6502SP_VERSION
+
  JSR ZEBC               \ Call ZEBC to zero-fill pages &B and &C
+
+ENDIF
 
  LDY #HI(K%-1)          \ Set up an OSFILE block at &0C00, containing:
  STY &0C03              \

@@ -1,12 +1,16 @@
 \ ******************************************************************************
 \
-\ 6502 SECOND PROCESSOR ELITE UNIVERSE EDITOR
+\ ELITE UNIVERSE EDITOR (PART 2)
 \
 \ The Universe Editor is an extended version of BBC Micro Elite by Mark Moxon
-
+\
 \ The original 6502 Second Processor Elite was written by Ian Bell and David
-\ Braben and is copyright Acornsoft 1985, and the extra code in the Universe
-\ Editor is copyright Mark Moxon
+\ Braben and is copyright Acornsoft 1985
+\
+\ The original BBC Master Elite was written by Ian Bell and David Braben and is
+\ copyright Acornsoft 1986
+\
+\ The extra code in the Universe Editor is copyright Mark Moxon
 \
 \ The code on this site is identical to the source discs released on Ian Bell's
 \ personal website at http://www.elitehomepage.org/ (it's just been reformatted
@@ -218,6 +222,8 @@
  BCS slod1              \ If the C flag is set, then an invalid drive number was
                         \ entered, so jump to slod1 to return from the subroutine
 
+IF _6502SP_VERSION
+
  PHA                    \ Store A on the stack so we can restore it after the
                         \ call to DODOSVN
 
@@ -225,6 +231,8 @@
  JSR DODOSVN            \ is in progress
 
  PLA                    \ Restore A from the stack
+
+ENDIF
 
  LDX #INWK              \ Store a pointer to INWK at the start of the block at
  STX &0C00              \ &0C00, storing #INWK in the low byte because INWK is
@@ -237,10 +245,14 @@
                         \ &0C00 (i.e. save or load a file depending on the value
                         \ of A)
 
+IF _6502SP_VERSION
+
  JSR CLDELAY            \ Pause for 1280 empty loops
 
  LDA #0                 \ Set the SVN flag to 0 indicate that disc access has
  JSR DODOSVN            \ finished
+
+ENDIF
 
  CLC                    \ Clear the C flag
 
@@ -301,16 +313,30 @@
 
                         \ Do the following from BR1 (part 1):
 
+IF _6502SP_VERSION
+
  JSR ZEKTRAN            \ Reset the key logger buffer that gets returned from
                         \ the I/O processor
+
+ENDIF
 
  LDA #3                 \ Move the text cursor to column 3
  JSR DOXC
 
  LDX #3                 \ Set X = 3 for the call to FX200
 
+IF _6502SP_VERSION
+
  JSR FX200              \ Disable the ESCAPE key and clear memory if the BREAK
                         \ key is pressed (*FX 200,3)
+
+ELIF _MASTER_VERSION
+
+ LDY #0                 \ Call OSBYTE 200 with Y = 0, so the new value is set to
+ LDA #200               \ X, and return from the subroutine using a tail call
+ JSR OSBYTE
+
+ENDIF
 
  JSR DFAULT             \ Call DFAULT to reset the current commander data block
                         \ to the last saved commander
@@ -372,5 +398,48 @@
  STA DELTA              \ possible at the start
 
  JMP TT100              \ Jump to TT100 to restart the main loop from the start
+
+IF _MASTER_VERSION
+
+\ ******************************************************************************
+\
+\       Name: TWIST
+\       Type: Subroutine
+\   Category: Demo
+\    Summary: Pitch the current ship by a small angle in a positive direction
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   TWIST2              Pitch in the direction given in A
+\
+\ ******************************************************************************
+
+.TWIST2
+
+ EQUB &2C               \ Skip the next instruction by turning it into
+                        \ &2C &A9 &00, or BIT &00A9, which does nothing apart
+                        \ from affect the flags
+
+.TWIST
+
+ LDA #0                 \ Set A = 0
+
+ STA RAT2               \ Set the pitch direction in RAT2 to A
+
+ LDX #15                \ Rotate (roofv_x, nosev_x) by a small angle (pitch)
+ LDY #9                 \ in the direction given in RAT2
+ JSR MVS5
+
+ LDX #17                \ Rotate (roofv_y, nosev_y) by a small angle (pitch)
+ LDY #11                \ in the direction given in RAT2
+ JSR MVS5
+
+ LDX #19                \ Rotate (roofv_z, nosev_z) by a small angle (pitch)
+ LDY #13                \ in the direction given in RAT2 and return from the
+ JMP MVS5               \ subroutine using a tail call
+
+ENDIF
 
 .endUniverseEditor2
