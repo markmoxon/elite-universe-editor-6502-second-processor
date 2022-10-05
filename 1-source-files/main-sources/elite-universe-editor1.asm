@@ -55,6 +55,16 @@ ELIF _MASTER_VERSION
 currentSlot = &0000     \ &0000 and &0001 are unused in the original game, so we
 repeatingKey = &0001    \ can reuse them
 
+IF _SNG47
+
+token8 = &A49E
+
+ELIF _COMPACT
+
+token8 = &A495
+
+ENDIF
+
 OSFILE = &FFDD          \ The address for the OSFILE routine
 
 keyA = &41              \ See TRANTABLE for key values
@@ -1065,8 +1075,17 @@ IF _6502SP_VERSION
 
 ELIF _MASTER_VERSION
 
+IF _SNG47
+
  LDA #0                 \ Call DKS4 to check whether the SHIFT key is being
  JSR DKS4               \ pressed
+
+ELIF _COMPACT
+
+ LDA #0                 \ Call DKS4mc to check whether the SHIFT key is being
+ JSR DKS4mc             \ pressed
+
+ENDIF
 
 ENDIF
 
@@ -2555,6 +2574,13 @@ ENDIF
  LDA #LO(NAME)
  STA GTL2+1
 
+ LDA #&11               \ Change token 8 in TKN1 to "File Name"
+ STA token8
+ LDA #&1E
+ STA token8+1
+ LDA #&B2
+ STA token8+2
+
  LDA #'U'               \ Change the directory to U
  STA S1%+3
  STA dirCommand+4
@@ -2636,9 +2662,7 @@ ENDIF
  JSR StoreName          \ Transfer the universe filename from INWK to NAME, to
                         \ set it as the current filename
 
- SEC                    \ Set the C flag to indicate we loaded a new universe
- BCS disc9+1            \ file, and return from the subroutine (as disc9+1
-                        \ contains an RTS)
+ JMP disc9              \ Jump to disc9 to return from the subroutine
 
 .disc8
 
@@ -2667,8 +2691,12 @@ ENDIF
 
                         \ Option 6: Exit
 
- JMP ExitDiscMenu       \ Exit the disc access menu, returning from the
-                        \ subroutine using a tail call
+ JSR ExitDiscMenu       \ Clear the screen and reverse all the modifications we
+                        \ did above
+
+.disc10
+
+ RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
@@ -2701,6 +2729,13 @@ ENDIF
  JSR OSCLI              \ Call OSCLI to run the OS command in dirCommand, which
                         \ changes the disc directory to E
 
+ LDA #&CD               \ Revert token 8 in TKN1 to "Commander's Name"
+ STA token8
+ LDA #&70
+ STA token8+1
+ LDA #&04
+ STA token8+2
+
  LDA #HI(NA%)           \ Revert TR1 so it uses the commander name in NA% as the
  STA GTL2+2             \ default when no filename is entered
  LDA #LO(NA%)
@@ -2712,76 +2747,30 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: LoadUniverse
-\       Type: Subroutine
+\       Name: DefaultName
+\       Type: Variable
 \   Category: Universe editor
-\    Summary: Load a universe file
+\    Summary: The default name for a universe file
 \
 \ ******************************************************************************
 
-.LoadUniverse
+.DefaultName
 
- JSR ZEBC               \ Call ZEBC to zero-fill pages &B and &C
+ EQUS "MyScene"
+ EQUB 13
 
- LDY #HI(K%-1)          \ Set up an OSFILE block at &0C00, containing:
- STY &0C03              \
- LDY #LO(K%-1)          \ Load address = K%-1 in &0C02 to &0C05
- STY &0C02              \
-                        \ Length of file = 1+&2E4+JUNK-FRIN+1 in &0C0A to &0C0D
-                        \
-                        \ The file is made up of:
-                        \
-                        \   * The file format (1 byte)
-                        \
-                        \   * The ship slots at K% (&2E4 bytes)
-                        \     20 ships, 37 bytes each, 20 * 37 = 740 = &2E4
-                        \
-                        \   * FRIN          MANY/SSPR       JUNK (&39 bytes)
-                        \     NOSH + 1      NTY + 1         1
-                        \     21            35              1
-                        \     21 + 35 + 1 = 57 = &39 = JUNK - FRIN + 1
+\ ******************************************************************************
+\
+\       Name: dirCommand
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: The OS command string for changing the disc directory to E
+\
+\ ******************************************************************************
 
- LDY #HI(1+&2E4+JUNK-FRIN+1)
- STY &0C0B
- LDY #LO(1+&2E4+JUNK-FRIN+1)
- STY &0C0A
+.dirCommand
 
- LDA #&FF               \ Call SaveLoadFile with A = &FF to load the universe
- JSR SaveLoadFile       \ file to address K%
-
- BCS load1              \ If the C flag is set then an invalid drive number was
-                        \ entered during the call to QUS1 and the file wasn't
-                        \ loaded, so jump to LOR to return from the subroutine
-
- LDA #HI(K%+&2E4)       \ Copy NOSH + 1 bytes from K%+&2E4 to FRIN
- STA P+1
- LDA #LO(K%+&2E4)
- STA P
- LDA #HI(FRIN)
- STA Q+1
- LDA #LO(FRIN)
- STA Q
- LDY #NOSH+1
- JSR CopyBlock
-
- LDA #HI(K%+&2E4+NOSH+1)  \ Copy NTY + 1 bytes from K%+&2E4+NOSH+1 to MANY
- STA P+1
- LDA #LO(K%+&2E4+NOSH+1)
- STA P
- LDA #HI(MANY)
- STA Q+1
- LDA #LO(MANY)
- STA Q
- LDY #NTY+1
- JSR CopyBlock
-
- LDA K%+&2E4+NOSH+1+NTY+1 \ Copy 1 byte from K%+&2E4+NOSH+1+NTY+1 to JUNK
- STA JUNK
-
-.load1
-
- SEC                    \ Set the C flag
-
- RTS                    \ Return from the subroutine
+ EQUS "DIR E"
+ EQUB 13
 
 .endUniverseEditor1

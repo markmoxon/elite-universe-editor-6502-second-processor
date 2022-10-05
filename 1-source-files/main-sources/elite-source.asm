@@ -42192,6 +42192,12 @@ ENDMACRO
  EJMP 12
  EQUB VE
 
+                        \ --- Mod: Code added for Universe Editor: ------------>
+
+.token8
+
+                        \ --- End of added code ------------------------------->
+
  ETOK 154               \ Token 8:      "{single cap}COMMANDER'S NAME? "
  ECHR '`'               \
  ECHR 'S'               \ Encoded as:   "[154][39]S[200]"

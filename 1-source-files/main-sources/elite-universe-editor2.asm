@@ -29,31 +29,77 @@
 
 \ ******************************************************************************
 \
-\       Name: DefaultName
-\       Type: Variable
+\       Name: LoadUniverse
+\       Type: Subroutine
 \   Category: Universe editor
-\    Summary: The default name for a universe file
+\    Summary: Load a universe file
 \
 \ ******************************************************************************
 
-.DefaultName
+.LoadUniverse
 
- EQUS "MyScene"
- EQUB 13
+ JSR ZEBC               \ Call ZEBC to zero-fill pages &B and &C
 
-\ ******************************************************************************
-\
-\       Name: dirCommand
-\       Type: Variable
-\   Category: Universe editor
-\    Summary: The OS command string for changing the disc directory to E
-\
-\ ******************************************************************************
+ LDY #HI(K%-1)          \ Set up an OSFILE block at &0C00, containing:
+ STY &0C03              \
+ LDY #LO(K%-1)          \ Load address = K%-1 in &0C02 to &0C05
+ STY &0C02              \
+                        \ Length of file = 1+&2E4+JUNK-FRIN+1 in &0C0A to &0C0D
+                        \
+                        \ The file is made up of:
+                        \
+                        \   * The file format (1 byte)
+                        \
+                        \   * The ship slots at K% (&2E4 bytes)
+                        \     20 ships, 37 bytes each, 20 * 37 = 740 = &2E4
+                        \
+                        \   * FRIN          MANY/SSPR       JUNK (&39 bytes)
+                        \     NOSH + 1      NTY + 1         1
+                        \     21            35              1
+                        \     21 + 35 + 1 = 57 = &39 = JUNK - FRIN + 1
 
-.dirCommand
+ LDY #HI(1+&2E4+JUNK-FRIN+1)
+ STY &0C0B
+ LDY #LO(1+&2E4+JUNK-FRIN+1)
+ STY &0C0A
 
- EQUS "DIR E"
- EQUB 13
+ LDA #&FF               \ Call SaveLoadFile with A = &FF to load the universe
+ JSR SaveLoadFile       \ file to address K%
+
+ BCS load1              \ If the C flag is set then an invalid drive number was
+                        \ entered during the call to QUS1 and the file wasn't
+                        \ loaded, so jump to LOR to return from the subroutine
+
+ LDA #HI(K%+&2E4)       \ Copy NOSH + 1 bytes from K%+&2E4 to FRIN
+ STA P+1
+ LDA #LO(K%+&2E4)
+ STA P
+ LDA #HI(FRIN)
+ STA Q+1
+ LDA #LO(FRIN)
+ STA Q
+ LDY #NOSH+1
+ JSR CopyBlock
+
+ LDA #HI(K%+&2E4+NOSH+1)  \ Copy NTY + 1 bytes from K%+&2E4+NOSH+1 to MANY
+ STA P+1
+ LDA #LO(K%+&2E4+NOSH+1)
+ STA P
+ LDA #HI(MANY)
+ STA Q+1
+ LDA #LO(MANY)
+ STA Q
+ LDY #NTY+1
+ JSR CopyBlock
+
+ LDA K%+&2E4+NOSH+1+NTY+1 \ Copy 1 byte from K%+&2E4+NOSH+1+NTY+1 to JUNK
+ STA JUNK
+
+.load1
+
+ SEC                    \ Set the C flag
+
+ RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
