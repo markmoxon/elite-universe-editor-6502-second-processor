@@ -158,8 +158,17 @@
  STA K%+&2E4+20+1+34+1  \ always save for NOSH = 20 and NTY = 34, even if they
                         \ are less
 
+IF _6502SP_VERSION
+
  LDA #1                 \ Set file format byte (1 = 6502sp)
  STA K%-1
+
+ELIF _MASTER_VERSION
+
+ LDA #2                 \ Set file format byte (2 = Master)
+ STA K%-1
+
+ENDIF
 
  LDA #0                 \ Call SaveLoadFile with A = 0 to save the universe
  JSR SaveLoadFile       \ file with the filename we copied to INWK at the start

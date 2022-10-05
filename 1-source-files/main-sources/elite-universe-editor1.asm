@@ -521,10 +521,9 @@ ENDIF
                         \ The following controls only apply to ships in slots 2
                         \ and up, and do not apply to the planet, sun or station
 
- LDX currentSlot        \ Get the current slot number
-
- CPX #2                 \ If this is the station or planet, do nothing
- BCC pkey1
+ LDX currentSlot        \ Get the current slot number to pass to the following
+                        \ routines, so they can do nothing (and give an error
+                        \ beep) if this is the station or planet
 
  CMP #keyDelete         \ DELETE pressed (delete ship)
  BNE P%+5
@@ -543,62 +542,6 @@ ENDIF
  JMP ExplodeShip
 
 .pkey1
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: FireLaser
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Fire the current ship's laser
-\
-\ ******************************************************************************
-
-.FireLaser
-
- LDA INWK+31            \ Toggle bit 6 in byte #31 to denote that the ship is
- EOR #%01000000         \ firing its laser at us (or to switch it off)
- STA INWK+31
-
- JMP DrawShip+3         \ Draw the ship (but not on the scanner), returning from
-                        \ the subroutine using a tail call
-
-\ ******************************************************************************
-\
-\       Name: ExplodeShip
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Explode the current ship
-\
-\ ******************************************************************************
-
-.ExplodeShip
-
- LDA #&A5               \ Re-enable DOEXP
- STA DOEXP+9
-
- LDA INWK+31            \ If bit 5 of byte #31 is set, then the ship is already
- AND #%00100000         \ exploding, so jump to expl1 to move the explosion on
- BNE expl1              \ by one step
-
- JSR MV5                \ Draw the current ship on the scanner to remove it
-
- LDA INWK+31            \ Set bit 7 and clear bit 5 in byte #31 to denote that
- ORA #%10000000         \ the ship is exploding
- AND #%11101111
- STA INWK+31
-
- JSR DrawShip+3         \ Draw the explosion (but not on the scanner) to get it
-                        \ going (as only calling this once at the start of a new
-                        \ explosion doesn't show a lot)
-
-.expl1
-
- JSR DrawShip+3         \ Draw the explosion (but not on the scanner)
-
- LDA #&60               \ Disable DOEXP again
- STA DOEXP+9
 
  RTS                    \ Return from the subroutine
 
@@ -1429,6 +1372,80 @@ ENDIF
 
 \ ******************************************************************************
 \
+\       Name: FireLaser
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Fire the current ship's laser
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   Slot number
+\
+\ ******************************************************************************
+
+.FireLaser
+
+ CPX #2                 \ If this is the station or planet, jump to
+ BCC MakeErrorBeep      \ MakeErrorBeep as you can't fire their lasers
+
+ LDA INWK+31            \ Toggle bit 6 in byte #31 to denote that the ship is
+ EOR #%01000000         \ firing its laser at us (or to switch it off)
+ STA INWK+31
+
+ JMP DrawShip+3         \ Draw the ship (but not on the scanner), returning from
+                        \ the subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: ExplodeShip
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Explode the current ship
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   Slot number
+\
+\ ******************************************************************************
+
+.ExplodeShip
+
+ CPX #2                 \ If this is the station or planet, jump to 
+ BCC MakeErrorBeep      \ MakeErrorBeep as you can't explode them
+
+ LDA #&A5               \ Re-enable DOEXP
+ STA DOEXP+9
+
+ LDA INWK+31            \ If bit 5 of byte #31 is set, then the ship is already
+ AND #%00100000         \ exploding, so jump to expl1 to move the explosion on
+ BNE expl1              \ by one step
+
+ JSR MV5                \ Draw the current ship on the scanner to remove it
+
+ LDA INWK+31            \ Set bit 7 and clear bit 5 in byte #31 to denote that
+ ORA #%10000000         \ the ship is exploding
+ AND #%11101111
+ STA INWK+31
+
+ JSR DrawShip+3         \ Draw the explosion (but not on the scanner) to get it
+                        \ going (as only calling this once at the start of a new
+                        \ explosion doesn't show a lot)
+
+.expl1
+
+ JSR DrawShip+3         \ Draw the explosion (but not on the scanner)
+
+ LDA #&60               \ Disable DOEXP again
+ STA DOEXP+9
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
 \       Name: CreateShip
 \       Type: Subroutine
 \   Category: Universe editor
@@ -1442,13 +1459,15 @@ ENDIF
 
  JSR NWSHP              \ Add the new ship and store it in K%
 
- BCC crea1              \ If ship was not added, make an error beep and return
-                        \ from the subroutine
+ BCC MakeErrorBeep      \ If ship was not added, jump to MakeErrorBeep to make
+                        \ an error beep and return from the subroutine using a
+                        \ tail call
 
  JSR GetCurrentSlot     \ Set X to the slot number of the new ship
 
- BCS crea1              \ If we didn't find the slot, make an error beep and
-                        \ return from the subroutine
+ BCS MakeErrorBeep      \ If we didn't find the slot, jump to MakeErrorBeep to
+                        \ make an error beep and return from the subroutine
+                        \ using a tail call
 
  JSR UpdateSlotNumber   \ Store and print the new slot number in X
 
@@ -1458,11 +1477,20 @@ ENDIF
  JMP DrawShip           \ Draw the ship, returning from the subroutine using a
                         \ tail call
 
-.crea1
+\ ******************************************************************************
+\
+\       Name: MakeErrorBeep
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Make an error beep
+\
+\ ******************************************************************************
+
+.MakeErrorBeep
 
  LDA #40                \ Call the NOISE routine with A = 40 to make a low,
- JMP NOISE              \ long beep to indicate the missile is now disarmed,
-                        \ returning from the subroutine using a tail call
+ JMP NOISE              \ long beep, returning from the subroutine using a tail
+                        \ call
 
 \ ******************************************************************************
 \
@@ -1518,9 +1546,18 @@ ENDIF
 \   Category: Universe editor
 \    Summary: Duplicate the ship in the current slot
 \
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   Slot number
+\
 \ ******************************************************************************
 
 .CopyShip
+
+ CPX #2                 \ If this is the station or planet, jump to
+ BCC MakeErrorBeep      \ MakeErrorBeep as you can't duplicate them
 
  LDA INWK+3             \ Move the current away from the origin a bit so the new
  CLC                    \ ship doesn't overlap the original ship
@@ -1541,9 +1578,18 @@ ENDIF
 \   Category: Universe editor
 \    Summary: Delete the ship from the current slot
 \
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   Slot number
+\
 \ ******************************************************************************
 
 .DeleteShip
+
+ CPX #2                 \ If this is the station or planet, jump to
+ BCC MakeErrorBeep      \ MakeErrorBeep as you can't delete them
 
  JSR EraseShip          \ Erase the current ship from the screen
 
