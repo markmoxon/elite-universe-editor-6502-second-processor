@@ -29,6 +29,34 @@
 
 \ ******************************************************************************
 \
+\       Name: DefaultName
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: The default name for a universe file
+\
+\ ******************************************************************************
+
+.DefaultName
+
+ EQUS "MyScene"
+ EQUB 13
+
+\ ******************************************************************************
+\
+\       Name: dirCommand
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: The OS command string for changing the disc directory to E
+\
+\ ******************************************************************************
+
+.dirCommand
+
+ EQUS "DIR E"
+ EQUB 13
+
+\ ******************************************************************************
+\
 \       Name: LoadUniverse
 \       Type: Subroutine
 \   Category: Universe editor
@@ -296,9 +324,29 @@ ENDIF
  LDX #0                 \ Set (Y X) = &0C00
  LDY #&C
 
+IF _MASTER_VERSION
+
+IF _SNG47
+
+ JSR SWAPZP             \ Call SWAPZP to restore the top part of zero page
+
+ELIF _COMPACT
+
+ JSR NMIRELEASE         \ Release the NMI workspace (&00A0 to &00A7)
+
+ENDIF
+
+ENDIF
+
  JSR OSFILE             \ Call OSFILE to do the file operation specified in
                         \ &0C00 (i.e. save or load a file depending on the value
                         \ of A)
+
+IF _MASTER_VERSION
+
+ JSR SWAPZP             \ Call SWAPZP to restore the top part of zero page
+
+ENDIF
 
 IF _6502SP_VERSION
 

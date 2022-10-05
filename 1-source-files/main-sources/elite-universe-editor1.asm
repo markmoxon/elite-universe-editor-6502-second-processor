@@ -2605,8 +2605,7 @@ ENDIF
  JSR t                  \ Scan the keyboard until a key is pressed, returning
                         \ the ASCII code in A and X
 
-                        \ Fall through into ShowDiscMenu to display the disc
-                        \ access menu
+ JMP afterBrk           \ Jump to afterBrk to display the disc access menu
 
 \ ******************************************************************************
 \
@@ -2637,7 +2636,35 @@ ENDIF
 
 IF _6502SP_VERSION
 
- STA DELI+9
+ STA DELI+9             \ Change the directory to U
+
+ LDA #&4C               \ Stop MEBRK error handler from returning to the SVE
+ STA SVE                \ routine, jump back here instead
+ LDA #LO(ShowDiscMenu)
+ STA SVE+1
+ LDA #HI(ShowDiscMenu)
+ STA SVE+2
+
+ELIF _MASTER_VERSION
+
+\ LDA #LO(ShowDiscMenu)  \ Stop BRBR error handler from returning to the SVE
+\ STA DEATH-2            \ routine, jump back here instead
+\ LDA #HI(ShowDiscMenu)
+\ STA DEATH-1
+
+ENDIF
+
+IF _MASTER_VERSION
+
+IF _SNG47
+
+ JSR SWAPZP             \ Call SWAPZP to restore the top part of zero page
+
+ELIF _COMPACT
+
+ JSR NMIRELEASE         \ Release the NMI workspace (&00A0 to &00A7)
+
+ENDIF
 
 ENDIF
 
@@ -2647,17 +2674,41 @@ ENDIF
  JSR OSCLI              \ Call OSCLI to run the OS command in dirCommand, which
                         \ changes the disc directory to E
 
+IF _MASTER_VERSION
+
+ JSR SWAPZP             \ Call SWAPZP to restore the top part of zero page
+
+ENDIF
+
+.afterBrk
+
+                        \ The following is based on the SVE routine for the
+                        \ normal disc access menu
+
+IF _6502SP_VERSION
+
  JSR ZEBC               \ Call ZEBC to zero-fill pages &B and &C
+
+ENDIF
 
  TSX                    \ Transfer the stack pointer to X and store it in stack,
  STX stack              \ so we can restore it in the MEBRK routine
 
- LDA #LO(DiscBreak)     \ Set BRKV to point to the MEBRK routine, disabling
- SEI                    \ while we make the change and re-enabling them once we
- STA BRKV               \ are done. MEBRK is the BRKV handler for disc access
- LDA #HI(DiscBreak)     \ operations, and replaces the standard BRKV handler in
- STA BRKV+1             \ BRBR while disc access operations are happening
- CLI
+IF _6502SP_VERSION
+
+ LDA #LO(MEBRK)         \ Set BRKV to point to the MEBRK routine, disabling
+ SEI                    \ interrupts while we make the change and re-enabling
+ STA BRKV               \ them once we are done. MEBRK is the BRKV handler for
+ LDA #HI(MEBRK)         \ disc access operations, and replaces the standard BRKV
+ STA BRKV+1             \ handler in BRBR while disc access operations are
+ CLI                    \ happening
+
+ELIF _MASTER_VERSION
+
+ JSR TRADE              \ Set the palette for trading screens and switch the
+                        \ current colour to white
+
+ENDIF
 
  LDA #1                 \ Print extended token 1, the disc access menu, which
  JSR ShowToken          \ presents these options:
@@ -2759,17 +2810,25 @@ ENDIF
 
 .ExitDiscMenu
 
- LDX #0                 \ Draw the front view, returning from the subroutine
- STX VIEW               \ using a tail call
- JSR ChangeView+8
-
  LDA #'E'               \ Change the directory back to E
  STA S1%+3
  STA dirCommand+4
 
 IF _6502SP_VERSION
 
- STA DELI+9
+ STA DELI+9             \ Change the directory back to E
+
+ELIF _MASTER_VERSION
+
+IF _SNG47
+
+ JSR SWAPZP             \ Call SWAPZP to restore the top part of zero page
+
+ELIF _COMPACT
+
+ JSR NMIRELEASE         \ Release the NMI workspace (&00A0 to &00A7)
+
+ENDIF
 
 ENDIF
 
@@ -2778,6 +2837,12 @@ ENDIF
 
  JSR OSCLI              \ Call OSCLI to run the OS command in dirCommand, which
                         \ changes the disc directory to E
+
+IF _MASTER_VERSION
+
+ JSR SWAPZP             \ Call SWAPZP to restore the top part of zero page
+
+ENDIF
 
  LDA #&CD               \ Revert token 8 in TKN1 to "Commander's Name"
  STA token8
@@ -2791,36 +2856,32 @@ ENDIF
  LDA #LO(NA%)
  STA GTL2+1
 
- JMP BRKBK              \ Jump to BRKBK to set BRKV back to the standard BRKV
+IF _6502SP_VERSION
+
+ LDA #&20               \ Return MEBRK error handler to its default state
+ SEI
+ STA SVE
+ LDA #LO(ZEBC)
+ STA SVE+1
+ LDA #HI(ZEBC)
+ STA SVE+2
+ CLI
+
+ JSR BRKBK              \ Jump to BRKBK to set BRKV back to the standard BRKV
                         \ handler for the game, and return from the subroutine
                         \ using a tail call
 
-\ ******************************************************************************
-\
-\       Name: DefaultName
-\       Type: Variable
-\   Category: Universe editor
-\    Summary: The default name for a universe file
-\
-\ ******************************************************************************
+ELIF _MASTER_VERSION
 
-.DefaultName
+ LDA #LO(SVE)           \ Return BRBR error handler to default state
+ STA DEATH-2
+ LDA #HI(SVE)
+ STA DEATH-1
 
- EQUS "MyScene"
- EQUB 13
+ENDIF
 
-\ ******************************************************************************
-\
-\       Name: dirCommand
-\       Type: Variable
-\   Category: Universe editor
-\    Summary: The OS command string for changing the disc directory to E
-\
-\ ******************************************************************************
-
-.dirCommand
-
- EQUS "DIR E"
- EQUB 13
+ LDX #0                 \ Draw the front view, returning from the subroutine
+ STX VIEW               \ using a tail call
+ JMP ChangeView+8
 
 .endUniverseEditor1
