@@ -833,7 +833,11 @@ ELIF _MASTER_VERSION
 
 ENDIF
 
- JMP LL14               \ Draw the existing ship to erase it and mark it as gone
+ LDA NEWB               \ Set bit 7 of the ship to indicate it has docked (so
+ ORA #%10000000         \ the call to LL9 removes it from the screen)
+ STA NEWB
+
+ JMP LL9                \ Draw the existing ship to erase it and mark it as gone
                         \ and return from the subroutine using a tail call
 
 \ ******************************************************************************
