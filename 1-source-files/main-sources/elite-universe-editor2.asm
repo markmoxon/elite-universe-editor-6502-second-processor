@@ -140,6 +140,8 @@
 
 .SaveUniverse
 
+ JSR ZEBC               \ Call ZEBC to zero-fill pages &B and &C
+
  JSR GTNMEW             \ If we get here then option 2 (save) was chosen, so
                         \ call GTNMEW to fetch the name of the commander file
                         \ to save (including drive number and directory) into
