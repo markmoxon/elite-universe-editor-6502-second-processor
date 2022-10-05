@@ -37953,9 +37953,7 @@ End macro FACE
      F195   A9 A5      LDA #&A5
      F197   8D E6 41   STA &41E6
      F19A   20 14 51   JSR &5114
-     F19D   68         PLA
-     F19E   68         PLA
-     F19F   60         RTS
+     F19D   4C B0 50   JMP &50B0
 .keyTable
      F1A0   79
      F1A1   19
@@ -38951,8 +38949,8 @@ End macro ETWO
      F715   8D 17 52   STA &5217
      F718   A9 55      LDA #&55
      F71A   8D 0F 10   STA &100F
-     F71D   8D 9B 52   STA &529B
-     F720   8D 4E 6E   STA &6E4E
+     F71D   8D 4E 6E   STA &6E4E
+     F720   8D 9B 52   STA &529B
      F723   A2 4A      LDX #&4A
      F725   A0 6E      LDY #&6E
      F727   20 F7 FF   JSR &FFF7
@@ -39002,8 +39000,8 @@ End macro ETWO
      F782   20 2C F3   JSR &F32C
      F785   A9 45      LDA #&45
      F787   8D 0F 10   STA &100F
-     F78A   8D 9B 52   STA &529B
-     F78D   8D 4E 6E   STA &6E4E
+     F78A   8D 4E 6E   STA &6E4E
+     F78D   8D 9B 52   STA &529B
      F790   A2 4A      LDX #&4A
      F792   A0 6E      LDY #&6E
      F794   20 F7 FF   JSR &FFF7

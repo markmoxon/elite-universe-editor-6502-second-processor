@@ -52,12 +52,10 @@ keyUp = &39
 
 ELIF _MASTER_VERSION
 
-currentSlot = &0001     \ &0001 and &0002 are unused in the original game, so we
-repeatingKey = &0002    \ can reuse them
+currentSlot = &0000     \ &0000 and &0001 are unused in the original game, so we
+repeatingKey = &0001    \ can reuse them
 
 OSFILE = &FFDD          \ The address for the OSFILE routine
-
-STORE = NWL3-3
 
 keyA = &41              \ See TRANTABLE for key values
 keyE = &45
@@ -90,9 +88,19 @@ ENDIF
 
 .UniverseEditor
 
+IF _6502SP_VERSION
+
  LDA #&24               \ Disable the TRB XX1+31 instruction in part 9 of LL9
  STA LL74+20            \ that disables the laser once it has fired, so that
                         \ lasers remain on-screen while in the editor
+
+ELIF _MASTER_VERSION
+
+ LDA #&24               \ Disable the STA XX1+31 instruction in part 9 of LL9
+ STA LL74+16            \ that disables the laser once it has fired, so that
+                        \ lasers remain on-screen while in the editor
+
+ENDIF
 
  LDA #&60               \ Disable DOEXP so that by default it draws an explosion
  STA DOEXP+9            \ cloud but doesn't recalculate it
@@ -215,17 +223,24 @@ ENDIF
  BMI P%+5               \ the space station bulb
  JSR SPBLB
 
+IF _6502SP_VERSION
+
  LDA #&14               \ Re-enable the TRB XX1+31 instruction in part 9 of LL9
  STA LL74+20
+
+ELIF _MASTER_VERSION
+
+ LDA #&85               \ Re-enable the STA XX1+31 instruction in part 9 of LL9
+ STA LL74+20
+
+ENDIF
 
  LDA #&A5               \ Re-enable DOEXP
  STA DOEXP+9
 
  JSR DFAULT             \ Restore correct commander name to NAME
 
- PLA                    \ Quit the scene editor by returning to the caller of
- PLA                    \ UniverseEditor
- RTS
+ JMP BR1                \ Quit the scene editor by returning to the start
 
 \ ******************************************************************************
 \
@@ -1043,8 +1058,17 @@ ENDIF
  LDX #0                 \ Set the high byte of K(3 2 1) to 0
  STX K+2
 
+IF _6502SP_VERSION
+
  JSR DKS4               \ Call DKS4 with X = 0 to check whether the SHIFT key is
                         \ being pressed
+
+ELIF _MASTER_VERSION
+
+ LDA #0                 \ Call DKS4 to check whether the SHIFT key is being
+ JSR DKS4               \ pressed
+
+ENDIF
 
  BMI move1              \ IF SHIFT is being pressed, jump to move1
 
@@ -1323,6 +1347,8 @@ ENDIF
  CMP #'9'+1             \ If key is '1' to '9', jump to add2 to process
  BCC add2
 
+IF _6502SP_VERSION
+
  CMP #'a'               \ If key is less than 'A', it is invalid, so jump to
  BCC add4               \ add4 to return from the subroutine
 
@@ -1333,6 +1359,21 @@ ENDIF
 
  SBC #'a'-11            \ Otherwise calculate ship type with 'A' = 10 (the C
                         \ flag is clear for this calculation)
+
+ELIF _MASTER_VERSION
+
+ CMP #'A'               \ If key is less than 'A', it is invalid, so jump to
+ BCC add4               \ add4 to return from the subroutine
+
+ CMP #'Y'               \ If key is 'Y or greater, it is invalid, so jump to
+ BCS add4               \ add4  to return from the subroutine
+
+                        \ Key is 'A' to 'X'
+
+ SBC #'A'-11            \ Otherwise calculate ship type with 'A' = 10 (the C
+                        \ flag is clear for this calculation)
+
+ENDIF
 
  BCS add3               \ Jump to add3 (this BCS is effectively a JMP as the C
                         \ flag will be set from the subtraction)
@@ -2135,7 +2176,9 @@ ENDIF
 
  EJMP 9                 \ Token 1:      "{clear screen}
  EJMP 11                \                {draw box around title}
+IF _6502SP_VERSION
  EJMP 30                \                {white}
+ENDIF
  EJMP 1                 \                {all caps}
  EJMP 8                 \                {tab 6} DISK ACCESS MENU{crlf}
  ECHR ' '               \                {lf}
@@ -2263,6 +2306,8 @@ ENDIF
                         \ entered as part of the catalogue process, so jump to
                         \ ShowDiscMenu to display the disc access menu
 
+IF _6502SP_VERSION
+
  LDA CTLI+1             \ The call to CATS above put the drive number into
  STA DELI+7             \ CTLI+1, so copy the drive number into DELI+7 so that
                         \ the drive number in the "DELETE:0.E.1234567" string
@@ -2270,6 +2315,22 @@ ENDIF
 
  LDA #9                 \ Print extended token 9 ("{clear bottom of screen}FILE
  JSR DETOK              \ TO DELETE?")
+
+ELIF _MASTER_VERSION
+
+IF _SNG47
+
+ LDA CTLI+4             \ The call to CATS above put the drive number into
+ STA DELI+8             \ CTLI+4, so copy the drive number into DELI+8 so that
+                        \ the drive number in the "DELETE :1.1234567" string
+                        \ gets updated (i.e. the number after the colon)
+
+ENDIF
+
+ LDA #8                 \ Print extended token 8 ("{single cap}COMMANDER'S
+ JSR DETOK              \ NAME? ")
+
+ENDIF
 
  JSR MT26               \ Call MT26 to fetch a line of text from the keyboard
                         \ to INWK+5, with the text length in Y
@@ -2281,11 +2342,41 @@ ENDIF
                         \ that it overwrites the filename part of the string,
                         \ i.e. the "E.1234567" part of "DELETE:0.E.1234567"
 
+IF _6502SP_VERSION
+
  LDX #9                 \ Set up a counter in X to count from 9 to 1, so that we
                         \ copy the string starting at INWK+4+1 (i.e. INWK+5) to
                         \ DELI+8+1 (i.e. DELI+9 onwards, or "E.1234567")
 
+ELIF _MASTER_VERSION
+
+IF _SNG47
+
+                        \ We now copy the entered filename from INWK to DELI, so
+                        \ that it overwrites the filename part of the string,
+                        \ i.e. the "E.1234567" part of "DELETE :1.1234567"
+
+ LDX #9                 \ Set up a counter in X to count from 9 to 1, so that we
+                        \ copy the string starting at INWK+4+1 (i.e. INWK+5) to
+                        \ DELI+9+1 (i.e. DELI+10 onwards, or "1.1234567")
+
+ELIF _COMPACT
+
+                        \ We now copy the entered filename from INWK to DELI, so
+                        \ that it overwrites the filename part of the string,
+                        \ i.e. the "1234567890" part of "DELETE 1234567890"
+
+ LDX #8                 \ Set up a counter in X to count from 8 to 0, so that we
+                        \ copy the string starting at INWK+5+0 (i.e. INWK+5) to
+                        \ DELI+7+0 (i.e. DELI+7 onwards, or "1234567890")
+
+ENDIF
+
+ENDIF
+
 .dele1
+
+IF _6502SP_VERSION
 
  LDA INWK+4,X           \ Copy the X-th byte of INWK+4 to the X-th byte of
  STA DELI+8,X           \ DELI+8
@@ -2294,6 +2385,36 @@ ENDIF
 
  BNE dele1              \ Loop back to delt1 to copy the next character until we
                         \ have copied the whole filename
+
+ELIF _MASTER_VERSION
+
+IF _SNG47
+
+ LDA INWK+4,X           \ Copy the X-th byte of INWK+4 to the X-th byte of
+ STA DELI+9,X           \ DELI+9
+
+ DEX                    \ Decrement the loop counter
+
+ BNE dele1              \ Loop back to dele1 to copy the next character until we
+                        \ have copied the whole filename
+
+ JSR SWAPZP             \ Call SWAPZP to restore the top part of zero page
+
+ELIF _COMPACT
+
+ LDA INWK+5,X           \ Copy the X-th byte of INWK+5 to the X-th byte of
+ STA DELI+7,X           \ DELI+7
+
+ DEX                    \ Decrement the loop counter
+
+ BPL dele1              \ Loop back to dele1 to copy the next character until we
+                        \ have copied the whole filename
+
+ JSR NMIRELEASE         \ Release the NMI workspace (&00A0 to &00A7)
+
+ENDIF
+
+ENDIF
 
  LDX #LO(DELI)          \ Set (Y X) to point to the OS command at DELI, which
  LDY #HI(DELI)          \ contains the DFS command for deleting this file
@@ -2436,8 +2557,13 @@ ENDIF
 
  LDA #'U'               \ Change the directory to U
  STA S1%+3
- STA DELI+9
  STA dirCommand+4
+
+IF _6502SP_VERSION
+
+ STA DELI+9
+
+ENDIF
 
  LDX #LO(dirCommand)    \ Set (Y X) to point to dirCommand ("DIR U")
  LDY #HI(dirCommand)
@@ -2445,11 +2571,7 @@ ENDIF
  JSR OSCLI              \ Call OSCLI to run the OS command in dirCommand, which
                         \ changes the disc directory to E
 
-IF _6502SP_VERSION
-
  JSR ZEBC               \ Call ZEBC to zero-fill pages &B and &C
-
-ENDIF
 
  TSX                    \ Transfer the stack pointer to X and store it in stack,
  STX stack              \ so we can restore it in the MEBRK routine
@@ -2565,8 +2687,13 @@ ENDIF
 
  LDA #'E'               \ Change the directory back to E
  STA S1%+3
- STA DELI+9
  STA dirCommand+4
+
+IF _6502SP_VERSION
+
+ STA DELI+9
+
+ENDIF
 
  LDX #LO(dirCommand)    \ Set (Y X) to point to dirCommand ("DIR E")
  LDY #HI(dirCommand)
@@ -2594,11 +2721,7 @@ ENDIF
 
 .LoadUniverse
 
-IF _6502SP_VERSION
-
  JSR ZEBC               \ Call ZEBC to zero-fill pages &B and &C
-
-ENDIF
 
  LDY #HI(K%-1)          \ Set up an OSFILE block at &0C00, containing:
  STY &0C03              \
