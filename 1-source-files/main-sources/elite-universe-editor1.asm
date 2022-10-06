@@ -65,8 +65,6 @@ token8 = &A495
 
 ENDIF
 
-OSFILE = &FFDD          \ The address for the OSFILE routine
-
 keyA = &41              \ See TRANTABLE for key values
 keyE = &45
 keyK = &4B
@@ -122,7 +120,7 @@ ENDIF
 
 .scen0
 
- LDA DefaultName,X      \ Copy the X-th character of the filename to NAME
+ LDA defaultName,X      \ Copy the X-th character of the filename to NAME
  STA NAME,X
 
  DEX                    \ Decrement the loop counter
@@ -1936,7 +1934,6 @@ ENDIF
  LDX #0                 \ Move right, returning from the subroutine using a tail
  LDY #0                 \ call
  JMP MoveShip
-
 
 IF _MASTER_VERSION
 

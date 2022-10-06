@@ -29,6 +29,106 @@
 
 \ ******************************************************************************
 \
+\       Name: defaultName
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: The default name for a universe file
+\
+\ ******************************************************************************
+
+.defaultName
+
+ EQUS "MyScene"
+ EQUB 13
+
+\ ******************************************************************************
+\
+\       Name: dirCommand
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: The OS command string for changing the disc directory to E
+\
+\ ******************************************************************************
+
+.dirCommand
+
+ EQUS "DIR E"
+ EQUB 13
+
+\ ******************************************************************************
+\
+\       Name: saveCommand
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: The OS command string for saving a universe file
+\
+\ ******************************************************************************
+
+.saveCommand
+
+IF _MASTER_VERSION
+
+IF _SNG47
+
+ EQUS "SAVE :1.U.MyScene  3FF +31E 0 0"
+ EQUB 13
+
+ELIF _COMPACT
+
+ EQUS "SAVE MyScene  3FF +31E 0 0"
+ EQUB 13
+
+ENDIF
+
+ENDIF
+
+\ ******************************************************************************
+\
+\       Name: deleteCommand
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: The OS command string for deleting a universe file
+\
+\ ******************************************************************************
+
+.deleteCommand
+
+IF _MASTER_VERSION
+
+ EQUS "DELETE :1.U.MyScene"
+ EQUB 13
+
+ENDIF
+
+\ ******************************************************************************
+\
+\       Name: loadCommand
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: The OS command string for loading a universe file
+\
+\ ******************************************************************************
+
+.loadCommand
+
+IF _MASTER_VERSION
+
+IF _SNG47
+
+ EQUS "LOAD :1.U.MyScene  3FF"
+ EQUB 13
+
+ELIF _COMPACT
+
+ EQUS "LOAD MyScene  3FF"
+ EQUB 13
+
+ENDIF
+
+ENDIF
+
+\ ******************************************************************************
+\
 \       Name: ShowToken
 \       Type: Subroutine
 \   Category: Universe editor
@@ -86,8 +186,8 @@
 \
 \ This routine asks for a disc drive number, and if it is a valid number (0-3)
 \ it displays a catalogue of the disc in that drive. It then asks for a filename
-\ to delete, updates the OS command at DELI so that when that command is run, it
-\ it deletes the correct file, and then it does the deletion.
+\ to delete, updates the OS command at deleteCommand so that when that command
+\ is run, it it deletes the correct file, and then it does the deletion.
 \
 \ Other entry points:
 \
@@ -101,9 +201,9 @@
                         \ name on the Master Compact) and catalogue that disc
                         \ or directory
 
- BCS ShowDiscMenu       \ If the C flag is set then an invalid drive number was
+ BCS ReturnToDiscMenu   \ If the C flag is set then an invalid drive number was
                         \ entered as part of the catalogue process, so jump to
-                        \ ShowDiscMenu to display the disc access menu
+                        \ ReturnToDiscMenu to display the disc access menu
 
 IF _6502SP_VERSION
 
@@ -120,9 +220,10 @@ ELIF _MASTER_VERSION
 IF _SNG47
 
  LDA CTLI+4             \ The call to CATS above put the drive number into
- STA DELI+8             \ CTLI+4, so copy the drive number into DELI+8 so that
-                        \ the drive number in the "DELETE :1.1234567" string
-                        \ gets updated (i.e. the number after the colon)
+ STA deleteCommand+8    \ deleteCommand+4, so copy the drive number into
+                        \ deleteCommand+8 so that the drive number in the
+                        \ "DELETE :1.U.1234567" string gets updated (i.e. the
+                        \ number after the colon)
 
 ENDIF
 
@@ -135,7 +236,7 @@ ENDIF
                         \ to INWK+5, with the text length in Y
 
  TYA                    \ If no text was entered (Y = 0) then jump to
- BEQ ShowDiscMenu       \ ShowDiscMenu to display the disc access menu
+ BEQ ReturnToDiscMenu   \ ReturnToDiscMenu to display the disc access menu
 
                         \ We now copy the entered filename from INWK to DELI, so
                         \ that it overwrites the filename part of the string,
@@ -155,9 +256,11 @@ IF _SNG47
                         \ that it overwrites the filename part of the string,
                         \ i.e. the "E.1234567" part of "DELETE :1.1234567"
 
- LDX #9                 \ Set up a counter in X to count from 9 to 1, so that we
+ LDX #8                 \ Set up a counter in X to count from 9 to 1, so that we
                         \ copy the string starting at INWK+4+1 (i.e. INWK+5) to
-                        \ DELI+9+1 (i.e. DELI+10 onwards, or "1.1234567")
+                        \ deleteCommand+9+1 (i.e. DELI+10 onwards, or "1.1234567")
+                        \
+                        \ This is 9 in the original, which is a bug
 
 ELIF _COMPACT
 
@@ -190,7 +293,7 @@ ELIF _MASTER_VERSION
 IF _SNG47
 
  LDA INWK+4,X           \ Copy the X-th byte of INWK+4 to the X-th byte of
- STA DELI+9,X           \ DELI+9
+ STA deleteCommand+11,X \ deleteCommand+11
 
  DEX                    \ Decrement the loop counter
 
@@ -215,16 +318,21 @@ ENDIF
 
 ENDIF
 
+IF _6502SP_VERSION
+
  LDX #LO(DELI)          \ Set (Y X) to point to the OS command at DELI, which
  LDY #HI(DELI)          \ contains the DFS command for deleting this file
 
-IF _6502SP_VERSION
 
  JSR SCLI2              \ Call SCLI2 to execute the OS command at (Y X), which
                         \ deletes the file, setting the SVN flag while it's
                         \ running to indicate disc access is in progress
 
 ELIF _MASTER_VERSION
+
+ LDX #LO(deleteCommand) \ Set (Y X) to point to the OS command at deleteCommand, which
+ LDY #HI(deleteCommand) \ contains the DFS command for deleting this file
+
 
  JSR OSCLI              \ Call OSCLI to execute the OS command at (Y X), which
                         \ catalogues the disc
@@ -233,109 +341,8 @@ ELIF _MASTER_VERSION
 
 ENDIF
 
- JMP ShowDiscMenu       \ Jump to ShowDiscMenu to display the disc access menu
+ JMP ReturnToDiscMenu   \ Jump to ReturnToDiscMenu to display the disc access menu
                         \ and return from the subroutine using a tail call
-
-\ ******************************************************************************
-\
-\       Name: DiscBreak
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: The BRKV handler for disc access operations
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine is used to display error messages from the disc filing system
-\ while disc access operations are being performed. When called, it makes a beep
-\ and prints the system error message in the block pointed to by (&FD &FE),
-\ which is where the disc filing system will put any disc errors (such as "File
-\ not found", "Disc error" and so on). It then waits for a key press and returns
-\ to the disc access menu.
-\
-\ BRKV is set to this routine at the start of the SVE routine, just before the
-\ disc access menu is shown, and it reverts to BRBR at the end of the SVE
-\ routine after the disc access menu has been processed. In other words, BRBR is
-\ the standard BRKV handler for the game, and it's swapped out to MEBRK for disc
-\ access operations only.
-\
-\ When it is the BRKV handler, the routine can be triggered using a BRK
-\ instruction. The main difference between this routine and the standard BRKV
-\ handler in BRBR is that this routine returns to the disc access menu rather
-\ than restarting the game, and it doesn't decrement the brkd counter.
-\
-\ ******************************************************************************
-
-.DiscBreak
-
- LDX stack              \ Set the stack pointer to the value that we stored in
- TXS                    \ the stack variable, so that's back to the value it had
-                        \ before we set BRKV to point to MEBRK in the SVE
-                        \ routine
-
-IF _6502SP_VERSION
-
- JSR backtonormal       \ Disable the keyboard and set the SVN flag to 0
-
- TAY                    \ The call to backtonormal sets A to 0, so this sets Y
-                        \ to 0, which we use as a loop counter below
-
-
-ELIF _MASTER_VERSION
-
- JSR SWAPZP             \ Call SWAPZP to restore the top part of zero page
-
- STZ CATF               \ Set the CATF flag to 0, so the TT26 routine reverts to
-                        \ standard formatting
-
- LDY #0                 \ Set Y to 0, which we use as a loop counter below
-
-ENDIF
-
- LDA #7                 \ Set A = 7 to generate a beep before we print the error
-                        \ message
-
-.dbrk1
-
-IF _6502SP_VERSION
-
- JSR OSWRCH             \ Print the character in A (which contains a beep on the
-                        \ first loop iteration), and then any non-zero
-                        \ characters we fetch from the error message
-
-ELIF _MASTER_VERSION
-
- JSR CHPR               \ Print the character in A, which contains a line feed
-                        \ on the first loop iteration, and then any non-zero
-                        \ characters we fetch from the error message
-
-ENDIF
-
- INY                    \ Increment the loop counter
-
-IF _6502SP_VERSION
-
- BEQ dbrk2              \ If Y = 0 then we have worked our way through a whole
-                        \ page, so jump to retry to wait for a key press and
-                        \ display the disc access menu (this BEQ is effectively
-                        \ a JMP, as we didn't take the BNE branch above)
-
-ENDIF
-
- LDA (&FD),Y            \ Fetch the Y-th byte of the block pointed to by
-                        \ (&FD &FE), so that's the Y-th character of the message
-                        \ pointed to by the MOS error message pointer
-
- BNE dbrk1              \ If the fetched character is non-zero, loop back to the
-                        \ JSR OSWRCH above to print the it, and keep looping
-                        \ until we fetch a zero (which marks the end of the
-                        \ message)
-
-.dbrk2
-
- JSR t                  \ Scan the keyboard until a key is pressed, returning
-                        \ the ASCII code in A and X
-
- JMP afterBrk           \ Jump to afterBrk to display the disc access menu
 
 \ ******************************************************************************
 \
@@ -370,16 +377,16 @@ IF _6502SP_VERSION
 
  LDA #&4C               \ Stop MEBRK error handler from returning to the SVE
  STA SVE                \ routine, jump back here instead
- LDA #LO(ShowDiscMenu)
+ LDA #LO(ReturnToDiscMenu)
  STA SVE+1
- LDA #HI(ShowDiscMenu)
+ LDA #HI(ReturnToDiscMenu)
  STA SVE+2
 
 ELIF _MASTER_VERSION
 
- LDA #LO(afterBrk)      \ Stop BRBR error handler from returning to the SVE
- STA DEATH-2            \ routine, jump back here instead
- LDA #HI(afterBrk)
+ LDA #LO(ReturnToDiscMenu) \ Stop BRBR error handler from returning to the SVE
+ STA DEATH-2               \ routine, jump back here instead
+ LDA #HI(ReturnToDiscMenu)
  STA DEATH-1
 
 ENDIF
@@ -410,7 +417,16 @@ IF _MASTER_VERSION
 
 ENDIF
 
-.afterBrk
+\ ******************************************************************************
+\
+\       Name: ReturnToDiscMenu
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Show the universe disc menu
+\
+\ ******************************************************************************
+
+.ReturnToDiscMenu
 
                         \ The following is based on the SVE routine for the
                         \ normal disc access menu
@@ -463,7 +479,9 @@ ENDIF
 
                         \ Option 4: Delete
 
- JMP DeleteUniverse     \ Delete a file
+ JSR DeleteUniverse     \ Delete a file
+
+ JMP ReturnToDiscMenu
 
 .disc1
 
@@ -510,7 +528,7 @@ ENDIF
  JSR t                  \ Scan the keyboard until a key is pressed, returning
                         \ the ASCII code in A and X
 
- JMP ShowDiscMenu       \ Show the disc menu again
+ JMP ReturnToDiscMenu   \ Show the disc menu again
 
 .disc7
 
@@ -518,7 +536,7 @@ ENDIF
 
  JSR SaveUniverse       \ Save the universe file
 
- JMP ShowDiscMenu       \ Show the disc menu again
+ JMP ReturnToDiscMenu   \ Show the disc menu again
 
 .disc9
 
@@ -618,34 +636,6 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: DefaultName
-\       Type: Variable
-\   Category: Universe editor
-\    Summary: The default name for a universe file
-\
-\ ******************************************************************************
-
-.DefaultName
-
- EQUS "MyScene"
- EQUB 13
-
-\ ******************************************************************************
-\
-\       Name: dirCommand
-\       Type: Variable
-\   Category: Universe editor
-\    Summary: The OS command string for changing the disc directory to E
-\
-\ ******************************************************************************
-
-.dirCommand
-
- EQUS "DIR E"
- EQUB 13
-
-\ ******************************************************************************
-\
 \       Name: LoadUniverse
 \       Type: Subroutine
 \   Category: Universe editor
@@ -654,6 +644,8 @@ ENDIF
 \ ******************************************************************************
 
 .LoadUniverse
+
+IF _6502SP_VERSION
 
  JSR ZEBC               \ Call ZEBC to zero-fill pages &B and &C
 
@@ -680,12 +672,25 @@ ENDIF
  LDY #LO(1+&2E4+JUNK-FRIN+1)
  STY &0C0A
 
+ELIF _MASTER_VERSION
+
+ JSR SetFilename        \ Copy the filename to the load and save commands
+
+ENDIF
+
  LDA #&FF               \ Call SaveLoadFile with A = &FF to load the universe
- JSR SaveLoadFile       \ file to address K%
+ JSR SaveLoadFile       \ file to address K%-1
 
  BCS load1              \ If the C flag is set then an invalid drive number was
-                        \ entered during the call to QUS1 and the file wasn't
-                        \ loaded, so jump to LOR to return from the subroutine
+                        \ entered during the call to SaveLoadFile and the file
+                        \ wasn't loaded, so jump to load1 to skip the following
+                        \ and return from the subroutine
+
+ JSR StoreName          \ Transfer the universe filename from INWK to NAME, to
+                        \ set it as the current filename
+
+                        \ We now disssemble the file, by copying the data after
+                        \ the end of the K% block into FRIN, MANY and JUNK
 
  LDA #HI(K%+&2E4)       \ Copy NOSH + 1 bytes from K%+&2E4 to FRIN
  STA P+1
@@ -729,8 +734,6 @@ ENDIF
 
 .SaveUniverse
 
- JSR ZEBC               \ Call ZEBC to zero-fill pages &B and &C
-
  JSR GTNMEW             \ If we get here then option 2 (save) was chosen, so
                         \ call GTNMEW to fetch the name of the commander file
                         \ to save (including drive number and directory) into
@@ -738,6 +741,10 @@ ENDIF
 
  JSR StoreName          \ Transfer the universe filename from INWK to NAME, to
                         \ set it as the current filename
+
+IF _6502SP_VERSION
+
+ JSR ZEBC               \ Call ZEBC to zero-fill pages &B and &C
 
  LDY #HI(K%-1)          \ Set up an OSFILE block at &0C00, containing:
  STY &0C0B              \
@@ -750,6 +757,16 @@ ENDIF
  STY &0C0F
  LDY #LO(K%+&2E4+JUNK-FRIN+1)
  STY &0C0E
+
+ELIF _MASTER_VERSION
+
+ JSR SetFilename        \ Copy the filename to the load and save commands
+
+ENDIF
+
+                        \ We now assemble the file in one place, by copying the
+                        \ data from FRIN, MANY and JUNK to the space after the
+                        \ end of the K% ship data block
 
  LDA #HI(FRIN)          \ Copy NOSH + 1 bytes from FRIN to K%+&2E4
  STA P+1
@@ -794,6 +811,109 @@ ENDIF
                         \ of this routine
 
  RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: SetFilename
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Copy the filename from INWK to the save and load commands 
+\
+\ ******************************************************************************
+
+IF _MASTER_VERSION
+
+.SetFilename
+
+ LDY #0                 \ We start by changing the load and save commands to
+                        \ contain the filename that was just entered by the
+                        \ user, so we set an index in Y so we can copy the
+                        \ filename from INWK+5 into the command
+
+.setf1
+
+ LDA INWK+5,Y           \ Fetch the Y-th character of the filename
+
+ CMP #13                \ If the character is a carriage return then we have
+ BEQ setf2             \ reached the end of the filename, so jump to setf2 as
+                        \ we have now copied the whole filename
+
+IF _SNG47
+
+ STA loadCommand+10,Y   \ Store the Y-th character of the filename in the Y-th
+                        \ character of loadCommand+10, where loadCommand+10
+                        \ points to the MyScene part of the load command in
+                        \ loadCommand:
+                        \
+                        \   "LOAD :1.U.MyScene  3FF"
+
+ STA saveCommand+10,Y   \ Store the Y-th character of the commander name in the
+                        \ Y-th character of saveCommand+10, where saveCommand+10
+                        \ points to the MyScene part of the save command in
+                        \ saveCommand:
+                        \
+                        \   "SAVE :1.U.MyScene  3FF +31E 0 0"
+
+ELIF _COMPACT
+
+ STA loadCommand+5,Y    \ Store the Y-th character of the filename in the Y-th
+                        \ character of loadCommand+5, where loadCommand+5
+                        \ points to the MyScene part of the load command in
+                        \ loadCommand:
+                        \
+                        \   "LOAD MyScene  3FF"
+
+ STA saveCommand+5,Y    \ Store the Y-th character of the commander name in the
+                        \ Y-th character of saveCommand+5, where saveCommand+5
+                        \ points to the MyScene part of the save command in
+                        \ saveCommand:
+                        \
+                        \   "SAVE MyScene  3FF +31E 0 0"
+ENDIF
+
+ INY                    \ Increment the loop counter
+
+ CPY #7                 \ If Y < 7 then there may be more characters in the
+ BCC setf1              \ name, so loop back to setf1 to fetch the next one
+
+.setf2
+
+ LDA #' '               \ We have copied the name into the loadCommand string,
+                        \ but the new name might be shorter then the previous
+                        \ one, so we now need to blank out the rest of the name
+                        \ with spaces, so we load the space character into A
+
+IF _SNG47
+
+ STA loadCommand+10,Y   \ Store the Y-th character of the filename in the Y-th
+                        \ character of loadCommand+10, which will be directly
+                        \ after the last letter we copied above
+
+ STA saveCommand+10,Y   \ Store the Y-th character of the commander name in the
+                        \ Y-th character of saveCommand+10, which will be
+                        \ directly after the last letter we copied above
+
+ELIF _COMPACT
+
+ STA loadCommand+5,Y    \ Store the Y-th character of the filename in the Y-th
+                        \ character of loadCommand+5, which will be directly
+                        \ after the last letter we copied above
+
+ STA saveCommand+5,Y    \ Store the Y-th character of the commander name in the
+                        \ Y-th character of saveCommand+5, which will be 
+                        \ directly after the last letter we copied above
+
+ENDIF
+
+ INY                    \ Increment the loop counter
+
+ CPY #7                 \ If Y < 7 then we haven't yet blanked out the whole
+ BCC setf2              \ name, so loop back to setf2 to blank the next one
+                        \ until the load string is ready for use
+
+ RTS                    \ Return from the subroutine
+
+ENDIF
 
 \ ******************************************************************************
 \
@@ -888,13 +1008,25 @@ ENDIF
                         \ in A, setting the C flag if an invalid drive number
                         \ was entered
 
+IF _6502SP_VERSION
+
  STA INWK+1             \ Store the ASCII drive number in INWK+1, which is the
                         \ drive character of the filename string ":0.E."
 
+ELIF _MASTER_VERSION
+
+ STA saveCommand+6      \ Store the ASCII drive number in saveCommand+6, which
+                        \ is the drive character of the filename string ":1.U."
+
+ STA loadCommand+6      \ Store the ASCII drive number in loadCommand+6, which
+                        \ is the drive character of the filename string ":1.U."
+
+ENDIF
+
  PLA                    \ Restore A from the stack
 
- BCS slod1              \ If the C flag is set, then an invalid drive number was
-                        \ entered, so jump to slod1 to return from the subroutine
+ BCS slod3              \ If the C flag is set, then an invalid drive number was
+                        \ entered, so jump to slod3 to return from the subroutine
 
 IF _6502SP_VERSION
 
@@ -906,8 +1038,6 @@ IF _6502SP_VERSION
 
  PLA                    \ Restore A from the stack
 
-ENDIF
-
  LDX #INWK              \ Store a pointer to INWK at the start of the block at
  STX &0C00              \ &0C00, storing #INWK in the low byte because INWK is
                         \ in zero page
@@ -915,7 +1045,19 @@ ENDIF
  LDX #0                 \ Set (Y X) = &0C00
  LDY #&C
 
-IF _MASTER_VERSION
+ JSR OSFILE             \ Call OSFILE to do the file operation specified in
+                        \ &0C00 (i.e. save or load a file depending on the value
+                        \ of A)
+
+ JSR CLDELAY            \ Pause for 1280 empty loops
+
+ LDA #0                 \ Set the SVN flag to 0 indicate that disc access has
+ JSR DODOSVN            \ finished
+
+ELIF _MASTER_VERSION
+
+ PHA                    \ Store A on the stack so we can restore it after the
+                        \ call to SWAPZP/NMIRELEASE
 
 IF _SNG47
 
@@ -927,30 +1069,33 @@ ELIF _COMPACT
 
 ENDIF
 
-ENDIF
+ PLA                    \ Restore A from the stack
 
- JSR OSFILE             \ Call OSFILE to do the file operation specified in
-                        \ &0C00 (i.e. save or load a file depending on the value
-                        \ of A)
+ BNE slod2              \ If A is non-zero then we need to load the file, so
+                        \ jump to slod2
 
-IF _MASTER_VERSION
+ LDX #LO(saveCommand)   \ Set (Y X) to point to the save command
+ LDY #HI(saveCommand)
+
+ BNE slod2              \ Jump to slod2 (this BNE is effectively a JMP as Y is
+                        \ never zero
+
+.slod1
+
+ LDX #LO(loadCommand)   \ Set (Y X) to point to the load command
+ LDY #HI(loadCommand)
+
+.slod2
+
+ JSR OSCLI              \ Call OSCLI to run the load or save OS command
 
  JSR SWAPZP             \ Call SWAPZP to restore the top part of zero page
 
 ENDIF
 
-IF _6502SP_VERSION
-
- JSR CLDELAY            \ Pause for 1280 empty loops
-
- LDA #0                 \ Set the SVN flag to 0 indicate that disc access has
- JSR DODOSVN            \ finished
-
-ENDIF
-
  CLC                    \ Clear the C flag
 
-.slod1
+.slod3
 
  RTS                    \ Return from the subroutine
 
