@@ -1144,6 +1144,11 @@ ELIF _MASTER_VERSION
  STA ZINF
 
 ENDIF
+
+ STZ ALPHA              \ Reset ALPHA (roll angle alpha) and ALP1 (magnitude of
+ STZ ALP1               \ roll angle alpha) to 0, as RES2 sets them to 3, which
+                        \ makes us roll (which we don't want)
+
                         \ We now do what ZERO would have done, but leaving
                         \ the ship slots alone, and we then call DIALS and ZINF
                         \ as we disabled them above

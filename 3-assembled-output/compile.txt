@@ -16376,45 +16376,47 @@ Saving file '3-assembled-output/ELTH.bin'
      7059   A9 20      LDA #&20
      705B   8D B6 4C   STA &4CB6
      705E   8D C3 4C   STA &4CC3
-     7061   A2 0C      LDX #&0C
-     7063   A9 00      LDA #&00
+     7061   64 8C      STZ &8C
+     7063   64 30      STZ &30
+     7065   A2 0C      LDX #&0C
+     7067   A9 00      LDA #&00
 .play1
-     7065   9D 8B 08   STA &088B,X
-     7068   CA         DEX
-     7069   10 FA      BPL &7065
-     706B   20 8A 25   JSR &258A
-     706E   20 C6 4C   JSR &4CC6
-     7071   20 69 54   JSR &5469
-     7074   A9 03      LDA #&03
-     7076   20 8B 33   JSR &338B
-     7079   A2 03      LDX #&03
-     707B   20 2D 54   JSR &542D
-     707E   20 14 51   JSR &5114
-     7081   20 DB 4C   JSR &4CDB
-     7084   20 F8 4A   JSR &4AF8
-     7087   20 37 3A   JSR &3A37
-     708A   20 A1 3B   JSR &3BA1
-     708D   A2 05      LDX #&05
+     7069   9D 8B 08   STA &088B,X
+     706C   CA         DEX
+     706D   10 FA      BPL &7069
+     706F   20 8A 25   JSR &258A
+     7072   20 C6 4C   JSR &4CC6
+     7075   20 69 54   JSR &5469
+     7078   A9 03      LDA #&03
+     707A   20 8B 33   JSR &338B
+     707D   A2 03      LDX #&03
+     707F   20 2D 54   JSR &542D
+     7082   20 14 51   JSR &5114
+     7085   20 DB 4C   JSR &4CDB
+     7088   20 F8 4A   JSR &4AF8
+     708B   20 37 3A   JSR &3A37
+     708E   20 A1 3B   JSR &3BA1
+     7091   A2 05      LDX #&05
 .play2
-     708F   B5 6B      LDA &6B,X
-     7091   9D FE 08   STA &08FE,X
-     7094   CA         DEX
-     7095   10 F8      BPL &708F
-     7097   E8         INX
-     7098   8E 95 08   STX &0895
-     709B   AD 04 09   LDA &0904
-     709E   8D F8 08   STA &08F8
-     70A1   AD 06 09   LDA &0906
-     70A4   8D FB 08   STA &08FB
-     70A7   AD 05 09   LDA &0905
-     70AA   8D FA 08   STA &08FA
-     70AD   A9 00      LDA #&00
-     70AF   85 90      STA &90
-     70B1   A2 00      LDX #&00
-     70B3   20 9F 6C   JSR &6C9F
-     70B6   A9 01      LDA #&01
-     70B8   85 7C      STA &7C
-     70BA   4C 62 4D   JMP &4D62
+     7093   B5 6B      LDA &6B,X
+     7095   9D FE 08   STA &08FE,X
+     7098   CA         DEX
+     7099   10 F8      BPL &7093
+     709B   E8         INX
+     709C   8E 95 08   STX &0895
+     709F   AD 04 09   LDA &0904
+     70A2   8D F8 08   STA &08F8
+     70A5   AD 06 09   LDA &0906
+     70A8   8D FB 08   STA &08FB
+     70AB   AD 05 09   LDA &0905
+     70AE   8D FA 08   STA &08FA
+     70B1   A9 00      LDA #&00
+     70B3   85 90      STA &90
+     70B5   A2 00      LDX #&00
+     70B7   20 9F 6C   JSR &6C9F
+     70BA   A9 01      LDA #&01
+     70BC   85 7C      STA &7C
+     70BE   4C 62 4D   JMP &4D62
 .endUniverseEditor2
 ELITE I
 Assembled at &6E0A 
