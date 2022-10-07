@@ -34,6 +34,7 @@ repeatingKey = YSAV2    \ can reuse them
 
 keyA = &41
 keyE = &22
+keyH = &54
 keyK = &46
 keyL = &56
 keyO = &36
@@ -67,6 +68,7 @@ ENDIF
 
 keyA = &41              \ See TRANTABLE for key values
 keyE = &45
+keyH = &48
 keyK = &4B
 keyL = &4C
 keyO = &4F
@@ -515,6 +517,10 @@ ENDIF
  BNE P%+5
  JMP ResetShip
 
+ CMP #keyH              \ H (highlight on scanner)
+ BNE P%+5
+ JMP HighlightScanner
+
  CMP #keyAt             \ @ (show disc access menu)
  BNE P%+5
  JMP ShowDiscMenu
@@ -763,8 +769,7 @@ ENDIF
 
  JSR MV5                \ Draw the current ship on the scanner to remove it
 
- LDY currentSlot        \ Get the current ship type
- LDX FRIN,Y
+ LDX TYPE               \ Get the current ship type
 
  LDA shpcol,X           \ Set A to the ship colour for this type, from the X-th
                         \ entry in the shpcol table
@@ -1881,59 +1886,182 @@ ENDIF
 
 \ ******************************************************************************
 \
+\       Name: HighlightScanner
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Highlight the current ship on the scanner
+\
+\ ******************************************************************************
+
+.HighlightScanner
+
+ LDX TYPE               \ If this is the sun or planet, give an error beep and
+ BPL P%+5               \ return from the subroutine using a tail call, as they
+ JMP MakeErrorBeep      \ don't appear on the scanner
+
+ LDX #10                \ Move the ship on the scanner up by up to 10 steps
+
+.hsca1
+
+ PHX                    \ Store the loop counter in X on the stack
+
+ JSR SCAN               \ Draw the ship on the scanner to remove it
+
+ LDA INWK+4             \ Move the ship up/down by 2, applied to y_hi
+ CLC
+ ADC #2
+ STA INWK+4
+ BCC P%+4
+ INC INWK+5
+
+ JSR SCAN               \ Redraw the ship on the scanner
+
+ LDY #2                 \ Wait for 2/50 of a second (0.04 seconds)
+ JSR DELAY
+
+ PLX                    \ Retrieve the loop counter in X and decrement it
+ DEX
+
+ BPL hsca1              \ Loop back until we have moved the ship X times
+
+ LDX #10                \ Move the ship on the scanner up by up to 10 steps
+
+.hsca2
+
+ PHX                    \ Store the loop counter in X on the stack
+
+ JSR SCAN               \ Draw the ship on the scanner to remove it
+
+ LDA INWK+4             \ Move the ship down/up by 2, applied to y_hi
+ SEC
+ SBC #2
+ STA INWK+4
+ BCS P%+4
+ DEC INWK+5
+
+ JSR SCAN               \ Draw the ship on the scanner to remove it
+
+ LDY #2                 \ Wait for 2/50 of a second (0.04 seconds)
+ JSR DELAY
+
+ PLX                    \ Retrieve the loop counter in X and decrement it
+ DEX
+
+ BPL hsca2              \ Loop back until we have moved the ship X times
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
 \       Name: HighlightShip
 \       Type: Subroutine
 \   Category: Universe editor
-\    Summary: Highlight the current ship
+\    Summary: Highlight the current ship on-screen
 \
 \ ******************************************************************************
 
 .HighlightShip
 
- JSR MV5                \ Hide the ship on the scanner
+ LDX TYPE               \ Get the current ship type
 
- JSR high1              \ Highlight the ship, showing the ship on the scanner
+ BMI high8              \ If this is the planet or sun, jump to high8
 
- JSR MV5                \ Hide the ship on the scanner
+                        \ This is a ship or station
 
-                        \ Fall through into high1 to highlight the ship, showing
-                        \ the ship on the scanner
+ LDA INWK+31            \ If bit 5 of byte #31 is set, then the ship is
+ AND #%00100000         \ exploding, so return from the subroutine
+ BNE HighlightShip-1
 
-.high1
+ LDA shpcol,X           \ Set A to the ship colour for this type, from the X-th
+                        \ entry in the shpcol table
 
- JSR MV5                \ Toggle the ship on the scanner
+IF _6502SP_VERSION
 
- LDX #0                 \ Move right
- LDY #0
- JSR MoveShip
+ JSR DOCOL              \ Send a #SETCOL command to the I/O processor to switch
+                        \ to this colour
 
- LDX #0                 \ Move right
- LDY #0
- JSR MoveShip
+ELIF _MASTER_VERSION
 
- LDX #0                 \ Move left
- LDY #%10000000
- JSR MoveShip
+ STA COL                \ Switch to this colour
 
- LDX #0                 \ Move left
- LDY #%10000000
- JSR MoveShip
+ENDIF
 
- LDX #0                 \ Move left
- LDY #%10000000
- JSR MoveShip
+ JSR high2              \ Repeat the following subroutine twice
 
- LDX #0                 \ Move left
- LDY #%10000000
- JSR MoveShip
+ LDX currentSlot        \ Get the ship data for the current slot, as otherwise
+ JSR GetShipData        \ we will leave the wrong axes in INWK, and return from
+                        \ the subroutine using a tail call
 
- LDX #0                 \ Move right
- LDY #0
- JSR MoveShip
+ LDY #5                 \ Wait for 5/50 of a second (0.1 seconds)
+ JSR DELAY
 
- LDX #0                 \ Move right, returning from the subroutine using a tail
- LDY #0                 \ call
- JMP MoveShip
+.high2
+
+ LDA NEWB               \ Set bit 7 of the ship to indicate it has docked (so
+ ORA #%10000000         \ the call to LL9 removes it from the screen)
+ STA NEWB
+
+ JSR SCAN               \ Draw the ship on the scanner to remove it
+
+ JSR PLUT               \ Call PLUT to update the geometric axes in INWK to
+                        \ match the view (front, rear, left, right)
+
+ JSR LL9                \ Draw the existing ship to erase it
+
+ LDY #5                 \ Wait for 5/50 of a second (0.1 seconds)
+ JSR DELAY
+
+ LDX currentSlot        \ Get the ship data for the current slot, as otherwise
+ JSR GetShipData        \ we will use the wrong axes in INWK
+
+ JSR SCAN               \ Redraw the ship on the scanner
+
+ JSR PLUT               \ Call PLUT to update the geometric axes in INWK to
+                        \ match the view (front, rear, left, right)
+
+ JMP LL9                \ Redraw the existing ship
+
+.high8
+
+IF _6502SP_VERSION
+
+ LDA #GREEN             \ Send a #SETCOL GREEN command to the I/O processor to
+ JSR DOCOL              \ switch to stripe 3-1-3-1, which is cyan/yellow in the
+                        \ space view
+
+ELIF _MASTER_VERSION
+
+ LDA #GREEN             \ Switch to stripe 3-1-3-1, which is cyan/yellow in the
+ STA COL                \ space view
+
+ENDIF
+
+.high7
+
+ JSR high9              \ Repeat the following subroutine twice
+
+ LDY #5                 \ Wait for 5/50 of a second (0.1 seconds)
+ JSR DELAY
+
+.high9
+
+ LDA #48                \ Move the planet or sun far away so it gets erased by
+ STA INWK+8             \ the call to LL9
+
+ JSR LL9                \ Redraw the planet or sun, which erases it from the
+                        \ screen
+
+ LDY #5                 \ Wait for 5/50 of a second (0.1 seconds)
+ JSR DELAY
+
+ LDX currentSlot        \ Get the ship data for the current slot, as otherwise
+ JSR GetShipData        \ we will use the wrong axes in INWK
+
+ JSR PLUT               \ Call PLUT to update the geometric axes in INWK to
+                        \ match the view (front, rear, left, right)
+
+ JMP LL9                \ Redraw the planet or sun and return from the
+                        \ subroutine using a tail call
 
 IF _MASTER_VERSION
 
