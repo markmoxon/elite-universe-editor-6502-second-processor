@@ -29,6 +29,466 @@
 
 \ ******************************************************************************
 \
+\       Name: ShowPrompt
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Show a prompt on-screen
+\
+\ ------------------------------------------------------------------------------
+\
+\ Display an in-flight message in capitals at the bottom of the space view.
+\
+\ Arguments:
+\
+\   A                   The text token to be printed
+\
+\ ******************************************************************************
+
+.ShowPrompt
+
+ PHA                    \ Store token number on the stack
+
+IF _6502SP_VERSION
+
+ LDA #YELLOW            \ Send a #SETCOL YELLOW command to the I/O processor to
+ JSR DOCOL              \ switch to colour 1, which is yellow
+
+ELIF _MASTER_VERSION
+
+ LDA #YELLOW            \ Switch to colour 1, which is yellow
+ STA COL
+
+ENDIF
+
+ LDX #0                 \ Set QQ17 = 0 to switch to ALL CAPS
+ STX QQ17
+
+ LDA #10                \ Move the text cursor to column 10
+ JSR DOXC
+
+ LDA #22                \ Move the text cursor to row 22
+ JSR DOYC
+
+ PLA                    \ Get token number
+
+ JMP prq                \ Print the text token in A, followed by a question mark
+                        \ and return from the subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: PrintSlotNumber
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Print the current slot number
+\
+\ ******************************************************************************
+
+.PrintSlotNumber
+
+ LDX currentSlot        \ Print the current slot number at text location (0, 1)
+ JMP ee3                \ and return from the subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: GetCurrentSlot
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Fetch the slot number for the ship in INF
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   X                   Slot number for ship in INF
+\
+\   C flag              Clear = success (ship slot found)
+\                       Set = failure (ship slot not found)
+\
+\ ******************************************************************************
+
+.GetCurrentSlot
+
+ LDX #2                 \ Start at slot 2 (first ship slot)
+
+.slot1
+
+ LDA FRIN,X             \ If slot is empty, move onto next slot
+ BEQ slot2
+
+ TXA                    \ Set Y = X * 2
+ ASL A
+ TAY
+
+ LDA UNIV,Y             \ If INF(1 0) <> UNIV(1 0), jump to next slot
+ CMP INF
+ BNE slot2
+ LDA UNIV+1,Y
+ CMP INF+1
+ BNE slot2
+
+ CLC                    \ Return with C flag clear to indicate success
+ RTS
+
+.slot2
+
+ INX                    \ Otherwise increment X to point to the next slot
+
+ CPX #NOSH              \ If we haven't reached the last slot yet, loop back
+ BCC slot1
+
+ RTS                    \ Return from the subroutine with C flag set to indicate
+                        \ failure
+
+\ ******************************************************************************
+\
+\       Name: NextSlot
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Go to next slot
+\
+\ ******************************************************************************
+
+.NextSlot
+
+ LDX currentSlot        \ Fetch the current slot number
+
+ INX                    \ Increment to point to the next slot
+
+ LDA FRIN,X             \ If slot X contains a ship, jump to SwitchToSlot to get
+ BNE SwitchToSlot       \ the ship's data and return from the subroutine using a
+                        \ tail call
+
+ LDX #0                 \ Otherwise wrap round to slot 0, the planet
+
+ BEQ SwitchToSlot       \ Jump to SwitchToSlot to get the planet's data (this BEQ
+                        \ is effectively a JMP as X is always 0), returning from
+                        \ the subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: PreviousSlot
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Go to previous slot
+\
+\ ******************************************************************************
+
+.PreviousSlot
+
+ LDX currentSlot        \ Fetch the current slot number
+
+ DEX                    \ Decrement to point to the previous slot
+
+ BPL SwitchToSlot       \ If X is positive, then this is a valid ship slot, so
+                        \ jump to SwitchToSlot to get the ship's data
+
+                        \ Otherwise we have gone past slot 0, so we need to find
+                        \ the last ship slot
+
+ LDX #1                 \ Start at the first ship slot (slot 2) and work forwards
+                        \ until we find an empty slot
+
+.prev1
+
+ INX                    \ Increment the slot number
+
+ CPX #NOSH              \ If we haven't reached the last slot, jump to prev2 to
+ BCC prev2              \ skip the following
+
+ LDX #NOSH-1            \ There are no empty ship slots, so set X to the last
+ BNE SwitchToSlot       \ slot and jump to SwitchToSlot (this BNE is effectively
+                        \ a JMP as X is never 0)
+
+.prev2
+
+ LDA FRIN,X             \ If slot X is populated, loop back to move to the next
+ BNE prev1              \ slot
+
+                        \ If we get here then we hae found the first empty slot
+
+ DEX                    \ Decrement the slot number to the populated slot before
+                        \ the empty one we just found
+
+                        \ If we get here, we have found the correct slot, so
+                        \ fall through into SwitchToSlot to get the ship's data
+
+\ ******************************************************************************
+\
+\       Name: SwitchToSlot
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Switch to a new specific slot, updating the slot number, fetching
+\             the ship data and highlighting the ship
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   New slot number
+\
+\ ******************************************************************************
+
+.SwitchToSlot
+
+ JSR UpdateSlotNumber   \ Store and print the new slot number
+
+ LDX currentSlot        \ Get the ship data for the new slot
+ JSR GetShipData
+
+ JMP HighlightShip      \ Highlight the new ship, so we can see which one it is,
+                        \ and return from the subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: GetShipData
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Fetch the ship info for a specified ship slot
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   Slot number of ship data to fetch
+\
+\ Returns:
+\
+\   X                   X is unchanged
+\
+\ ******************************************************************************
+
+.GetShipData
+
+ LDA FRIN,X             \ Fetch the contents of this slot into A. If it is 0
+ BEQ gets2              \ then this slot is empty, so jump to gets2 to return
+                        \ from the subroutine
+
+ STA TYPE               \ Store the ship type in TYPE
+
+ JSR GINF               \ Call GINF to fetch the address of the ship data block
+                        \ for the ship in slot X and store it in INF. The data
+                        \ block is in the K% workspace, which is where all the
+                        \ ship data blocks are stored
+
+                        \ Next we want to copy the ship data block from INF to
+                        \ the zero-page workspace at INWK, so we can process it
+                        \ more efficiently
+
+ LDY #NI%-1             \ There are NI% bytes in each ship data block (and in
+                        \ the INWK workspace, so we set a counter in Y so we can
+                        \ loop through them
+
+.gets1
+
+ LDA (INF),Y            \ Load the Y-th byte of INF and store it in the Y-th
+ STA INWK,Y             \ byte of INWK
+
+ DEY                    \ Decrement the loop counter
+
+ BPL gets1              \ Loop back for the next byte until we have copied the
+                        \ last byte from INF to INWK
+
+ LDA TYPE               \ If the ship type is negative then this indicates a
+ BMI gets2              \ planet or sun, so jump down to gets2, as the next bit
+                        \ sets up a pointer to the ship blueprint, which doesn't
+                        \ apply to planets and suns
+
+ ASL A                  \ Set Y = ship type * 2
+ TAY
+
+ LDA XX21-2,Y           \ The ship blueprints at XX21 start with a lookup
+ STA XX0                \ table that points to the individual ship blueprints,
+                        \ so this fetches the low byte of this particular ship
+                        \ type's blueprint and stores it in XX0
+
+ LDA XX21-1,Y           \ Fetch the high byte of this particular ship type's
+ STA XX0+1              \ blueprint and store it in XX0+1
+
+.gets2
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: HighlightScanner
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Highlight the current ship on the scanner
+\
+\ ******************************************************************************
+
+.HighlightScanner
+
+ LDX TYPE               \ If this is the sun or planet, give an error beep and
+ BPL P%+5               \ return from the subroutine using a tail call, as they
+ JMP MakeErrorBeep      \ don't appear on the scanner
+
+ LDX #10                \ Move the ship on the scanner up by up to 10 steps
+
+.hsca1
+
+ PHX                    \ Store the loop counter in X on the stack
+
+ JSR SCAN               \ Draw the ship on the scanner to remove it
+
+ LDA INWK+4             \ Move the ship up/down by 2, applied to y_hi
+ CLC
+ ADC #2
+ STA INWK+4
+ BCC P%+4
+ INC INWK+5
+
+ JSR SCAN               \ Redraw the ship on the scanner
+
+ LDY #2                 \ Wait for 2/50 of a second (0.04 seconds)
+ JSR DELAY
+
+ PLX                    \ Retrieve the loop counter in X and decrement it
+ DEX
+
+ BPL hsca1              \ Loop back until we have moved the ship X times
+
+ LDX #10                \ Move the ship on the scanner up by up to 10 steps
+
+.hsca2
+
+ PHX                    \ Store the loop counter in X on the stack
+
+ JSR SCAN               \ Draw the ship on the scanner to remove it
+
+ LDA INWK+4             \ Move the ship down/up by 2, applied to y_hi
+ SEC
+ SBC #2
+ STA INWK+4
+ BCS P%+4
+ DEC INWK+5
+
+ JSR SCAN               \ Draw the ship on the scanner to remove it
+
+ LDY #2                 \ Wait for 2/50 of a second (0.04 seconds)
+ JSR DELAY
+
+ PLX                    \ Retrieve the loop counter in X and decrement it
+ DEX
+
+ BPL hsca2              \ Loop back until we have moved the ship X times
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: HighlightShip
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Highlight the current ship on-screen
+\
+\ ******************************************************************************
+
+.HighlightShip
+
+ LDX TYPE               \ Get the current ship type
+
+ BMI high8              \ If this is the planet or sun, jump to high8
+
+                        \ This is a ship or station
+
+ LDA INWK+31            \ If bit 5 of byte #31 is set, then the ship is
+ AND #%00100000         \ exploding, so return from the subroutine
+ BNE HighlightShip-1
+
+ LDA shpcol,X           \ Set A to the ship colour for this type, from the X-th
+                        \ entry in the shpcol table
+
+IF _6502SP_VERSION
+
+ JSR DOCOL              \ Send a #SETCOL command to the I/O processor to switch
+                        \ to this colour
+
+ELIF _MASTER_VERSION
+
+ STA COL                \ Switch to this colour
+
+ENDIF
+
+ JSR high2              \ Repeat the following subroutine twice
+
+ LDX currentSlot        \ Get the ship data for the current slot, as otherwise
+ JSR GetShipData        \ we will leave the wrong axes in INWK, and return from
+                        \ the subroutine using a tail call
+
+ LDY #5                 \ Wait for 5/50 of a second (0.1 seconds)
+ JSR DELAY
+
+.high2
+
+ LDA NEWB               \ Set bit 7 of the ship to indicate it has docked (so
+ ORA #%10000000         \ the call to LL9 removes it from the screen)
+ STA NEWB
+
+ JSR SCAN               \ Draw the ship on the scanner to remove it
+
+ JSR PLUT               \ Call PLUT to update the geometric axes in INWK to
+                        \ match the view (front, rear, left, right)
+
+ JSR LL9                \ Draw the existing ship to erase it
+
+ LDY #5                 \ Wait for 5/50 of a second (0.1 seconds)
+ JSR DELAY
+
+ LDX currentSlot        \ Get the ship data for the current slot, as otherwise
+ JSR GetShipData        \ we will use the wrong axes in INWK
+
+ JSR SCAN               \ Redraw the ship on the scanner
+
+ JSR PLUT               \ Call PLUT to update the geometric axes in INWK to
+                        \ match the view (front, rear, left, right)
+
+ JMP LL9                \ Redraw the existing ship
+
+.high8
+
+IF _6502SP_VERSION
+
+ LDA #GREEN             \ Send a #SETCOL GREEN command to the I/O processor to
+ JSR DOCOL              \ switch to stripe 3-1-3-1, which is cyan/yellow in the
+                        \ space view
+
+ELIF _MASTER_VERSION
+
+ LDA #GREEN             \ Switch to stripe 3-1-3-1, which is cyan/yellow in the
+ STA COL                \ space view
+
+ENDIF
+
+.high7
+
+ JSR high9              \ Repeat the following subroutine twice
+
+ LDY #5                 \ Wait for 5/50 of a second (0.1 seconds)
+ JSR DELAY
+
+.high9
+
+ LDA #48                \ Move the planet or sun far away so it gets erased by
+ STA INWK+8             \ the call to LL9
+
+ JSR LL9                \ Redraw the planet or sun, which erases it from the
+                        \ screen
+
+ LDY #5                 \ Wait for 5/50 of a second (0.1 seconds)
+ JSR DELAY
+
+ LDX currentSlot        \ Get the ship data for the current slot, as otherwise
+ JSR GetShipData        \ we will use the wrong axes in INWK
+
+ JSR PLUT               \ Call PLUT to update the geometric axes in INWK to
+                        \ match the view (front, rear, left, right)
+
+ JMP LL9                \ Redraw the planet or sun and return from the
+                        \ subroutine using a tail call
+
+\ ******************************************************************************
+\
 \       Name: defaultName
 \       Type: Variable
 \   Category: Universe editor
@@ -1259,6 +1719,792 @@ ENDIF
  STA DELTA              \ possible at the start
 
  JMP TT100              \ Jump to TT100 to restart the main loop from the start
+
+\ ******************************************************************************
+\
+\       Name: UpdateDashboard
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Update the dashboard with the current ship's details
+\
+\ ******************************************************************************
+
+.UpdateDashboard
+
+ LDA INWK+27            \ Set DELTA to the ship's energy speed
+ STA DELTA
+
+ LDA INWK+28            \ Set FSH to the ship's acceleration
+ STA FSH
+
+ LDA INWK+29            \ Set ALP1 and ALP2 to the magnitude and sign of the
+ TAX                    \ roll counter (magnitude of ALP1 is in the range 0-31)
+ AND %01111111
+ LSR A
+ LSR A
+ STA ALP1
+ TXA
+ AND %10000000
+ STA ALP2
+
+ LDA INWK+30            \ Set BETA and BET1 to the magnitude and sign of the
+ TAX                    \ pitch counter (magnitude of BETA is in the range 0-7)
+ AND %01111111
+ LSR A
+ LSR A
+ LSR A
+ LSR A
+ STA BETA
+ TXA
+ AND %10000000
+ STA BET1
+
+ LDA INWK+35            \ Set ENERGY to the ship's energy level
+ STA ENERGY
+
+ LDX #0                 \ Set ASH to the ship's AI setting (on/off) from bit 7
+ BIT INWK+32            \ of INWK+32, reusing the aft shields indicator
+ BPL P%+4
+ LDX #&FF
+ STX ASH
+
+ LDX #0                 \ Set QQ14 to the ship's Innocent Bystander setting
+ LDA INWK+36            \ (on/off) from bit 5 of INWK+36 (NEWB), reusing the
+ AND #%00100000         \ fuel indicator
+ BEQ P%+4
+ LDX #70
+ STX QQ14
+
+ LDX #0                 \ Set CABTMP to the ship's Cop setting (on/off) from
+ BIT INWK+36            \ bit 6 of INWK+36 (NEWB), reusing the cabin temperature
+ BVC P%+4               \ indicator
+ LDX #&FF
+ STX CABTMP
+
+ LDX #0                 \ Set GNTMP to the ship's Cop setting (on/off) from
+ BIT INWK+32            \ bit 6 of INWK+32, reusing the laser temperature
+ BVC P%+4               \ indicator
+ LDX #&FF
+ STX GNTMP
+
+ LDA INWK+32            \ Set ALTIT to the ship's Aggression Level setting from
+ AND #%00111110         \ bits 1-5 of INWK+32, reusing the altitude indicator
+ ASL A
+ ASL A
+ STA ALTIT
+
+ JSR DIALS              \ Update the dashboard
+
+ LDA INWK+31            \ Get the number of missiles
+ AND #%00000111
+
+ CMP #5                 \ If there are 0 to 4 missiles, jump to upda1 to show
+ BCC upda1              \ them in green
+
+ LDY #YELLOW2           \ Modify the msblob routine so it shows missiles in
+ STY SAL8+1             \ yellow
+
+ SEC                    \ Subtract 4 from the missile count, so we just show the
+ SBC #4                 \ missiles in positions 5-7
+
+.upda1
+
+ STA NOMSL              \ Set NOMSL to the number of missiles to show
+
+ JSR msblob             \ Update the dashboard's missile indicators in green so
+                        \ none of them are targeted
+
+ LDA #GREEN2            \ Reverse the modification to the msblob routine so it
+ STA SAL8+1             \ shows missiles in green once again
+
+ JSR SetEBulb           \ Show or hide the E.C.M. bulb according to the setting
+                        \ of bit 0 of INWK+32
+
+ JSR SetSBulb           \ Show or hide the space station bulb according to the
+                        \ setting of bit 4 of INWK+36 (NEWB)
+
+.upda3
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: SetSBulb
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Show or hide the S bulb
+\
+\ ******************************************************************************
+
+.SetSBulb
+
+ LDA INWK+36            \ If the space station bulb setting in bit 4 of INWK+36
+ AND #%00010000         \ (NEWB) matches the display bit in showingS, then the
+ EOR showingS           \ bulb is already correct, so jump to sets1 to return
+ BEQ sets1              \ from the subroutine
+
+ JSR SPBLB              \ Flip the space station bulb on-screen
+
+ LDA #%00010000         \ Flip bit 4 of the showingS flag
+ EOR showingS
+ STA showingS
+
+.sets1
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: SetEBulb
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Show or hide the E bulb
+\
+\ ******************************************************************************
+
+.SetEBulb
+
+ LDA INWK+32            \ If the E.C.M. bulb setting in bit 0 of INWK+32 matches
+ AND #%00000001         \ the display bit in showingE, then the bulb is already
+ EOR showingE           \ correct, so jump to sete1 to return from the
+ BEQ sete1              \ subroutine
+
+ JSR ECBLB              \ Flip the E.C.M. bulb on-screen
+
+ LDA #%00000001         \ Flip bit 0 of the showingE flag
+ EOR showingE
+ STA showingE
+
+.sete1
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: ToggleValue
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Toggle one of the ship's details
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   Offset of INWK byte within INWK block
+\
+\   A                   Mask containing bits to toggle
+\
+\ ******************************************************************************
+
+.ToggleValue
+
+ STA P                  \ Store the bit mask in P
+
+ LDA INWK,X             \ Flip the corresponding bits in INWK+X
+ EOR P
+ STA INWK,X
+
+ JMP StoreValue         \ Store the updated results and update the dashboard
+
+\ ******************************************************************************
+\
+\       Name: ChangeMissiles
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Update the ship's missile count
+\
+\ ******************************************************************************
+
+.ChangeMissiles
+
+ LDA INWK+31            \ Extract the missile count from bits 0-2 into and stick
+ AND #%00000111         \ 0-4 of A and stick the result on the stack
+ PHA
+
+IF _6502SP_VERSION
+
+ LDX #0                 \ Call DKS4 with X = 0 to check whether the SHIFT key is
+ JSR DKS4               \ being pressed
+
+ELIF _MASTER_VERSION
+
+IF _SNG47
+
+ LDA #0                 \ Call DKS4 to check whether the SHIFT key is being
+ JSR DKS4               \ pressed
+
+ELIF _COMPACT
+
+ LDA #0                 \ Call DKS4mc to check whether the SHIFT key is being
+ JSR DKS4mc             \ pressed
+
+ENDIF
+
+ENDIF
+
+ BMI cham1              \ If SHIFT is being held, jump to cham1 to reduce the
+                        \ value
+
+ PLX                    \ Retrieve the missile count from the stack into X
+
+ INX                    \ Increment the number of missiles
+
+ CPX #%00001000         \ If we didn't go past the maximum value, jump to cham2
+ BCC cham2              \ to store the value
+
+ LDX #%00000111         \ Otherwise decrement the value again so we don't
+ BNE cham2              \ overflow and jump to cham2 to store the value (this
+                        \ BNE is effectively a JMP as X is always non-zero)
+
+.cham1
+
+ PLX                    \ Retrieve the missile count from the stack into X
+
+ DEX                    \ Decrement the number of missiles
+
+ CPX #255               \ If we didn't wrap around to 255, jump to cham2
+ BNE cham2              \ to store the value
+
+ INX                    \ Otherwise increment the number of missiles to 0
+
+.cham2
+
+ STX P                  \ Stick the new missile count into P
+
+ LDA INWK+31            \ Insert the new missile count into bits 0-2 of
+ AND #%11111000         \ INWK+31
+ ORA P
+ STA INWK+31
+
+ JMP StoreValue         \ Jump to StoreValue to store the new value
+
+\ ******************************************************************************
+\
+\       Name: ChangeAggression
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Update the ship's aggression level
+\
+\ ******************************************************************************
+
+.ChangeAggression
+
+ LDA INWK+32            \ Extract the aggression level from bits 1-5 into and stick
+ AND #%00111110         \ 0-4 of A and stick the result on the stack
+ LSR A
+ PHA
+
+IF _6502SP_VERSION
+
+ LDX #0                 \ Call DKS4 with X = 0 to check whether the SHIFT key is
+ JSR DKS4               \ being pressed
+
+ELIF _MASTER_VERSION
+
+IF _SNG47
+
+ LDA #0                 \ Call DKS4 to check whether the SHIFT key is being
+ JSR DKS4               \ pressed
+
+ELIF _COMPACT
+
+ LDA #0                 \ Call DKS4mc to check whether the SHIFT key is being
+ JSR DKS4mc             \ pressed
+
+ENDIF
+
+ENDIF
+
+ BMI chag1              \ If SHIFT is being held, jump to chag1 to reduce the
+                        \ value
+
+ PLX                    \ Retrieve the aggression level from the stack into X
+
+ INX                    \ Increment the aggression level
+
+ CPX #%00011111         \ If we didn't reach the maximum value, jump to chag2 
+ BCC chag2              \ to store the value
+
+ LDX #%00011111         \ Otherwise decrement the value again so we don't
+ BNE chag2              \ overflow and jump to chag2 to store the value (this
+                        \ BNE is effectively a JMP as X is always non-zero)
+
+.chag1
+
+ PLX                    \ Retrieve the aggression level from the stack into X
+
+ DEX                    \ Decrement the aggression level
+
+ CPX #255               \ If we didn't wrap around to 255, jump to chag2
+ BNE chag2              \ to store the value
+
+ INX                    \ Otherwise increment the value again so we don't
+                        \ underflow and fall through into chag2 to store the
+                        \ value
+
+.chag2
+
+ TXA                    \ Stick the new aggression level into P, shifted left
+ ASL A                  \ by one place so we can OR it into the correct place in
+ STA P                  \ INWK+32 (i.e. into bits 1-5)
+
+ LDA INWK+32            \ Insert the new aggression level into bits 1-5 of
+ AND #%11000001         \ INWK+32
+ ORA P
+ STA INWK+32
+
+ JMP StoreValue         \ Jump to StoreValue to store the new value
+
+\ ******************************************************************************
+\
+\       Name: ChangeValue
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Update one of the ship's details
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   Offset of INWK byte within INWK block
+\
+\ ******************************************************************************
+
+.ChangeValue
+
+ PHX                    \ Store the offset on the stack
+
+IF _6502SP_VERSION
+
+ LDX #0                 \ Call DKS4 with X = 0 to check whether the SHIFT key is
+ JSR DKS4               \ being pressed
+
+ELIF _MASTER_VERSION
+
+IF _SNG47
+
+ LDA #0                 \ Call DKS4 to check whether the SHIFT key is being
+ JSR DKS4               \ pressed
+
+ELIF _COMPACT
+
+ LDA #0                 \ Call DKS4mc to check whether the SHIFT key is being
+ JSR DKS4mc             \ pressed
+
+ENDIF
+
+ENDIF
+
+ BMI chan1              \ If SHIFT is being held, jump to chan1 to reduce the
+                        \ value
+
+ PLX                    \ Retrieve the offset from the stack
+
+ INC INWK,X             \ Increment the value at the correct offset
+
+ BNE StoreValue         \ If we didn't wrap around to zero, jump to StoreValue
+                        \ to store the value
+
+ DEC INWK,X             \ Otherwise decrement the value again so we don't
+ BMI StoreValue         \ overflow and jump to StoreValue to store the value
+
+.chan1
+
+ PLX                    \ Retrieve the offset from the stack
+
+ DEC INWK,X             \ Decrement the value at the correct offset
+
+ LDA INWK,X             \ If we didn't wrap around to 255, jump to StoreValue
+ CMP #255               \ to store the value
+ BNE StoreValue
+
+ INC INWK,X             \ Otherwise increment the value again so we don't
+                        \ underflow and fall through into StoreValue to store
+                        \ the value
+
+\ ******************************************************************************
+\
+\       Name: StoreValue
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Store an updated ship's details and update the dashboard
+\
+\ ******************************************************************************
+
+.StoreValue
+
+ JSR STORE              \ Call STORE to copy the ship data block at INWK back to
+                        \ the K% workspace at INF
+
+ JSR UpdateDashboard    \ Update the dashboard
+
+ RTS                    \ Return from the subroutine
+
+IF _MASTER_VERSION
+
+\ ******************************************************************************
+\
+\       Name: EJMP
+\       Type: Macro
+\   Category: Text
+\    Summary: Macro definition for jump tokens in the extended token table
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used when building the extended token table:
+\
+\   EJMP n              Insert a jump to address n in the JMTB table
+\
+\ See the deep dive on "Printing extended text tokens" for details on how jump
+\ tokens are stored in the extended token table.
+\
+\ Arguments:
+\
+\   n                   The jump number to insert into the table
+\
+\ ******************************************************************************
+
+MACRO EJMP n
+
+  EQUB n EOR VE
+
+ENDMACRO
+
+\ ******************************************************************************
+\
+\       Name: ECHR
+\       Type: Macro
+\   Category: Text
+\    Summary: Macro definition for characters in the extended token table
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used when building the extended token table:
+\
+\   ECHR 'x'            Insert ASCII character "x"
+\
+\ To include an apostrophe, use a backtick character, as in ECHR '`'.
+\
+\ See the deep dive on "Printing extended text tokens" for details on how
+\ characters are stored in the extended token table.
+\
+\ Arguments:
+\
+\   'x'                 The character to insert into the table
+\
+\ ******************************************************************************
+
+MACRO ECHR x
+
+  IF x = '`'
+    EQUB 39 EOR VE
+  ELSE
+    EQUB x EOR VE
+  ENDIF
+
+ENDMACRO
+
+\ ******************************************************************************
+\
+\       Name: ETOK
+\       Type: Macro
+\   Category: Text
+\    Summary: Macro definition for recursive tokens in the extended token table
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used when building the extended token table:
+\
+\   ETOK n              Insert extended recursive token [n]
+\
+\ See the deep dive on "Printing extended text tokens" for details on how
+\ recursive tokens are stored in the extended token table.
+\
+\ Arguments:
+\
+\   n                   The number of the recursive token to insert into the
+\                       table, in the range 129 to 214
+\
+\ ******************************************************************************
+
+MACRO ETOK n
+
+  EQUB n EOR VE
+
+ENDMACRO
+
+\ ******************************************************************************
+\
+\       Name: ETWO
+\       Type: Macro
+\   Category: Text
+\    Summary: Macro definition for two-letter tokens in the extended token table
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used when building the extended token table:
+\
+\   ETWO 'x', 'y'       Insert two-letter token "xy"
+\
+\ The newline token can be entered using ETWO '-', '-'.
+\
+\ See the deep dive on "Printing extended text tokens" for details on how
+\ two-letter tokens are stored in the extended token table.
+\
+\ Arguments:
+\
+\   'x'                 The first letter of the two-letter token to insert into
+\                       the table
+\
+\   'y'                 The second letter of the two-letter token to insert into
+\                       the table
+\
+\ ******************************************************************************
+
+MACRO ETWO t, k
+
+  IF t = '-' AND k = '-' : EQUB 215 EOR VE : ENDIF
+  IF t = 'A' AND k = 'B' : EQUB 216 EOR VE : ENDIF
+  IF t = 'O' AND k = 'U' : EQUB 217 EOR VE : ENDIF
+  IF t = 'S' AND k = 'E' : EQUB 218 EOR VE : ENDIF
+  IF t = 'I' AND k = 'T' : EQUB 219 EOR VE : ENDIF
+  IF t = 'I' AND k = 'L' : EQUB 220 EOR VE : ENDIF
+  IF t = 'E' AND k = 'T' : EQUB 221 EOR VE : ENDIF
+  IF t = 'S' AND k = 'T' : EQUB 222 EOR VE : ENDIF
+  IF t = 'O' AND k = 'N' : EQUB 223 EOR VE : ENDIF
+  IF t = 'L' AND k = 'O' : EQUB 224 EOR VE : ENDIF
+  IF t = 'N' AND k = 'U' : EQUB 225 EOR VE : ENDIF
+  IF t = 'T' AND k = 'H' : EQUB 226 EOR VE : ENDIF
+  IF t = 'N' AND k = 'O' : EQUB 227 EOR VE : ENDIF
+
+  IF t = 'A' AND k = 'L' : EQUB 228 EOR VE : ENDIF
+  IF t = 'L' AND k = 'E' : EQUB 229 EOR VE : ENDIF
+  IF t = 'X' AND k = 'E' : EQUB 230 EOR VE : ENDIF
+  IF t = 'G' AND k = 'E' : EQUB 231 EOR VE : ENDIF
+  IF t = 'Z' AND k = 'A' : EQUB 232 EOR VE : ENDIF
+  IF t = 'C' AND k = 'E' : EQUB 233 EOR VE : ENDIF
+  IF t = 'B' AND k = 'I' : EQUB 234 EOR VE : ENDIF
+  IF t = 'S' AND k = 'O' : EQUB 235 EOR VE : ENDIF
+  IF t = 'U' AND k = 'S' : EQUB 236 EOR VE : ENDIF
+  IF t = 'E' AND k = 'S' : EQUB 237 EOR VE : ENDIF
+  IF t = 'A' AND k = 'R' : EQUB 238 EOR VE : ENDIF
+  IF t = 'M' AND k = 'A' : EQUB 239 EOR VE : ENDIF
+  IF t = 'I' AND k = 'N' : EQUB 240 EOR VE : ENDIF
+  IF t = 'D' AND k = 'I' : EQUB 241 EOR VE : ENDIF
+  IF t = 'R' AND k = 'E' : EQUB 242 EOR VE : ENDIF
+  IF t = 'A' AND k = '?' : EQUB 243 EOR VE : ENDIF
+  IF t = 'E' AND k = 'R' : EQUB 244 EOR VE : ENDIF
+  IF t = 'A' AND k = 'T' : EQUB 245 EOR VE : ENDIF
+  IF t = 'E' AND k = 'N' : EQUB 246 EOR VE : ENDIF
+  IF t = 'B' AND k = 'E' : EQUB 247 EOR VE : ENDIF
+  IF t = 'R' AND k = 'A' : EQUB 248 EOR VE : ENDIF
+  IF t = 'L' AND k = 'A' : EQUB 249 EOR VE : ENDIF
+  IF t = 'V' AND k = 'E' : EQUB 250 EOR VE : ENDIF
+  IF t = 'T' AND k = 'I' : EQUB 251 EOR VE : ENDIF
+  IF t = 'E' AND k = 'D' : EQUB 252 EOR VE : ENDIF
+  IF t = 'O' AND k = 'R' : EQUB 253 EOR VE : ENDIF
+  IF t = 'Q' AND k = 'U' : EQUB 254 EOR VE : ENDIF
+  IF t = 'A' AND k = 'N' : EQUB 255 EOR VE : ENDIF
+
+ENDMACRO
+
+\ ******************************************************************************
+\
+\       Name: ERND
+\       Type: Macro
+\   Category: Text
+\    Summary: Macro definition for random tokens in the extended token table
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used when building the extended token table:
+\
+\   ERND n              Insert recursive token [n]
+\
+\                         * Tokens 0-123 get stored as n + 91
+\
+\ See the deep dive on "Printing extended text tokens" for details on how
+\ random tokens are stored in the extended token table.
+\
+\ Arguments:
+\
+\   n                   The number of the random token to insert into the
+\                       table, in the range 0 to 37
+\
+\ ******************************************************************************
+
+MACRO ERND n
+
+  EQUB (n + 91) EOR VE
+
+ENDMACRO
+
+\ ******************************************************************************
+\
+\       Name: TOKN
+\       Type: Macro
+\   Category: Text
+\    Summary: Macro definition for standard tokens in the extended token table
+\  Deep dive: Printing text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used when building the recursive token table:
+\
+\   TOKN n              Insert recursive token [n]
+\
+\                         * Tokens 0-95 get stored as n + 160
+\
+\                         * Tokens 128-145 get stored as n - 114
+\
+\                         * Tokens 96-127 get stored as n
+\
+\ See the deep dive on "Printing text tokens" for details on how recursive
+\ tokens are stored in the recursive token table.
+\
+\ Arguments:
+\
+\   n                   The number of the recursive token to insert into the
+\                       table, in the range 0 to 145
+\
+\ ******************************************************************************
+
+MACRO TOKN n
+
+  IF n >= 0 AND n <= 95
+    t = n + 160
+  ELIF n >= 128
+    t = n - 114
+  ELSE
+    t = n
+  ENDIF
+
+  EQUB t EOR VE
+
+ENDMACRO
+
+ENDIF
+
+\ ******************************************************************************
+\
+\       Name: UniverseTokens
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: Extended recursive token table for the universe editor
+\
+\ ******************************************************************************
+
+.UniverseToken
+
+ EQUB VE                \ Token 0:      ""
+                        \
+                        \ Encoded as:   ""
+
+ EJMP 9                 \ Token 1:      "{clear screen}
+ EJMP 11                \                {draw box around title}
+IF _6502SP_VERSION
+ EJMP 30                \                {white}
+ENDIF
+ EJMP 1                 \                {all caps}
+ EJMP 8                 \                {tab 6} DISK ACCESS MENU{crlf}
+ ECHR ' '               \                {lf}
+ ETWO 'D', 'I'          \                {sentence case}
+ ECHR 'S'               \                1. LOAD UNIVERSE{crlf}
+ ECHR 'K'               \                2. SAVE UNIVERSE {commander name}{crlf}
+ ECHR ' '               \                3. CATALOGUE{crlf}
+ ECHR 'A'               \                4. DELETE A FILE{crlf}
+ ECHR 'C'               \                5. PLAY UNIVERSE{crlf}
+ ETWO 'C', 'E'          \                6. EXIT{crlf}
+ ECHR 'S'               \               "
+ ECHR 'S'
+ ECHR ' '
+ ECHR 'M'
+ ECHR 'E'
+ ETWO 'N', 'U'
+ ETWO '-', '-'
+ EJMP 10
+ EJMP 2
+ ECHR '1'
+ ECHR '.'
+ ECHR ' '
+ ETWO 'L', 'O'
+ ECHR 'A'
+ ECHR 'D'
+ ECHR ' '
+ ECHR 'U'
+ ECHR 'N'
+ ECHR 'I'
+ ETWO 'V', 'E'
+ ECHR 'R'
+ ETWO 'S', 'E'
+ ETWO '-', '-'
+ ECHR '2'
+ ECHR '.'
+ ECHR ' '
+ ECHR 'S'
+ ECHR 'A'
+ ETWO 'V', 'E'
+ ECHR ' '
+ ECHR 'U'
+ ECHR 'N'
+ ECHR 'I'
+ ETWO 'V', 'E'
+ ECHR 'R'
+ ETWO 'S', 'E'
+ ECHR ' '
+ EJMP 4
+ ETWO '-', '-'
+ ECHR '3'
+ ECHR '.'
+ ECHR ' '
+ ECHR 'C'
+ ETWO 'A', 'T'
+ ECHR 'A'
+ ETWO 'L', 'O'
+ ECHR 'G'
+ ECHR 'U'
+ ECHR 'E'
+ ETWO '-', '-'
+ ECHR '4'
+ ECHR '.'
+ ECHR ' '
+ ECHR 'D'
+ ECHR 'E'
+ ECHR 'L'
+ ETWO 'E', 'T'
+ ECHR 'E'
+ ETOK 208
+ ECHR 'F'
+ ECHR 'I'
+ ETWO 'L', 'E'
+ ETWO '-', '-'
+ ECHR '5'
+ ECHR '.'
+ ECHR ' '
+ ECHR 'P'
+ ETWO 'L', 'A'
+ ECHR 'Y'
+ ECHR ' '
+ ECHR 'U'
+ ECHR 'N'
+ ECHR 'I'
+ ETWO 'V', 'E'
+ ECHR 'R'
+ ETWO 'S', 'E'
+ ETWO '-', '-'
+ ECHR '6'
+ ECHR '.'
+ ECHR ' '
+ ECHR 'E'
+ ECHR 'X'
+ ETWO 'I', 'T'
+ ETWO '-', '-'
+ EQUB VE
 
 IF _MASTER_VERSION
 

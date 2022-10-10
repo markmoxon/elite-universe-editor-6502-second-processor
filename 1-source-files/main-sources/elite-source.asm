@@ -41745,7 +41745,7 @@ LOAD_I% = LOAD% + P% - CODE%
 _6502SP_VERSION = TRUE
 _MASTER_VERSION = FALSE
 
-INCLUDE "1-source-files/main-sources/elite-universe-editor2.asm"
+INCLUDE "1-source-files/main-sources/elite-universe-editor1.asm"
 
                         \ --- End of replacement ------------------------------>
 
@@ -49698,7 +49698,7 @@ ENDMACRO
 
                         \ --- And replaced by: -------------------------------->
 
-INCLUDE "1-source-files/main-sources/elite-universe-editor1.asm"
+INCLUDE "1-source-files/main-sources/elite-universe-editor2.asm"
 
                         \ --- End of replacement ------------------------------>
 
