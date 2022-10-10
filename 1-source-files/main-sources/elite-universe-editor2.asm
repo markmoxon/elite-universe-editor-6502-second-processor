@@ -29,6 +29,39 @@
 
 \ ******************************************************************************
 \
+\       Name: UpdateSlotNumber
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Set current slot number to INF ship and update slot number
+\             on-screen
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   New slot number
+\
+\ Returns:
+\
+\   currentSlot         Slot number for ship currently in INF
+\
+\ ******************************************************************************
+
+.UpdateSlotNumber
+
+ PHX                    \ Store the new slot number on the stack
+
+ JSR PrintSlotNumber    \ Erase the current slot number from screen
+
+ PLX                    \ Retrieve the new slot number from the stack
+
+ STX currentSlot        \ Set the current slot number to the new slot number
+
+ JMP PrintSlotNumber    \ Print new slot number and return from the subroutine
+                        \ using a tail call
+
+\ ******************************************************************************
+\
 \       Name: ShowPrompt
 \       Type: Subroutine
 \   Category: Universe editor
@@ -1722,6 +1755,24 @@ ENDIF
 
 \ ******************************************************************************
 \
+\       Name: UpdateCompass
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Update the compass with the current ship's position
+\
+\ ******************************************************************************
+
+.UpdateCompass
+
+ JSR DOT                \ Call DOT to redraw (i.e. remove) the current compass
+                        \ dot
+
+ JSR GetShipVector      \ Get the vector to the selected ship into XX15
+
+ JMP SP2                \ Draw the dot on the compass
+
+\ ******************************************************************************
+\
 \       Name: UpdateDashboard
 \       Type: Subroutine
 \   Category: Universe editor
@@ -1739,25 +1790,25 @@ ENDIF
 
  LDA INWK+29            \ Set ALP1 and ALP2 to the magnitude and sign of the
  TAX                    \ roll counter (magnitude of ALP1 is in the range 0-31)
- AND %01111111
+ AND #%01111111
  LSR A
  LSR A
  STA ALP1
  TXA
- AND %10000000
+ AND #%10000000
  STA ALP2
 
  LDA INWK+30            \ Set BETA and BET1 to the magnitude and sign of the
- TAX                    \ pitch counter (magnitude of BETA is in the range 0-7)
- AND %01111111
+ TAX                    \ pitch counter (magnitude of BET1 is in the range 0-7)
+ AND #%01111111
  LSR A
  LSR A
  LSR A
  LSR A
- STA BETA
- TXA
- AND %10000000
  STA BET1
+ TXA
+ AND #%10000000
+ STA BETA
 
  LDA INWK+35            \ Set ENERGY to the ship's energy level
  STA ENERGY
@@ -1824,6 +1875,8 @@ ENDIF
                         \ setting of bit 4 of INWK+36 (NEWB)
 
 .upda3
+
+ JSR UpdateCompass      \ Update the compass
 
  RTS                    \ Return from the subroutine
 
@@ -1917,35 +1970,12 @@ ENDIF
 
 .ChangeMissiles
 
- LDA INWK+31            \ Extract the missile count from bits 0-2 into and stick
- AND #%00000111         \ 0-4 of A and stick the result on the stack
- PHA
+ LDA INWK+31            \ Extract the missile count from bits 0-2 of INWK+31
+ AND #%00000111         \ into X
+ TAX
 
-IF _6502SP_VERSION
-
- LDX #0                 \ Call DKS4 with X = 0 to check whether the SHIFT key is
- JSR DKS4               \ being pressed
-
-ELIF _MASTER_VERSION
-
-IF _SNG47
-
- LDA #0                 \ Call DKS4 to check whether the SHIFT key is being
- JSR DKS4               \ pressed
-
-ELIF _COMPACT
-
- LDA #0                 \ Call DKS4mc to check whether the SHIFT key is being
- JSR DKS4mc             \ pressed
-
-ENDIF
-
-ENDIF
-
- BMI cham1              \ If SHIFT is being held, jump to cham1 to reduce the
-                        \ value
-
- PLX                    \ Retrieve the missile count from the stack into X
+ BIT shiftCtrl          \ If SHIFT is being held, jump to cham1 to reduce the
+ BMI cham1              \ value
 
  INX                    \ Increment the number of missiles
 
@@ -1957,8 +1987,6 @@ ENDIF
                         \ BNE is effectively a JMP as X is always non-zero)
 
 .cham1
-
- PLX                    \ Retrieve the missile count from the stack into X
 
  DEX                    \ Decrement the number of missiles
 
@@ -1989,36 +2017,13 @@ ENDIF
 
 .ChangeAggression
 
- LDA INWK+32            \ Extract the aggression level from bits 1-5 into and stick
- AND #%00111110         \ 0-4 of A and stick the result on the stack
+ LDA INWK+32            \ Extract the aggression level from bits 1-5 of INWK+32
+ AND #%00111110         \ into X
  LSR A
- PHA
+ TAX
 
-IF _6502SP_VERSION
-
- LDX #0                 \ Call DKS4 with X = 0 to check whether the SHIFT key is
- JSR DKS4               \ being pressed
-
-ELIF _MASTER_VERSION
-
-IF _SNG47
-
- LDA #0                 \ Call DKS4 to check whether the SHIFT key is being
- JSR DKS4               \ pressed
-
-ELIF _COMPACT
-
- LDA #0                 \ Call DKS4mc to check whether the SHIFT key is being
- JSR DKS4mc             \ pressed
-
-ENDIF
-
-ENDIF
-
- BMI chag1              \ If SHIFT is being held, jump to chag1 to reduce the
-                        \ value
-
- PLX                    \ Retrieve the aggression level from the stack into X
+ BIT shiftCtrl          \ If SHIFT is being held, jump to chag1 to reduce the
+ BMI chag1              \ value
 
  INX                    \ Increment the aggression level
 
@@ -2030,8 +2035,6 @@ ENDIF
                         \ BNE is effectively a JMP as X is always non-zero)
 
 .chag1
-
- PLX                    \ Retrieve the aggression level from the stack into X
 
  DEX                    \ Decrement the aggression level
 
@@ -2057,6 +2060,57 @@ ENDIF
 
 \ ******************************************************************************
 \
+\       Name: ChangeCounter
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Update one of the ship's counters
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   Offset of INWK byte within INWK block
+\
+\ ******************************************************************************
+
+.ChangeCounter
+
+ LDA INWK,X             \ Store counter in T1
+
+ AND #%10000000         \ Extract the sign (bit 7) of A and store it in T
+ STA T
+
+ BIT shiftCtrl          \ If SHIFT is being held, jump to chav2 to reduce the
+ BMI chav2              \ value
+
+ INC INWK,X             \ Increment the value at the correct offset
+
+ CMP #127               \ Cap it at a maximum of 127
+ BCC P%+4
+ LDA #127
+
+.chav1
+
+ ORA T                  \ Put the original sign back
+
+ JMP StoreValue         \ Jump to StoreValue to store the value, returning from
+                        \ the subroutine using a tail call
+
+.chav2
+
+ DEC INWK,X             \ Decrement the value at the correct offset
+
+ BPL chav1              \ If it's still positive, jump to chav1 to store the
+                        \ value
+
+ LDA T                  \ Otherwise, set the value to 0 with the sign flipped
+ EOR #%10000000
+
+ JMP StoreValue         \ Jump to StoreValue to store the value, returning from
+                        \ the subroutine using a tail call
+
+\ ******************************************************************************
+\
 \       Name: ChangeValue
 \       Type: Subroutine
 \   Category: Universe editor
@@ -2072,33 +2126,8 @@ ENDIF
 
 .ChangeValue
 
- PHX                    \ Store the offset on the stack
-
-IF _6502SP_VERSION
-
- LDX #0                 \ Call DKS4 with X = 0 to check whether the SHIFT key is
- JSR DKS4               \ being pressed
-
-ELIF _MASTER_VERSION
-
-IF _SNG47
-
- LDA #0                 \ Call DKS4 to check whether the SHIFT key is being
- JSR DKS4               \ pressed
-
-ELIF _COMPACT
-
- LDA #0                 \ Call DKS4mc to check whether the SHIFT key is being
- JSR DKS4mc             \ pressed
-
-ENDIF
-
-ENDIF
-
- BMI chan1              \ If SHIFT is being held, jump to chan1 to reduce the
-                        \ value
-
- PLX                    \ Retrieve the offset from the stack
+ BIT shiftCtrl          \ If SHIFT is being held, jump to chan1 to reduce the
+ BMI chan1              \ value
 
  INC INWK,X             \ Increment the value at the correct offset
 
@@ -2109,8 +2138,6 @@ ENDIF
  BMI StoreValue         \ overflow and jump to StoreValue to store the value
 
 .chan1
-
- PLX                    \ Retrieve the offset from the stack
 
  DEC INWK,X             \ Decrement the value at the correct offset
 
@@ -2139,6 +2166,35 @@ ENDIF
  JSR UpdateDashboard    \ Update the dashboard
 
  RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: GetShipVector
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Calculate the vector to the selected ship into XX15
+\
+\ ******************************************************************************
+
+.GetShipVector
+
+ LDY #8                 \ First we need to copy the ship's coordinates
+                        \ into K3, so set a counter to copy the first 9 bytes
+                        \ (the 3-byte x, y and z coordinates) from the ship's
+                        \ data block in K% (pointed to by INF) into K3
+
+.svec1
+
+ LDA (INF),Y            \ Copy the X-th byte from the ship's data block at
+ STA K3,Y               \ INF to the X-th byte of K3
+
+ DEY                    \ Decrement the loop counter
+
+ BPL svec1              \ Loop back to svec1 until we have copied all 9 bytes
+
+ JMP TAS2               \ Call TAS2 to build XX15 from K3, returning from the
+                        \ subroutine using a tail call
+
 
 IF _MASTER_VERSION
 

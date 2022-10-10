@@ -27,13 +27,16 @@
 \
 \ ******************************************************************************
 
+shiftCtrl = ECMA        \ ECMA is only used when the E.C.M. is active, so we can
+                        \ reuse it
+
+showingS = QQ22         \ QQ22 is only used when hyperspacing, so we can
+showingE = QQ22+1       \ reuse both bytes
+
 IF _6502SP_VERSION
 
 currentSlot = XSAV2     \ XSAV2 and YSAV2 are unused in the original game, so we
 repeatingKey = YSAV2    \ can reuse them
-
-showingS = QQ22         \ QQ22 is only used when hyperspacing, so we can
-showingE = QQ22+1       \ reuse this six-byte block
 
 keyA = &41
 keyC = &52
@@ -72,9 +75,6 @@ ELIF _MASTER_VERSION
 
 currentSlot = &0000     \ &0000 and &0001 are unused in the original game, so we
 repeatingKey = &0001    \ can reuse them
-
-showingS = QQ22         \ QQ22 is only used when hyperspacing, so we can
-showingE = QQ22+1       \ reuse this six-byte block
 
 IF _SNG47
 
@@ -275,11 +275,11 @@ ENDIF
 .QuitEditor
 
  LDA showingS           \ If we are showing the station buld, call SPBLB to
- BNE P%+5               \ remove it
+ BEQ P%+5               \ remove it
  JSR SPBLB
 
  LDA showingE           \ If we are showing the E.C.M. bulb, call ECBLB to
- BNE P%+5               \ remove it
+ BEQ P%+5               \ remove it
  JSR ECBLB
 
 IF _6502SP_VERSION
@@ -393,16 +393,75 @@ ENDIF
 
 .ProcessKey
 
+ PHA                    \ Store the key press on the stack
+
+ STZ shiftCtrl          \ We now test for SHIFT and CTRL and set bit 7 and 6 of
+                        \ shiftCtrl accordingly, so zero the byte first
+
+IF _6502SP_VERSION
+
+ JSR CTRL               \ Scan the keyboard to see if CTRL is currently pressed,
+                        \ returning a negative value in A if it is
+
+ELIF _MASTER_VERSION
+
+IF _SNG47
+
+ JSR CTRL               \ Scan the keyboard to see if CTRL is currently pressed,
+                        \ returning a negative value in A if it is
+
+ELIF _COMPACT
+
+ JSR CTRLmc             \ Scan the keyboard to see if CTRL is currently pressed,
+                        \ returning a negative value in A if it is
+
+ENDIF
+
+ENDIF
+
+ BPL P%+5               \ If CTRL is being pressed, set bit 7 of shiftCtrl
+ SEC                    \ (which we will shift into bit 6 below)
+ ROR shiftCtrl
+
+IF _6502SP_VERSION
+
+ LDX #0                 \ Call DKS4 with X = 0 to check whether the SHIFT key is
+ JSR DKS4               \ being pressed
+
+ELIF _MASTER_VERSION
+
+IF _SNG47
+
+ LDA #0                 \ Call DKS4 to check whether the SHIFT key is being
+ JSR DKS4               \ pressed
+
+ELIF _COMPACT
+
+ LDA #0                 \ Call DKS4mc to check whether the SHIFT key is being
+ JSR DKS4mc             \ pressed
+
+ENDIF
+
+ENDIF
+
+ CLC                    \ If SHIFT is being pressed, set the C flag, otherwise
+ BPL P%+3               \ clear it
+ SEC
+
+ ROR shiftCtrl          \ Shift the C flag into bit 7 of shiftCtrl, moving the
+                        \ CTRL bit into bit 6, so we now have SHIFT and CTRL
+                        \ captured in bits 7 and 6 of shiftCtrl
+
  LDX #1                 \ Set repeatingKey = 1 to indicate that the following
  STX repeatingKey       \ keys are repeating keys
 
- PHA                    \ Set Y = VIEW * 8, to act as an index into keyTable
- LDA VIEW
+ LDA VIEW               \ Set Y = VIEW * 8, to act as an index into keyTable
  ASL A
  ASL A
  ASL A
  TAY
- PLA
+
+ PLA                    \ Retrieve the key press from the stack
 
  LDX #0                 \ Set X = 0 for the x-axis
 
@@ -531,19 +590,19 @@ ENDIF
  CMP #key8              \ If 8 is pressed, update the ship's roll counter in
  BNE P%+7               \ INWK+29
  LDX #29
- JMP ChangeValue
+ JMP ChangeCounter
 
  CMP #key9              \ If 9 is pressed, update the ship's pitch counter in
  BNE P%+7               \ INWK+30
  LDX #30
- JMP ChangeValue
+ JMP ChangeCounter
 
  CMP #key0              \ If 0 is pressed, update the ship's energy in INWK+35
  BNE P%+7
  LDX #35
  JMP ChangeValue
 
- CMP #key6              \ If 0 is pressed, update the ship's aggression level in
+ CMP #key6              \ If 6 is pressed, update the ship's aggression level in
  BNE P%+5               \ INWK+32
  JMP ChangeAggression
 
@@ -1147,28 +1206,8 @@ ENDIF
  LDX #0                 \ Set the high byte of K(3 2 1) to 0
  STX K+2
 
-IF _6502SP_VERSION
-
- JSR DKS4               \ Call DKS4 with X = 0 to check whether the SHIFT key is
-                        \ being pressed
-
-ELIF _MASTER_VERSION
-
-IF _SNG47
-
- LDA #0                 \ Call DKS4 to check whether the SHIFT key is being
- JSR DKS4               \ pressed
-
-ELIF _COMPACT
-
- LDA #0                 \ Call DKS4mc to check whether the SHIFT key is being
- JSR DKS4mc             \ pressed
-
-ENDIF
-
-ENDIF
-
- BMI move1              \ IF SHIFT is being pressed, jump to move1
+ BIT shiftCtrl          \ IF SHIFT is being pressed, jump to move1
+ BMI move1
 
  LDY #1                 \ Set Y = 1 to use as the delta and jump to move2
  BNE move2
@@ -1692,38 +1731,5 @@ ENDIF
 
  JMP SwitchToSlot       \ Switch to slot X to load the new ship's data,
                         \ returning from the subroutine using a tail call
-
-\ ******************************************************************************
-\
-\       Name: UpdateSlotNumber
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Set current slot number to INF ship and update slot number
-\             on-screen
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   New slot number
-\
-\ Returns:
-\
-\   currentSlot         Slot number for ship currently in INF
-\
-\ ******************************************************************************
-
-.UpdateSlotNumber
-
- PHX                    \ Store the new slot number on the stack
-
- JSR PrintSlotNumber    \ Erase the current slot number from screen
-
- PLX                    \ Retrieve the new slot number from the stack
-
- STX currentSlot        \ Set the current slot number to the new slot number
-
- JMP PrintSlotNumber    \ Print new slot number and return from the subroutine
-                        \ using a tail call
 
 .endUniverseEditor1
