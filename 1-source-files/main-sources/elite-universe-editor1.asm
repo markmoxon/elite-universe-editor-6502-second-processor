@@ -193,10 +193,6 @@ ENDIF
  LDA #%10000001         \ Set x_sign = -1, so the sun is to the left
  STA INWK+2
 
-\ LDA INWK+8             \ Move the sun behind us
-\ EOR #%10000000
-\ STA INWK+8
-
  JSR STORE              \ Store the updated sun
 
  JSR LL9                \ Draw the sun
@@ -577,88 +573,88 @@ ENDIF
 
 .keys12
 
- CMP #key7              \ If 7 is pressed, update the ship's speed in INWK+27
+ CMP #key7              \ 7 (update the ship's speed in INWK+27)
  BNE P%+7
  LDX #27
  JMP ChangeValue
 
- CMP #key1              \ If 1 is pressed, update the ship's acceleration in
- BNE P%+7               \ INWK+28
+ CMP #key1              \ 1 (update the ship's acceleration in INWK+28)
+ BNE P%+7
  LDX #28
  JMP ChangeValue
 
- CMP #key8              \ If 8 is pressed, update the ship's roll counter in
- BNE P%+7               \ INWK+29
+ CMP #key8              \ 8 (update the ship's roll counter in INWK+29)
+ BNE P%+7
  LDX #29
  JMP ChangeCounter
 
- CMP #key9              \ If 9 is pressed, update the ship's pitch counter in
- BNE P%+7               \ INWK+30
+ CMP #key9              \ 9 (update the ship's pitch counter in INWK+30)
+ BNE P%+7
  LDX #30
  JMP ChangeCounter
 
- CMP #key0              \ If 0 is pressed, update the ship's energy in INWK+35
+ CMP #key0              \ 0 (update the ship's energy in INWK+35)
  BNE P%+7
  LDX #35
  JMP ChangeValue
 
- CMP #key6              \ If 6 is pressed, update the ship's aggression level in
- BNE P%+5               \ INWK+32
+ CMP #key6              \ 6 (update the ship's aggression level in INWK+32)
+ BNE P%+5
  JMP ChangeAggression
 
  LDX #0                 \ Set repeatingKey = 0 to indicate that the following
  STX repeatingKey       \ keys are non-repeating keys
 
- CMP #key2              \ If 2 is pressed, toggle the ship's AI in bit 7 of
- BNE P%+9               \ INWK+32
+ CMP #key2              \ 2 (toggle the ship's AI in bit 7 of INWK+32)
+ BNE P%+9
  LDX #32
  LDA #%10000000
  JMP ToggleValue
 
- CMP #key3              \ If 3 is pressed, toggle the ship's Innocent Bystander
- BNE P%+9               \ status in bit 5 of INWK+36 (NEWB)
+ CMP #key3              \ 3 (toggle the ship's Innocent Bystander status in
+ BNE P%+9               \ bit 5 of INWK+36, NEWB)
  LDX #36
  LDA #%00100000
  JMP ToggleValue
 
- CMP #key4              \ If 4 is pressed, toggle the ship's Cop status in
- BNE P%+9               \ bit 6 of INWK+36 (NEWB)
+ CMP #key4              \ 4 (toggle the ship's Cop status in bit 6 of INWK+36,
+ BNE P%+9               \ NEWB)
  LDX #36
  LDA #%01000000
  JMP ToggleValue
 
- CMP #key5              \ If 5 is pressed, toggle the ship's Hostile status in
- BNE P%+9               \ bit 6 of INWK+32
+ CMP #key5              \ 5 (toggle the ship's Hostile status in bit 6 of
+ BNE P%+9               \ INWK+32)
  LDX #32
  LDA #%01000000
  JMP ToggleValue
 
- CMP #keyM              \ If M is pressed, update the number of missiles in
- BNE P%+5               \ bits 0-2 of INWK+31
+ CMP #keyM              \ M (update the number of missiles in bits 0-2 of 
+ BNE P%+5               \ INWK+31)
  JMP ChangeMissiles
 
- CMP #keyC              \ If 4 is pressed, toggle the ship's Cop status in
- BNE P%+9               \ bit 6 of INWK+36 (NEWB)
+ CMP #keyC              \ 4 (toggle the ship's Cop status in bit 6 of INWK+36,
+ BNE P%+9               \ NEWB)
  LDX #36
  LDA #%00010000
  JMP ToggleValue
 
- CMP #keyE              \ If E is pressed, toggle the ship's E.C.M. status in
- BNE P%+9               \ bit 0 of INWK+32
+ CMP #keyE              \ E (toggle the ship's E.C.M. status in bit 0 of
+ BNE P%+9               \ INWK+32)
  LDX #32
  LDA #%00000001
  JMP ToggleValue
 
- CMP #f0                \ f0 pressed (front view)
+ CMP #f0                \ f0 (front view)
  BEQ keys13
 
- CMP #f1                \ f1 pressed (rear view)
+ CMP #f1                \ f1 (rear view)
  BEQ keys13
 
- CMP #f2                \ f2 pressed (left view)
+ CMP #f2                \ f2 (left view)
  BEQ keys13
 
- CMP #f3                \ f3 pressed (right view)
+ CMP #f3                \ f3 (right view)
  BNE keys14
 
 .keys13
@@ -667,15 +663,15 @@ ENDIF
 
 .keys14
 
- CMP #keyO              \ O pressed (toggle station/sun)
+ CMP #keyO              \ O (toggle station/sun)
  BNE P%+5
  JMP SwapStationSun
 
- CMP #keyP              \ P pressed (toggle planet type)
+ CMP #keyP              \ P (toggle planet type)
  BNE P%+5
  JMP TogglePlanetType
 
- CMP #keyReturn         \ RETURN pressed (add ship)
+ CMP #keyReturn         \ RETURN (add ship)
  BNE P%+5
  JMP AddShip
 
@@ -699,9 +695,10 @@ ENDIF
  BNE P%+5
  JMP ShowDiscMenu
 
- CMP #keyEscape         \ If ESCAPE is being pressed, jump to QuitEditor to quit
- BNE P%+5               \ the universe editor
+ CMP #keyEscape         \ ESCAPE (jump to QuitEditor to quit the Universe
+ BNE P%+5               \ Editor)
  JMP QuitEditor
+
                         \ The following controls only apply to ships in slots 2
                         \ and up, and do not apply to the planet, sun or station
 
@@ -709,11 +706,11 @@ ENDIF
                         \ routines, so they can do nothing (and give an error
                         \ beep) if this is the station or planet
 
- CMP #keyDelete         \ DELETE pressed (delete ship)
+ CMP #keyDelete         \ DELETE (delete ship)
  BNE P%+5
  JMP DeleteShip
 
- CMP #keyCopy           \ COPY pressed (copy ship)
+ CMP #keyCopy           \ COPY (copy ship)
  BNE P%+5
  JMP CopyShip
 
@@ -1467,17 +1464,15 @@ ENDIF
  LDA #185               \ Print text token 25 ("SHIP") followed by a question
  JSR ShowPrompt         \ mark
 
- JSR BEEP               \ Make a high beep to prompt for the ship type
-
  JSR TT217              \ Scan the keyboard until a key is pressed, and return
                         \ the key's ASCII code in A (and X)
 
  CMP #'1'               \ Check key is '1' or higher
  BCS add1
 
- BCC add4               \ Key is invalid, so jump to add4 to return from the
-                        \ subroutine (this BCC is effectively a JMP as we just
-                        \ passed through a BCS)
+ BCC add6               \ Key is invalid, so jump to add6 to make an error beep
+                        \ and return from the subroutine (this BCC is
+                        \ effectively a JMP as we just passed through a BCS)
 
 .add1
 
@@ -1487,12 +1482,15 @@ ENDIF
 IF _6502SP_VERSION
 
  CMP #'a'               \ If key is less than 'A', it is invalid, so jump to
- BCC add4               \ add4 to return from the subroutine
+ BCC add6               \ add6 to make an error beep and return from the
+                        \ subroutine
 
- CMP #'y'               \ If key is 'Y or greater, it is invalid, so jump to
- BCS add4               \ add4  to return from the subroutine
+ CMP #'x'               \ If key is 'X' or greater, it is invalid, so jump to
+ BCS add6               \ add6 to make an error beep and return from the
+                        \ subroutine
 
-                        \ Key is 'A' to 'X'
+                        \ Key is 'A' to 'W' (which includes the Elite logo as
+                        \ 'W')
 
  SBC #'a'-11            \ Otherwise calculate ship type with 'A' = 10 (the C
                         \ flag is clear for this calculation)
@@ -1500,32 +1498,38 @@ IF _6502SP_VERSION
 ELIF _MASTER_VERSION
 
  CMP #'A'               \ If key is less than 'A', it is invalid, so jump to
- BCC add4               \ add4 to return from the subroutine
+ BCC add6               \ add6 to make an error beep and return from the
+                        \ subroutine
 
- CMP #'Y'               \ If key is 'Y or greater, it is invalid, so jump to
- BCS add4               \ add4  to return from the subroutine
+ CMP #'W'               \ If key is 'W' or greater, it is invalid, so jump to
+ BCS add6               \ add6 to make an error beep and return from the
+                        \ subroutine
 
-                        \ Key is 'A' to 'X'
+                        \ Key is 'A' to 'V' (which does not include the Elite
+                        \ logo)
 
  SBC #'A'-11            \ Otherwise calculate ship type with 'A' = 10 (the C
                         \ flag is clear for this calculation)
 
 ENDIF
 
- BCS add3               \ Jump to add3 (this BCS is effectively a JMP as the C
+ BCS add4               \ Jump to add4 (this BCS is effectively a JMP as the C
                         \ flag will be set from the subtraction)
 
 .add2
 
                         \ Key is '1' to '9'
 
- CMP #'2'               \ '2' is invalid as it is the space station, so jump to
- BEQ add4               \ add4 to return from the subroutine
+ CMP #'2'               \ If key is '2' then we reuse this for the Cougar (as
+ BNE add3               \ the value of 2 would otherwise be the space station),
+ LDA #'0' + COU         \ so set A so the subtraction gives us the type in COU
+
+.add3
 
  SEC                    \ Calculate the ship type from the key pressed
  SBC #'0'
 
-.add3
+.add4
 
  STA TYPE               \ Store the new ship type
 
@@ -1535,11 +1539,17 @@ ENDIF
 
  JSR CreateShip         \ Create the new ship
 
-.add4
+.add5
 
  LDA #185               \ Print text token 25 ("SHIP") followed by a question
  JMP ShowPrompt         \ mark to remove it from the screen, and return from the
                         \ subroutine using a tail call
+
+.add6
+
+ JSR MakeErrorBeep      \ Make an error beep
+
+ JMP add5               \ Jump to add5 to remove the ship prompt
 
 \ ******************************************************************************
 \

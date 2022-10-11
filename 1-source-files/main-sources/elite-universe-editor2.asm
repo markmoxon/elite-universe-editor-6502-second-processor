@@ -423,7 +423,7 @@ ENDIF
 
  BMI high8              \ If this is the planet or sun, jump to high8
 
-                        \ This is a ship or station
+                        \ If we get here then this is a ship or the station
 
  LDA INWK+31            \ If bit 5 of byte #31 is set, then the ship is
  AND #%00100000         \ exploding, so return from the subroutine
@@ -476,9 +476,12 @@ ENDIF
  JSR PLUT               \ Call PLUT to update the geometric axes in INWK to
                         \ match the view (front, rear, left, right)
 
- JMP LL9                \ Redraw the existing ship
+ JMP LL9                \ Redraw the existing ship, returning from the
+                        \ subroutine using a tail call
 
 .high8
+
+                        \ If we get here then this is the planet or sun
 
 IF _6502SP_VERSION
 
@@ -1789,25 +1792,26 @@ ENDIF
  STA FSH
 
  LDA INWK+29            \ Set ALP1 and ALP2 to the magnitude and sign of the
- TAX                    \ roll counter (magnitude of ALP1 is in the range 0-31)
- AND #%01111111
+ AND #%10000000         \ roll counter (magnitude of ALP1 is in the range 0-31)
+ EOR #%10000000
+ STA ALP2
+ LDA INWK+29
+ AND #%01111111 
  LSR A
  LSR A
  STA ALP1
- TXA
- AND #%10000000
- STA ALP2
 
- LDA INWK+30            \ Set BETA and BET1 to the magnitude and sign of the
- TAX                    \ pitch counter (magnitude of BET1 is in the range 0-7)
+ LDA INWK+30            \ Set BETA and BET1 to the value and magnitude of the
+ AND #%10000000         \ pitch counter (BETA is in the range -8 to +8)
+ STA T1
+ LDA INWK+30
  AND #%01111111
  LSR A
  LSR A
  LSR A
  LSR A
  STA BET1
- TXA
- AND #%10000000
+ ORA T1
  STA BETA
 
  LDA INWK+35            \ Set ENERGY to the ship's energy level
