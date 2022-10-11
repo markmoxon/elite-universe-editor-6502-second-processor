@@ -1669,9 +1669,18 @@ ENDIF
 
 .MakeErrorBeep
 
+IF _6502SP_VERSION
+
  LDA #40                \ Call the NOISE routine with A = 40 to make a low,
  JMP NOISE              \ long beep, returning from the subroutine using a tail
                         \ call
+
+ELIF _MASTER_VERSION
+
+ LDY #0                 \ Call the NOISE routine with Y = 0 to make a long, low
+ JMP NOISE              \ beep, returning from the subroutine using a tail call
+
+ENDIF
 
 \ ******************************************************************************
 \
