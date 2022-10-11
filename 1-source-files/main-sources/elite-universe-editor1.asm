@@ -134,6 +134,9 @@ ENDIF
 
 .UniverseEditor
 
+ LDA #250               \ Switch to the Universe Editor dashboard
+ JSR SwitchDashboard
+
 IF _6502SP_VERSION
 
  LDA #&24               \ Disable the TRB XX1+31 instruction in part 9 of LL9
@@ -272,6 +275,18 @@ ENDIF
 
 .QuitEditor
 
+ JSR PrintAreYouSure    \ Print "Are you sure?" at the bottom of the screen
+
+ JSR GETYN              \ Call GETYN to wait until either "Y" or "N" is pressed
+
+ BCS quit1              \ If "Y" was pressed, jump to quit1 to quit
+
+ JSR PrintAreYouSure    \ Print "Are you sure?" at the bottom of the screen
+
+ JMP scen3+3            \ Rejoin the main loop
+
+.quit1
+
  LDA showingS           \ If we are showing the station buld, call SPBLB to
  BEQ P%+5               \ remove it
  JSR SPBLB
@@ -299,6 +314,9 @@ ENDIF
  STA DOEXP+9
 
  JSR DFAULT             \ Restore correct commander name to NAME
+
+ LDA #251               \ Switch to the main game dashboard
+ JSR SwitchDashboard
 
  JMP BR1                \ Quit the scene editor by returning to the start
 
@@ -897,30 +915,6 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: TogglePlanetType
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Toggle the planet between meridian and crater
-\
-\ ******************************************************************************
-
-.TogglePlanetType
-
- LDX #0                 \ Switch to slot 0, which is the planet, and highlight
- JSR SwitchToSlot       \ the existing contents
-
- LDA TYPE               \ Flip the planet type between 128 and 130
- EOR #%00000010
- STA TYPE
- STA FRIN
-
- JSR STORE              \ Store the new planet details
-
- JMP DrawShip           \ Draw the ship and return from the subroutine using a
-                        \ tail call
-
-\ ******************************************************************************
-\
 \       Name: EraseShip
 \       Type: Subroutine
 \   Category: Universe editor
@@ -1054,9 +1048,6 @@ ENDIF
  JSR SetSBulb           \ Show or hide the space station bulb according to the
                         \ setting of bit 4 of INWK+36 (NEWB)
 
-\ LDX #10                \ Flip the station around nosev to reverse the flip
-\ JSR FlipShip           \ that's done in NWSPS
-
  JSR InitialiseShip     \ Initialise the station so it's in front of us
 
  JSR STORE              \ Store the updated station
@@ -1065,37 +1056,6 @@ ENDIF
 
  JMP DrawShip           \ Draw the ship and return from the subroutine using a
                         \ tail call
-
-\ ******************************************************************************
-\
-\       Name: FlipShip
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Flip ship around in space
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   The orientation vector to flip:
-\
-\                         * 10 = negate nosev
-\
-\ ******************************************************************************
-
-.FlipShip
-
- PHA
-
- JSR NwS1               \ Call NwS1 to flip the sign of nosev_x_hi (byte #10)
-
- JSR NwS1               \ And again to flip the sign of nosev_y_hi (byte #12)
-
- JSR NwS1               \ And again to flip the sign of nosev_z_hi (byte #14)
-
- PLA
-
- RTS
 
 \ ******************************************************************************
 \
@@ -1469,8 +1429,10 @@ ENDIF
  LDA #0                 \ Set the delay in DLY to 0, so any new in-flight
  STA DLY                \ messages will be shown instantly
 
+ JSR SetupPrompt        \ Move the cursor and set the colour for a prompt
+
  LDA #185               \ Print text token 25 ("SHIP") followed by a question
- JSR ShowPrompt         \ mark
+ JSR prq                \ mark
 
  JSR TT217              \ Scan the keyboard until a key is pressed, and return
                         \ the key's ASCII code in A (and X)
@@ -1549,9 +1511,10 @@ ENDIF
 
 .add5
 
+ JSR SetupPrompt        \ Move the cursor and set the colour for a prompt
+
  LDA #185               \ Print text token 25 ("SHIP") followed by a question
- JMP ShowPrompt         \ mark to remove it from the screen, and return from the
-                        \ subroutine using a tail call
+ JMP prq                \ mark and return from the subroutine using a tail call
 
 .add6
 

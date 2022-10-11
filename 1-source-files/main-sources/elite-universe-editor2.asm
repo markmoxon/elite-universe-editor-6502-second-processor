@@ -29,6 +29,53 @@
 
 \ ******************************************************************************
 \
+\       Name: PrintAreYouSure
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Print "Are you sure?" at the bottom of the screen
+\
+\ ******************************************************************************
+
+.PrintAreYouSure
+
+ JSR SetupPrompt        \ Move the cursor and set the colour for a prompt
+
+ LDA #5                 \ Print extended token 224 ("ARE YOU SURE?") and return
+ JMP PrintToken         \ from the subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: FlipShip
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Flip ship around in space
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The orientation vector to flip:
+\
+\                         * 10 = negate nosev
+\
+\ ******************************************************************************
+
+.FlipShip
+
+ PHA
+
+ JSR NwS1               \ Call NwS1 to flip the sign of nosev_x_hi (byte #10)
+
+ JSR NwS1               \ And again to flip the sign of nosev_y_hi (byte #12)
+
+ JSR NwS1               \ And again to flip the sign of nosev_z_hi (byte #14)
+
+ PLA
+
+ RTS
+
+\ ******************************************************************************
+\
 \       Name: UpdateSlotNumber
 \       Type: Subroutine
 \   Category: Universe editor
@@ -62,24 +109,19 @@
 
 \ ******************************************************************************
 \
-\       Name: ShowPrompt
+\       Name: SetupPrompt
 \       Type: Subroutine
 \   Category: Universe editor
 \    Summary: Show a prompt on-screen
 \
 \ ------------------------------------------------------------------------------
 \
-\ Display an in-flight message in capitals at the bottom of the space view.
-\
-\ Arguments:
-\
-\   A                   The text token to be printed
+\ Set up the text cursor and colour for an in-flight message in capitals at the
+\ bottom of the space view.
 \
 \ ******************************************************************************
 
-.ShowPrompt
-
- PHA                    \ Store token number on the stack
+.SetupPrompt
 
 IF _6502SP_VERSION
 
@@ -102,10 +144,7 @@ ENDIF
  LDA #22                \ Move the text cursor to row 22
  JSR DOYC
 
- PLA                    \ Get token number
-
- JMP prq                \ Print the text token in A, followed by a question mark
-                        \ and return from the subroutine using a tail call
+ RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
@@ -981,7 +1020,7 @@ ENDIF
 
  JSR DeleteUniverse     \ Delete a file
 
- JMP ReturnToDiscMenu
+ JMP ReturnToDiscMenu   \ Show disc menu
 
 .disc1
 
@@ -1610,7 +1649,24 @@ ENDIF
 
 .PlayUniverse
 
+ JSR PrintAreYouSure    \ Print "Are you sure?" at the bottom of the screen
+
+ JSR GETYN              \ Call GETYN to wait until either "Y" or "N" is pressed
+
+ BCS play1              \ If "Y" was pressed, jump to play1 to play the universe
+
+ JSR PrintAreYouSure    \ Print "Are you sure?" at the bottom of the screen to
+                        \ remove it
+
+ JMP ReturnToDiscMenu   \ Return to the disc menu
+
+.play1
+
  JSR ExitDiscMenu       \ Revert the changes made for the disc access menu
+
+
+ LDA #251               \ Switch to the main game dashboard
+ JSR SwitchDashboard
 
                         \ Do the following from DEATH2:
 
@@ -1624,7 +1680,7 @@ IF _6502SP_VERSION
 
 ELIF _MASTER_VERSION
 
- LDA #&60               \ Turn ZINF fallthrough into an RTS
+ LDA #&60               \ Turn ZINF fallthrough in RES2 into an RTS
  STA ZINF
 
 ENDIF
@@ -1640,10 +1696,16 @@ IF _6502SP_VERSION
 
 ELIF _MASTER_VERSION
 
- LDA #&A0               \ Re-enable ZINF fallthrough
+ LDA #&A0               \ Re-enable ZINF fallthrough in RES2
  STA ZINF
 
 ENDIF
+
+ LDA #&FF               \ Recharge the forward and aft shields
+ STA FSH
+ STA ASH
+
+ STA ENERGY             \ Recharge the energy banks
 
  STZ ALPHA              \ Reset ALPHA (roll angle alpha) and ALP1 (magnitude of
  STZ ALP1               \ roll angle alpha) to 0, as RES2 sets them to 3, which
@@ -1659,13 +1721,13 @@ ENDIF
 
  LDA #0                 \ Set A = 0 so we can zero the variables
 
-.play1
+.play2
 
  STA auto,X             \ Zero the X-th byte of FRIN to de
 
  DEX                    \ Decrement the loop counter
 
- BPL play1              \ Loop back to zero the next variable until we have done
+ BPL play2              \ Loop back to zero the next variable until we have done
                         \ them all
 
  JSR DIALS              \ Update the dashboard to zero all the above values
@@ -1720,14 +1782,14 @@ ENDIF
                         \ current system, so set up a counter in X for copying
                         \ 6 bytes (for three 16-bit seeds)
 
-.play2
+.play3
 
  LDA QQ15,X             \ Copy the X-th byte in QQ15 to the X-th byte in QQ2,
  STA QQ2,X
 
  DEX                    \ Decrement the counter
 
- BPL play2              \ Loop back to play2 if we still have more bytes to
+ BPL play3              \ Loop back to play3 if we still have more bytes to
                         \ copy
 
  INX                    \ Set X = 0 (as we ended the above loop with X = &FF)
@@ -1948,6 +2010,30 @@ ENDIF
 
 \ ******************************************************************************
 \
+\       Name: TogglePlanetType
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Toggle the planet between meridian and crater
+\
+\ ******************************************************************************
+
+.TogglePlanetType
+
+ LDX #0                 \ Switch to slot 0, which is the planet, and highlight
+ JSR SwitchToSlot       \ the existing contents
+
+ LDA TYPE               \ Flip the planet type between 128 and 130
+ EOR #%00000010
+ STA TYPE
+ STA FRIN
+
+ JSR STORE              \ Store the new planet details
+
+ JMP DrawShip           \ Draw the ship and return from the subroutine using a
+                        \ tail call
+
+\ ******************************************************************************
+\
 \       Name: ToggleValue
 \       Type: Subroutine
 \   Category: Universe editor
@@ -1985,8 +2071,17 @@ ENDIF
 
 .PrintShipType
 
+IF _6502SP_VERSION
+
  LDA #RED               \ Send a #SETCOL RED command to the I/O processor to
  JSR DOCOL              \ switch to colour 2, which is red in the space view
+
+ELIF _MASTER_VERSION
+
+ LDA #RED               \ Switch to colour 2, which is red
+ STA COL
+
+ENDIF
 
  LDA #24                \ Move the text cursor to column 24 on row 1
  JSR DOXC
@@ -2756,6 +2851,7 @@ ENDIF
  ECHR 'E'
  EQUB VE
 
+ EJMP 1
  ECHR 'A'               \ Token 5:    "ARE YOU SURE?"
  ETWO 'R', 'E'          \
  ECHR ' '               \ Encoded as:   "A<242> [179] SU<242>?"
@@ -2773,7 +2869,7 @@ IF _MASTER_VERSION
 \
 \       Name: TWIST
 \       Type: Subroutine
-\   Category: Demo
+\   Category: Universe editor
 \    Summary: Pitch the current ship by a small angle in a positive direction
 \
 \ ------------------------------------------------------------------------------
@@ -2812,7 +2908,7 @@ IF _MASTER_VERSION
 \
 \       Name: STORE
 \       Type: Subroutine
-\   Category: Universe
+\   Category: Universe editor
 \    Summary: Copy the ship data block at INWK back to the K% workspace
 \
 \ ------------------------------------------------------------------------------
@@ -2844,7 +2940,7 @@ IF _MASTER_VERSION
 \
 \       Name: ZEBC
 \       Type: Subroutine
-\   Category: Utility routines
+\   Category: Universe editor
 \    Summary: Zero-fill pages &B and &C
 \
 \ ******************************************************************************
@@ -2859,5 +2955,84 @@ IF _MASTER_VERSION
  JMP ZES1               \ Jump to ZES1 to zero-fill page &B
 
 ENDIF
+
+\ ******************************************************************************
+\
+\       Name: GETYN
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Wait until either "Y" or "N" is pressed
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   C flag              Set if "Y" was pressed, clear if "N" was pressed
+\
+\ ******************************************************************************
+
+IF _6502SP_VERSION
+
+.GETYN
+
+ JSR t                  \ Scan the keyboard until a key is pressed, returning
+                        \ the ASCII code in A and X
+
+ CMP #'y'               \ If "Y" was pressed, return from the subroutine with
+ BEQ gety1              \ the C flag set (as the CMP sets the C flag)
+
+ CMP #'n'               \ If "N" was not pressed, loop back to keep scanning
+ BNE GETYN              \ for key presses
+
+ CLC                    \ Clear the C flag
+
+.gety1
+
+ RTS                    \ Return from the subroutine
+
+ENDIF
+
+\ ******************************************************************************
+\
+\       Name: dashboardBuff
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: Buffer for changing the dashboard
+\
+\ ******************************************************************************
+
+.dashboardBuff
+
+ EQUB 2                 \ The number of bytes to transmit with this command
+
+ EQUB 2                 \ The number of bytes to receive with this command
+
+\ ******************************************************************************
+\
+\       Name: SwitchDashboard
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Change the dashboard
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The dashboard to display:
+\
+\                         * 250 = the Universe Editor dashboard
+\
+\                         * 251 = the main game dashboard
+\
+\ ******************************************************************************
+
+.SwitchDashboard
+
+ LDX #LO(dashboardBuff) \ Set (Y X) to point to the dashboardBuff parameter
+ LDY #HI(dashboardBuff) \ block
+
+ JMP OSWORD             \ Send an OSWORD command to the I/O processor to
+                        \ draw the dashboard, returning from the subroutine
+                        \ using a tail call
 
 .endUniverseEditor2

@@ -6458,8 +6458,19 @@ ENDMACRO
  EQUW HLOIN             \            247 (&F7)     7 = Draw orange sun lines
  EQUW HANGER            \            248 (&F8)     8 = Display the hangar
  EQUW SOMEPROT          \            249 (&F9)     9 = Copy protection
- EQUW SAFE              \            250 (&FA)    10 = Do nothing
- EQUW SAFE              \            251 (&FB)    11 = Do nothing
+
+                        \ --- Mod: Original Acornsoft code removed: ----------->
+
+\ EQUW SAFE             \            250 (&FA)    10 = Do nothing
+\ EQUW SAFE             \            251 (&FB)    11 = Do nothing
+
+                        \ --- And replaced by: -------------------------------->
+
+ EQUW EditorDashboard   \            250 (&FA)    10 = Display editor dashboard
+ EQUW GameDashboard     \            251 (&FB)    11 = Display game dashboard
+
+                        \ --- End of added code ------------------------------->
+
  EQUW SAFE              \            252 (&FC)    12 = Do nothing
  EQUW SAFE              \            253 (&FD)    13 = Do nothing
  EQUW SAFE              \            254 (&FE)    14 = Do nothing
@@ -8686,6 +8697,12 @@ CPU 0                   \ Switch back to normal 6502 asembly
 
  JMP PUTBACK            \ Jump to PUTBACK to restore the USOSWRCH handler and
                         \ return from the subroutine using a tail call
+
+                        \ --- Mod: Code added for Universe Editor: ------------>
+
+INCLUDE "1-source-files/main-sources/elite-universe-editor3.asm"
+
+                        \ --- End of added code ------------------------------->
 
 \ ******************************************************************************
 \
