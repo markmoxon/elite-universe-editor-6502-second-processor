@@ -16331,11 +16331,11 @@ Saving file '3-assembled-output/ELTH.bin'
      6FDD   C9 24      CMP #&24
      6FDF   D0 05      BNE &6FE6
      6FE1   A2 1B      LDX #&1B
-     6FE3   4C FF F5   JMP &F5FF
+     6FE3   4C 17 F6   JMP &F617
      6FE6   C9 30      CMP #&30
      6FE8   D0 05      BNE &6FEF
      6FEA   A2 1C      LDX #&1C
-     6FEC   4C FF F5   JMP &F5FF
+     6FEC   4C 17 F6   JMP &F617
      6FEF   C9 15      CMP #&15
      6FF1   D0 05      BNE &6FF8
      6FF3   A2 1D      LDX #&1D
@@ -16347,7 +16347,7 @@ Saving file '3-assembled-output/ELTH.bin'
      7001   C9 27      CMP #&27
      7003   D0 05      BNE &700A
      7005   A2 23      LDX #&23
-     7007   4C FF F5   JMP &F5FF
+     7007   4C 17 F6   JMP &F617
      700A   C9 34      CMP #&34
      700C   D0 03      BNE &7011
      700E   4C B5 F5   JMP &F5B5
@@ -38640,7 +38640,7 @@ End macro FACE
      F25C   48         PHA
      F25D   A5 22      LDA &22
      F25F   48         PHA
-     F260   A9 29      LDA #&29
+     F260   A9 41      LDA #&41
      F262   85 21      STA &21
      F264   A9 F6      LDA #&F6
      F266   4C 1F 16   JMP &161F
@@ -38927,7 +38927,7 @@ End macro FACE
      F4C4   4C 62 4D   JMP &4D62
 .UpdateCompass
      F4C7   20 FD 43   JSR &43FD
-     F4CA   20 1C F6   JSR &F61C
+     F4CA   20 34 F6   JSR &F634
      F4CD   4C D9 43   JMP &43D9
 .UpdateDashboard
      F4D0   A5 60      LDA &60
@@ -39029,7 +39029,7 @@ End macro FACE
      F587   B5 45      LDA &45,X
      F589   45 19      EOR &19
      F58B   95 45      STA &45,X
-     F58D   4C 15 F6   JMP &F615
+     F58D   4C 2D F6   JMP &F62D
 .ChangeMissiles
      F590   A5 64      LDA &64
      F592   29 07      AND #&07
@@ -39052,7 +39052,7 @@ End macro FACE
      F5AC   29 F8      AND #&F8
      F5AE   05 19      ORA &19
      F5B0   85 64      STA &64
-     F5B2   4C 15 F6   JMP &F615
+     F5B2   4C 2D F6   JMP &F62D
 .ChangeAggression
      F5B5   A5 65      LDA &65
      F5B7   29 3E      AND #&3E
@@ -39078,283 +39078,229 @@ End macro FACE
      F5D4   29 C1      AND #&C1
      F5D6   05 19      ORA &19
      F5D8   85 65      STA &65
-     F5DA   4C 15 F6   JMP &F615
+     F5DA   4C 2D F6   JMP &F62D
 .ChangeCounter
      F5DD   B5 45      LDA &45,X
      F5DF   29 80      AND #&80
      F5E1   85 D1      STA &D1
-     F5E3   24 2F      BIT &2F
-     F5E5   30 0D      BMI &F5F4
-     F5E7   F6 45      INC &45,X
-     F5E9   C9 7F      CMP #&7F
-     F5EB   90 02      BCC &F5EF
-     F5ED   A9 7F      LDA #&7F
+     F5E3   B5 45      LDA &45,X
+     F5E5   29 7F      AND #&7F
+     F5E7   A8         TAY
+     F5E8   24 2F      BIT &2F
+     F5EA   30 25      BMI &F611
+     F5EC   A5 D1      LDA &D1
+     F5EE   30 02      BMI &F5F2
 .chav1
-     F5EF   05 D1      ORA &D1
-     F5F1   4C 15 F6   JMP &F615
+     F5F0   C8         INY
+     F5F1   24
 .chav2
-     F5F4   D6 45      DEC &45,X
-     F5F6   10 F7      BPL &F5EF
-     F5F8   A5 D1      LDA &D1
-     F5FA   49 80      EOR #&80
-     F5FC   4C 15 F6   JMP &F615
+     F5F2   88         DEY
+     F5F3   C0 80      CPY #&80
+     F5F5   D0 05      BNE &F5FC
+     F5F7   20 82 55   JSR &5582
+     F5FA   A0 7F      LDY #&7F
+.chav3
+     F5FC   98         TYA
+     F5FD   10 08      BPL &F607
+     F5FF   A5 D1      LDA &D1
+     F601   49 80      EOR #&80
+     F603   85 D1      STA &D1
+     F605   A0 00      LDY #&00
+.chav4
+     F607   98         TYA
+     F608   05 D1      ORA &D1
+     F60A   95 45      STA &45,X
+     F60C   C9 7F      CMP #&7F
+     F60E   4C 2D F6   JMP &F62D
+.chav5
+     F611   A5 D1      LDA &D1
+     F613   10 DD      BPL &F5F2
+     F615   30 D9      BMI &F5F0
 .ChangeValue
-     F5FF   24 2F      BIT &2F
-     F601   30 08      BMI &F60B
-     F603   F6 45      INC &45,X
-     F605   D0 0E      BNE &F615
-     F607   D6 45      DEC &45,X
-     F609   30 0A      BMI &F615
+     F617   24 2F      BIT &2F
+     F619   30 08      BMI &F623
+     F61B   F6 45      INC &45,X
+     F61D   D0 0E      BNE &F62D
+     F61F   D6 45      DEC &45,X
+     F621   30 0A      BMI &F62D
 .chan1
-     F60B   D6 45      DEC &45,X
-     F60D   B5 45      LDA &45,X
-     F60F   C9 FF      CMP #&FF
-     F611   D0 02      BNE &F615
-     F613   F6 45      INC &45,X
+     F623   D6 45      DEC &45,X
+     F625   B5 45      LDA &45,X
+     F627   C9 FF      CMP #&FF
+     F629   D0 02      BNE &F62D
+     F62B   F6 45      INC &45,X
 .StoreValue
-     F615   20 37 6E   JSR &6E37
-     F618   20 D0 F4   JSR &F4D0
-     F61B   60         RTS
+     F62D   20 37 6E   JSR &6E37
+     F630   20 D0 F4   JSR &F4D0
+     F633   60         RTS
 .GetShipVector
-     F61C   A0 08      LDY #&08
+     F634   A0 08      LDY #&08
 .svec1
-     F61E   B1 1F      LDA (&1F),Y
-     F620   99 D2 00   STA &00D2,Y
-     F623   88         DEY
-     F624   10 F8      BPL &F61E
-     F626   4C 84 54   JMP &5484
+     F636   B1 1F      LDA (&1F),Y
+     F638   99 D2 00   STA &00D2,Y
+     F63B   88         DEY
+     F63C   10 F8      BPL &F636
+     F63E   4C 84 54   JMP &5484
 .UniverseToken
-     F629   57
+     F641   57
 Macro EJMP:
-     F62A   5E
+     F642   5E
 End macro EJMP
 Macro EJMP:
-     F62B   5C
+     F643   5C
 End macro EJMP
 Macro EJMP:
-     F62C   49
+     F644   49
 End macro EJMP
 Macro EJMP:
-     F62D   56
+     F645   56
 End macro EJMP
 Macro EJMP:
-     F62E   5F
+     F646   5F
 End macro EJMP
 Macro ECHR:
-     F62F   77
+     F647   77
 End macro ECHR
 Macro ETWO:
-     F630   A6
+     F648   A6
 End macro ETWO
 Macro ECHR:
-     F631   04
+     F649   04
 End macro ECHR
 Macro ECHR:
-     F632   1C
+     F64A   1C
 End macro ECHR
 Macro ECHR:
-     F633   77
+     F64B   77
 End macro ECHR
 Macro ECHR:
-     F634   16
+     F64C   16
 End macro ECHR
 Macro ECHR:
-     F635   14
+     F64D   14
 End macro ECHR
 Macro ETWO:
-     F636   BE
+     F64E   BE
 End macro ETWO
 Macro ECHR:
-     F637   04
+     F64F   04
 End macro ECHR
 Macro ECHR:
-     F638   04
+     F650   04
 End macro ECHR
 Macro ECHR:
-     F639   77
+     F651   77
 End macro ECHR
 Macro ECHR:
-     F63A   1A
+     F652   1A
 End macro ECHR
 Macro ECHR:
-     F63B   12
+     F653   12
 End macro ECHR
 Macro ETWO:
-     F63C   B6
+     F654   B6
 End macro ETWO
 Macro ETWO:
-     F63D   80
+     F655   80
 End macro ETWO
 Macro EJMP:
-     F63E   5D
+     F656   5D
 End macro EJMP
 Macro EJMP:
-     F63F   55
+     F657   55
 End macro EJMP
 Macro ECHR:
-     F640   66
+     F658   66
 End macro ECHR
 Macro ECHR:
-     F641   79
+     F659   79
 End macro ECHR
 Macro ECHR:
-     F642   77
-End macro ECHR
-Macro ETWO:
-     F643   B7
-End macro ETWO
-Macro ECHR:
-     F644   16
-End macro ECHR
-Macro ECHR:
-     F645   13
-End macro ECHR
-Macro ECHR:
-     F646   77
-End macro ECHR
-Macro ECHR:
-     F647   02
-End macro ECHR
-Macro ECHR:
-     F648   19
-End macro ECHR
-Macro ECHR:
-     F649   1E
+     F65A   77
 End macro ECHR
 Macro ETWO:
-     F64A   AD
+     F65B   B7
 End macro ETWO
 Macro ECHR:
-     F64B   05
+     F65C   16
+End macro ECHR
+Macro ECHR:
+     F65D   13
+End macro ECHR
+Macro ECHR:
+     F65E   77
+End macro ECHR
+Macro ECHR:
+     F65F   02
+End macro ECHR
+Macro ECHR:
+     F660   19
+End macro ECHR
+Macro ECHR:
+     F661   1E
 End macro ECHR
 Macro ETWO:
-     F64C   8D
-End macro ETWO
-Macro ETWO:
-     F64D   80
+     F662   AD
 End macro ETWO
 Macro ECHR:
-     F64E   65
-End macro ECHR
-Macro ECHR:
-     F64F   79
-End macro ECHR
-Macro ECHR:
-     F650   77
-End macro ECHR
-Macro ECHR:
-     F651   04
-End macro ECHR
-Macro ECHR:
-     F652   16
+     F663   05
 End macro ECHR
 Macro ETWO:
-     F653   AD
+     F664   8D
+End macro ETWO
+Macro ETWO:
+     F665   80
 End macro ETWO
 Macro ECHR:
-     F654   77
+     F666   65
 End macro ECHR
 Macro ECHR:
-     F655   02
+     F667   79
 End macro ECHR
 Macro ECHR:
-     F656   19
+     F668   77
 End macro ECHR
 Macro ECHR:
-     F657   1E
+     F669   04
+End macro ECHR
+Macro ECHR:
+     F66A   16
 End macro ECHR
 Macro ETWO:
-     F658   AD
+     F66B   AD
 End macro ETWO
 Macro ECHR:
-     F659   05
+     F66C   77
+End macro ECHR
+Macro ECHR:
+     F66D   02
+End macro ECHR
+Macro ECHR:
+     F66E   19
+End macro ECHR
+Macro ECHR:
+     F66F   1E
 End macro ECHR
 Macro ETWO:
-     F65A   8D
+     F670   AD
 End macro ETWO
 Macro ECHR:
-     F65B   77
+     F671   05
+End macro ECHR
+Macro ETWO:
+     F672   8D
+End macro ETWO
+Macro ECHR:
+     F673   77
 End macro ECHR
 Macro EJMP:
-     F65C   53
+     F674   53
 End macro EJMP
-Macro ETWO:
-     F65D   80
-End macro ETWO
-Macro ECHR:
-     F65E   64
-End macro ECHR
-Macro ECHR:
-     F65F   79
-End macro ECHR
-Macro ECHR:
-     F660   77
-End macro ECHR
-Macro ECHR:
-     F661   14
-End macro ECHR
-Macro ETWO:
-     F662   A2
-End macro ETWO
-Macro ECHR:
-     F663   16
-End macro ECHR
-Macro ETWO:
-     F664   B7
-End macro ETWO
-Macro ECHR:
-     F665   10
-End macro ECHR
-Macro ECHR:
-     F666   02
-End macro ECHR
-Macro ECHR:
-     F667   12
-End macro ECHR
-Macro ETWO:
-     F668   80
-End macro ETWO
-Macro ECHR:
-     F669   63
-End macro ECHR
-Macro ECHR:
-     F66A   79
-End macro ECHR
-Macro ECHR:
-     F66B   77
-End macro ECHR
-Macro ECHR:
-     F66C   13
-End macro ECHR
-Macro ECHR:
-     F66D   12
-End macro ECHR
-Macro ECHR:
-     F66E   1B
-End macro ECHR
-Macro ETWO:
-     F66F   8A
-End macro ETWO
-Macro ECHR:
-     F670   12
-End macro ECHR
-Macro ETOK:
-     F671   87
-End macro ETOK
-Macro ECHR:
-     F672   11
-End macro ECHR
-Macro ECHR:
-     F673   1E
-End macro ECHR
-Macro ETWO:
-     F674   B2
-End macro ETWO
 Macro ETWO:
      F675   80
 End macro ETWO
 Macro ECHR:
-     F676   62
+     F676   64
 End macro ECHR
 Macro ECHR:
      F677   79
@@ -39363,72 +39309,144 @@ Macro ECHR:
      F678   77
 End macro ECHR
 Macro ECHR:
-     F679   07
+     F679   14
 End macro ECHR
 Macro ETWO:
-     F67A   AE
+     F67A   A2
 End macro ETWO
 Macro ECHR:
-     F67B   0E
-End macro ECHR
-Macro ECHR:
-     F67C   77
-End macro ECHR
-Macro ECHR:
-     F67D   02
-End macro ECHR
-Macro ECHR:
-     F67E   19
-End macro ECHR
-Macro ECHR:
-     F67F   1E
+     F67B   16
 End macro ECHR
 Macro ETWO:
-     F680   AD
+     F67C   B7
 End macro ETWO
 Macro ECHR:
-     F681   05
+     F67D   10
+End macro ECHR
+Macro ECHR:
+     F67E   02
+End macro ECHR
+Macro ECHR:
+     F67F   12
 End macro ECHR
 Macro ETWO:
-     F682   8D
+     F680   80
+End macro ETWO
+Macro ECHR:
+     F681   63
+End macro ECHR
+Macro ECHR:
+     F682   79
+End macro ECHR
+Macro ECHR:
+     F683   77
+End macro ECHR
+Macro ECHR:
+     F684   13
+End macro ECHR
+Macro ECHR:
+     F685   12
+End macro ECHR
+Macro ECHR:
+     F686   1B
+End macro ECHR
+Macro ETWO:
+     F687   8A
+End macro ETWO
+Macro ECHR:
+     F688   12
+End macro ECHR
+Macro ETOK:
+     F689   87
+End macro ETOK
+Macro ECHR:
+     F68A   11
+End macro ECHR
+Macro ECHR:
+     F68B   1E
+End macro ECHR
+Macro ETWO:
+     F68C   B2
 End macro ETWO
 Macro ETWO:
-     F683   80
+     F68D   80
 End macro ETWO
 Macro ECHR:
-     F684   61
+     F68E   62
 End macro ECHR
 Macro ECHR:
-     F685   79
+     F68F   79
 End macro ECHR
 Macro ECHR:
-     F686   77
+     F690   77
 End macro ECHR
 Macro ECHR:
-     F687   12
-End macro ECHR
-Macro ECHR:
-     F688   0F
+     F691   07
 End macro ECHR
 Macro ETWO:
-     F689   8C
+     F692   AE
+End macro ETWO
+Macro ECHR:
+     F693   0E
+End macro ECHR
+Macro ECHR:
+     F694   77
+End macro ECHR
+Macro ECHR:
+     F695   02
+End macro ECHR
+Macro ECHR:
+     F696   19
+End macro ECHR
+Macro ECHR:
+     F697   1E
+End macro ECHR
+Macro ETWO:
+     F698   AD
+End macro ETWO
+Macro ECHR:
+     F699   05
+End macro ECHR
+Macro ETWO:
+     F69A   8D
 End macro ETWO
 Macro ETWO:
-     F68A   80
+     F69B   80
 End macro ETWO
-     F68B   57
+Macro ECHR:
+     F69C   61
+End macro ECHR
+Macro ECHR:
+     F69D   79
+End macro ECHR
+Macro ECHR:
+     F69E   77
+End macro ECHR
+Macro ECHR:
+     F69F   12
+End macro ECHR
+Macro ECHR:
+     F6A0   0F
+End macro ECHR
+Macro ETWO:
+     F6A1   8C
+End macro ETWO
+Macro ETWO:
+     F6A2   80
+End macro ETWO
+     F6A3   57
 .endUniverseEditor2
 SHIPS
 Assembled at &D000 
-Ends at &F68C 
-Code size is &268C 
+Ends at &F6A4 
+Code size is &26A4 
 Execute at &D000 
 Reload at &D000 
-S.SHIPS &D000  &F68C  &D000  &D000 
+S.SHIPS &D000  &F6A4  &D000  &D000 
 Saving file '3-assembled-output/SHIPS.bin'
 ELITE game code &6F  bytes free
 F% = &8191 
-Ends at &F68C 
+Ends at &F6A4 
 .elitea
 elitea = &100C 
 .eliteb
@@ -39456,7 +39474,7 @@ words = &8191
 .ships
 ships = &8591 
 .end
-P% = &AD11 
+P% = &AD29 
 S.P.CODE &1000 &AD91  &1000 &1000 
 Saving file '3-assembled-output/P.CODE.unprot.bin'
 .ZP

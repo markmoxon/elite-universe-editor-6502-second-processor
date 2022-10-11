@@ -2079,39 +2079,70 @@ ENDIF
 
 .ChangeCounter
 
- LDA INWK,X             \ Store counter in T1
-
- AND #%10000000         \ Extract the sign (bit 7) of A and store it in T
+ LDA INWK,X             \ Extract the sign (bit 7) of the counter and store
+ AND #%10000000         \ it in T
  STA T
 
- BIT shiftCtrl          \ If SHIFT is being held, jump to chav2 to reduce the
- BMI chav2              \ value
+ LDA INWK,X             \ Extract the magnitude of the counter into A
+ AND #%01111111
+ TAY
 
- INC INWK,X             \ Increment the value at the correct offset
+ BIT shiftCtrl          \ If SHIFT is being held, jump to chav5 to reduce the
+ BMI chav5              \ value
 
- CMP #127               \ Cap it at a maximum of 127
- BCC P%+4
- LDA #127
+ LDA T                  \ If the counter is negative, we need to decrease the
+ BMI chav2              \ magnitude in Y, so jump to the DEY below
 
 .chav1
 
- ORA T                  \ Put the original sign back
+ INY                    \ Otherwise increment the magnitude in Y
 
- JMP StoreValue         \ Jump to StoreValue to store the value, returning from
-                        \ the subroutine using a tail call
+ EQUB &24               \ Skip the next instruction by turning it into &24 &88,
+                        \ or BIT &0088, which does nothing apart from affect the
+                        \ flags
 
 .chav2
 
- DEC INWK,X             \ Decrement the value at the correct offset
+ DEY                    \ Decrement the magnitude in Y
 
- BPL chav1              \ If it's still positive, jump to chav1 to store the
-                        \ value
+ CPY #128               \ If Y has not yet overflowed, jump to chav3
+ BNE chav3
 
- LDA T                  \ Otherwise, set the value to 0 with the sign flipped
+ JSR BEEP               \ Beep to indicate we have reached the maximum
+
+ LDY #127               \ Cap the magnitude to a maximum of 127
+
+.chav3
+
+ TYA                    \ If the magnitude is still positive, jump to chav4 to
+ BPL chav4              \ skip the following
+
+ LDA T                  \ Flip the sign in T, so we go past the middle point
  EOR #%10000000
+ STA T
+
+ LDY #0                 \ Set the counter magnitude to 0
+
+.chav4
+
+ TYA                    \ Copy the updated magnitude into A
+
+ ORA T                  \ Put the sign back
+
+ STA INWK,X             \ Store the updated value
+
+ CMP #127
 
  JMP StoreValue         \ Jump to StoreValue to store the value, returning from
                         \ the subroutine using a tail call
+
+.chav5
+
+ LDA T                  \ If the counter is positive, we need to decrease the
+ BPL chav2              \ magnitude in Y, so jump to the DEY above
+
+ BMI chav1              \ Jump up to chav1 to store the new value (this BMI is
+                        \ effectively a JMP as we just passed through a BPL)
 
 \ ******************************************************************************
 \
