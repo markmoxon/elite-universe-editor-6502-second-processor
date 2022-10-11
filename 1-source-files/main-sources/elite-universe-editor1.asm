@@ -50,6 +50,7 @@ keyO = &36
 keyP = &37
 keyQ = &10
 keyR = &33
+keyT = &23
 keyW = &21
 
 key1 = &30
@@ -98,6 +99,7 @@ keyO = &4F
 keyP = &50
 keyQ = &51
 keyR = &52
+keyT = &54
 keyW = &57
 
 key1 = &31
@@ -633,6 +635,10 @@ ENDIF
  BNE P%+5               \ INWK+31)
  JMP ChangeMissiles
 
+ CMP #keyT              \ T (toggle the trader/bounty hunter/pirate flag in
+ BNE P%+5               \ bits 0, 1, 3 of INWK+36, NEWB)
+ JMP ToggleShipType
+
  CMP #keyC              \ 4 (toggle the ship's Cop status in bit 6 of INWK+36,
  BNE P%+9               \ NEWB)
  LDX #36
@@ -792,6 +798,8 @@ ENDIF
                         \ doesn't draw the stardust - it should)
 
  JSR PrintSlotNumber    \ Print the current slot number at text location (0, 1)
+
+ JSR PrintShipType      \ Print the current ship type on the screen
 
  JSR DrawShips          \ Draw all ships
 

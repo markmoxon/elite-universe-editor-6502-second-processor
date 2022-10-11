@@ -265,8 +265,12 @@ ENDIF
 
  JSR UpdateSlotNumber   \ Store and print the new slot number
 
+ JSR PrintShipType      \ Remove the current ship type from the screen
+
  LDX currentSlot        \ Get the ship data for the new slot
  JSR GetShipData
+
+ JSR PrintShipType      \ Print the current ship type on the screen
 
  JMP HighlightShip      \ Highlight the new ship, so we can see which one it is,
                         \ and return from the subroutine using a tail call
@@ -625,7 +629,7 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: ShowToken
+\       Name: PrintToken
 \       Type: Subroutine
 \   Category: Universe editor
 \    Summary: Print an extended recursive token from the UniverseToken table
@@ -646,7 +650,7 @@ ENDIF
 \
 \ ******************************************************************************
 
-.ShowToken
+.PrintToken
 
  PHA                    \ Store A on the stack, so we can retrieve it later
 
@@ -955,7 +959,7 @@ IF _MASTER_VERSION
 ENDIF
 
  LDA #1                 \ Print extended token 1, the disc access menu, which
- JSR ShowToken          \ presents these options:
+ JSR PrintToken         \ presents these options:
                         \
                         \   1. Load Universe
                         \   2. Save Universe {universe name}
@@ -1917,6 +1921,12 @@ ENDIF
 \   Category: Universe editor
 \    Summary: Show or hide the E bulb
 \
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   sete1               Contains an RTS
+\
 \ ******************************************************************************
 
 .SetEBulb
@@ -1961,7 +1971,136 @@ ENDIF
  EOR P
  STA INWK,X
 
- JMP StoreValue         \ Store the updated results and update the dashboard
+ JMP StoreValue         \ Store the updated results and update the dashboard,
+                        \ returning from the subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: PrintShipType
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Print the trader/bounty hunter/pirate flag
+\
+\ ******************************************************************************
+
+.PrintShipType
+
+ LDA #RED               \ Send a #SETCOL RED command to the I/O processor to
+ JSR DOCOL              \ switch to colour 2, which is red in the space view
+
+ LDA #24                \ Move the text cursor to column 24 on row 1
+ JSR DOXC
+ LDA #1
+ JSR DOYC
+
+ JSR MT19               \ Call MT19 to capitalise the next letter (i.e. set
+                        \ Sentence Case for this word only)
+
+ LDA #%10000000         \ Set bit 7 of QQ17 to switch to Sentence Case
+ STA QQ17
+
+ LDA INWK+36            \ Set A to the NEWB flag in INWK+36
+
+ LSR A                  \ Set the C flag to bit 0 of NEWB (trader)
+
+ BCC ptyp1              \ If bit 0 is clear, jump to ptyp1
+
+                        \ Bit 0 is set, so the ship is a trader
+
+ LDA #2                 \ Print extended token 2 ("TRADER"), returning from the
+ JMP PrintToken         \ subroutine using a tail call
+
+.ptyp1
+
+ LSR A                  \ Set the C flag to bit 1 of NEWB (bounty hunter)
+
+ BCC ptyp2              \ If bit 1 is clear, jump to ptyp2
+
+                        \ Bit 1 is set, so the ship is a bounty hunter
+
+ LDA #3                 \ Print extended token 3 ("BOUNTY"), returning from the
+ JMP PrintToken         \ subroutine using a tail call
+
+.ptyp2
+
+ LSR A                  \ Set the C flag to bit 3 of NEWB (pirate)
+ LSR A
+
+ BCC sete1              \ If bit 3 is clear, jump to sete1 to return from the
+                        \ subroutine without printing anything (as sete1
+                        \ contains an RTS)
+
+ LDA #4                 \ Print extended token 4 ("PIRATE"), returning from the
+ JMP PrintToken         \ subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: ToggleShipType
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Toggle the trader/bounty hunter/pirate flag
+\
+\ ******************************************************************************
+
+.ToggleShipType
+
+ JSR PrintShipType      \ Remove the current ship type from the screen
+
+ LDA INWK+36            \ Set X and A to the NEWB flag
+ TAX
+
+ LSR A                  \ Set the C flag to bit 0 of NEWB (trader)
+
+ BCC styp1              \ If bit 0 is clear, jump to styp1
+
+                        \ Bit 0 is set, so we are already a trader, and we move
+                        \ on to bounty hunter
+
+ LDA #%00000010         \ Set bit 1 of A (bounty hunter) and jump to styp6
+ BNE styp6
+
+.styp1
+
+ LSR A                  \ Set the C flag to bit 1 of NEWB (bounty hunter)
+
+ BCC styp2              \ If bit 1 is clear, jump to styp2
+
+                        \ Bit 1 is set, so we are already a bounty hunter, and
+                        \ we move on to pirate
+
+ LDA #%00001000         \ Set bit 3 of A (pirate) and jump to styp6
+ BNE styp6
+
+.styp2
+
+ LSR A                  \ Set the C flag to bit 3 of NEWB (pirate)
+ LSR A
+
+ BCC styp3              \ If bit 3 is clear, jump to styp3
+
+                        \ Bit 3 is set, so we are already a pirate, and we move
+                        \ on to no status
+
+ LDA #%00000000         \ Clear all bits of T (no status) and jump to styp6
+ BEQ styp6
+
+.styp3
+
+ LDA #%00000001         \ Set bit 0 of A (trader)
+
+.styp6
+
+ STA T                  \ Store the bits we want to set in T
+
+ TXA                    \ Set the bits in T in NEWB (which we fetch from X)
+ AND #%11110100
+ ORA T
+ STA INWK+36
+
+ JSR PrintShipType      \ Print the current ship type on the screen
+
+ JMP StoreValue         \ Store the updated results and update the dashboard,
+                        \ returning from the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -2008,7 +2147,8 @@ ENDIF
  ORA P
  STA INWK+31
 
- JMP StoreValue         \ Jump to StoreValue to store the new value
+ JMP StoreValue         \ Store the updated results and update the dashboard,
+                        \ returning from the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -2060,7 +2200,8 @@ ENDIF
  ORA P
  STA INWK+32
 
- JMP StoreValue         \ Jump to StoreValue to store the new value
+ JMP StoreValue         \ Store the updated results and update the dashboard,
+                        \ returning from the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -2129,12 +2270,10 @@ ENDIF
 
  ORA T                  \ Put the sign back
 
- STA INWK,X             \ Store the updated value
+ STA INWK,X             \ Updated the counter with the new value
 
- CMP #127
-
- JMP StoreValue         \ Jump to StoreValue to store the value, returning from
-                        \ the subroutine using a tail call
+ JMP StoreValue         \ Store the updated results and update the dashboard,
+                        \ returning from the subroutine using a tail call
 
 .chav5
 
@@ -2595,6 +2734,37 @@ ENDIF
  ECHR 'X'
  ETWO 'I', 'T'
  ETWO '-', '-'
+ EQUB VE
+
+ ECHR 'T'               \ Token 2:    "TRADER"
+ ETWO 'R', 'A'
+ ECHR 'D'
+ ETWO 'E', 'R'
+ EQUB VE
+
+ ECHR 'B'               \ Token 3:    "BOUNTY"
+ ETWO 'O', 'U'
+ ECHR 'N'
+ ECHR 'T'
+ ECHR 'Y'
+ EQUB VE
+
+ ECHR 'P'               \ Token 4:    "PIRATE"
+ ECHR 'I'
+ ETWO 'R', 'A'
+ ECHR 'T'
+ ECHR 'E'
+ EQUB VE
+
+ ECHR 'A'               \ Token 5:    "ARE YOU SURE?"
+ ETWO 'R', 'E'          \
+ ECHR ' '               \ Encoded as:   "A<242> [179] SU<242>?"
+ ETOK 179
+ ECHR ' '
+ ECHR 'S'
+ ECHR 'U'
+ ETWO 'R', 'E'
+ ECHR '?'
  EQUB VE
 
 IF _MASTER_VERSION
