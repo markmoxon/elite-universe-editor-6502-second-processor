@@ -29,6 +29,52 @@
 
 \ ******************************************************************************
 \
+\       Name: ChangeView
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Change view to front, rear, left or right
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   Internal key number for f0, f1, f2 or f3
+\
+\ Other entry points:
+\
+\   ChangeView+8        Change to view X, even if we are already on that view
+\                       (so this redraws the view)
+\
+\ ******************************************************************************
+
+.ChangeView
+
+ AND #3                 \ If we get here then we have pressed f0-f3, so extract
+ TAX                    \ bits 0-1 to set X = 0, 1, 2, 3 for f0, f1, f2, f3
+
+ CPX VIEW               \ If we are already on this view, jump to view1 to
+ BEQ view1              \ ignore the key press and return from the subroutine
+
+                        \ Otherwise this is a new view, so set it up
+
+ JSR LOOK1              \ Otherwise this is a new view, so call LOOK1 to switch
+                        \ to view X and draw the stardust
+
+ JSR NWSTARS            \ Set up a new stardust field (not sure why LOOK1
+                        \ doesn't draw the stardust - it should)
+
+ JSR PrintSlotNumber    \ Print the current slot number at text location (0, 1)
+
+ JSR PrintShipType      \ Print the current ship type on the screen
+
+ JSR DrawShips          \ Draw all ships
+
+.view1
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
 \       Name: QuitEditor
 \       Type: Subroutine
 \   Category: Universe editor
@@ -1881,8 +1927,17 @@ ENDIF
  LDA INWK+27            \ Set DELTA to the ship's energy speed
  STA DELTA
 
- LDA INWK+28            \ Set FSH to the ship's acceleration
- STA FSH
+ LDA INWK+28            \ Set FSH to the ship's acceleration, adding 128 so it
+ CLC                    \ goes from a signed 8-bit number:
+ ADC #128               \
+ STA FSH                \   0 to 127, -128 to -1
+                        \
+                        \ to the range:
+                        \
+                        \   128 to 255, 0 to 127
+                        \
+                        \ so positive is in the right half of the indicator, and
+                        \ negative is in the left half
 
  LDA INWK+29            \ Set ALP1 and ALP2 to the magnitude and sign of the
  AND #%10000000         \ roll counter (magnitude of ALP1 is in the range 0-31)
@@ -1946,8 +2001,8 @@ ENDIF
  LDA INWK+31            \ Get the number of missiles
  AND #%00000111
 
- CMP #5                 \ If there are 0 to 4 missiles, jump to upda1 to show
- BCC upda1              \ them in green
+ CMP #5                 \ If there are 0 to 4 missiles, jump to upda2 to show
+ BCC upda2              \ them in green
 
  LDY #YELLOW2           \ Modify the msblob routine so it shows missiles in
  STY SAL8+1             \ yellow
@@ -1955,7 +2010,7 @@ ENDIF
  SEC                    \ Subtract 4 from the missile count, so we just show the
  SBC #4                 \ missiles in positions 5-7
 
-.upda1
+.upda2
 
  STA NOMSL              \ Set NOMSL to the number of missiles to show
 
@@ -2244,23 +2299,30 @@ ENDIF
 
  INX                    \ Increment the number of missiles
 
- CPX #%00001000         \ If we didn't go past the maximum value, jump to cham2
- BCC cham2              \ to store the value
+ CPX #%00001000         \ If we didn't go past the maximum value, jump to cham3
+ BCC cham3              \ to store the value
 
- LDX #%00000111         \ Otherwise decrement the value again so we don't
- BNE cham2              \ overflow and jump to cham2 to store the value (this
-                        \ BNE is effectively a JMP as X is always non-zero)
+ BCS cham2              \ Jump to cham2 to beep (this BCS is effectively a JMP
+                        \ as we just passed through a BCC)
+
 
 .cham1
 
  DEX                    \ Decrement the number of missiles
 
- CPX #255               \ If we didn't wrap around to 255, jump to cham2
- BNE cham2              \ to store the value
-
- INX                    \ Otherwise increment the number of missiles to 0
+ CPX #255               \ If we didn't wrap around to 255, jump to cham3
+ BNE cham3              \ to store the value
 
 .cham2
+
+                        \ If we get here then we already reached the minimum or
+                        \ maximum value, so we make an error beep and do not
+                        \ update the value
+
+ JMP BEEP               \ Beep to indicate we have reached the maximum and
+                        \ return from the subroutine using a tail call
+
+.cham3
 
  STX P                  \ Stick the new missile count into P
 
@@ -2293,25 +2355,29 @@ ENDIF
 
  INX                    \ Increment the aggression level
 
- CPX #%00011111         \ If we didn't reach the maximum value, jump to chag2 
- BCC chag2              \ to store the value
+ CPX #%00100000         \ If we didn't reach the maximum value, jump to chag3 
+ BCC chag3              \ to store the value
 
- LDX #%00011111         \ Otherwise decrement the value again so we don't
- BNE chag2              \ overflow and jump to chag2 to store the value (this
-                        \ BNE is effectively a JMP as X is always non-zero)
+ BCS chag2              \ Jump to chag2 to beep (this BCS is effectively a JMP
+                        \ as we just passed through a BCC)
 
 .chag1
 
  DEX                    \ Decrement the aggression level
 
- CPX #255               \ If we didn't wrap around to 255, jump to chag2
- BNE chag2              \ to store the value
-
- INX                    \ Otherwise increment the value again so we don't
-                        \ underflow and fall through into chag2 to store the
-                        \ value
+ CPX #255               \ If we didn't wrap around to 255, jump to chag3
+ BNE chag3              \ to store the value
 
 .chag2
+
+                        \ If we get here then we already reached the minimum or
+                        \ maximum value, so we make an error beep and do not
+                        \ update the value
+
+ JMP BEEP               \ Beep to indicate we have reached the maximum and
+                        \ return from the subroutine using a tail call
+
+.chag3
 
  TXA                    \ Stick the new aggression level into P, shifted left
  ASL A                  \ by one place so we can OR it into the correct place in
@@ -2371,9 +2437,8 @@ ENDIF
  CPY #128               \ If Y has not yet overflowed, jump to chav3
  BNE chav3
 
- JSR BEEP               \ Beep to indicate we have reached the maximum
-
- LDY #127               \ Cap the magnitude to a maximum of 127
+ JMP BEEP               \ Beep to indicate we have reached the maximum and
+                        \ return from the subroutine using a tail call
 
 .chav3
 
@@ -2418,32 +2483,47 @@ ENDIF
 \
 \   X                   Offset of INWK byte within INWK block
 \
+\   A                   The minimum allowed value + 1
+\
+\   Y                   The maximum allowed value + 1
+\
 \ ******************************************************************************
 
 .ChangeValue
+
+ STA P                  \ Store the minimum value in P
+
+ STY K                  \ Store the maximum value in K
 
  BIT shiftCtrl          \ If SHIFT is being held, jump to chan1 to reduce the
  BMI chan1              \ value
 
  INC INWK,X             \ Increment the value at the correct offset
 
- BNE StoreValue         \ If we didn't wrap around to zero, jump to StoreValue
-                        \ to store the value
+ LDA INWK,X             \ If we didn't go past the maximum value, jump to
+ CMP K                  \ StoreValue to store the value
+ BNE StoreValue
 
  DEC INWK,X             \ Otherwise decrement the value again so we don't
- BMI StoreValue         \ overflow and jump to StoreValue to store the value
+                        \ overflow
+
+ JMP chan2              \ Jump to chan2 to beep and return from the subroutine
 
 .chan1
 
  DEC INWK,X             \ Decrement the value at the correct offset
 
- LDA INWK,X             \ If we didn't wrap around to 255, jump to StoreValue
- CMP #255               \ to store the value
+ LDA INWK,X             \ If we didn't go past the miniumum value, jump to
+ CMP P                  \ StoreValue to store the value
  BNE StoreValue
 
  INC INWK,X             \ Otherwise increment the value again so we don't
-                        \ underflow and fall through into StoreValue to store
-                        \ the value
+                        \ underflow
+
+.chan2
+
+ JMP BEEP               \ Beep to indicate we have reached the maximum and
+                        \ return from the subroutine using a tail call
 
 \ ******************************************************************************
 \

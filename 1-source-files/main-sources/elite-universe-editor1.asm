@@ -61,7 +61,7 @@ key5 = &13
 key6 = &34
 key7 = &24
 key8 = &15
-key9 = &25
+key9 = &26
 key0 = &27
 
 keyAt = &47
@@ -611,99 +611,133 @@ ENDIF
 
 .keys12
 
- CMP #key7              \ 7 (update the ship's speed in INWK+27)
- BNE P%+7
+ CMP #key7              \ 7 (update the ship's speed in INWK+27, in the range
+ BNE keys13             \ 0 to 40)
  LDX #27
+ LDA #255
+ LDY #41
  JMP ChangeValue
 
- CMP #key1              \ 1 (update the ship's acceleration in INWK+28)
- BNE P%+7
+.keys13
+
+ CMP #key1              \ 1 (update the ship's acceleration in INWK+28, in the
+ BNE keys14             \ range -128 to 127)
  LDX #28
+ LDA #127
+ LDY #128
  JMP ChangeValue
+
+.keys14
 
  CMP #key8              \ 8 (update the ship's roll counter in INWK+29)
- BNE P%+7
+ BNE keys15
  LDX #29
  JMP ChangeCounter
 
+.keys15
+
  CMP #key9              \ 9 (update the ship's pitch counter in INWK+30)
- BNE P%+7
+ BNE keys16
  LDX #30
  JMP ChangeCounter
 
- CMP #key0              \ 0 (update the ship's energy in INWK+35)
- BNE P%+7
+.keys16
+
+ CMP #key0              \ 0 (update the ship's energy in INWK+35, in the range
+ BNE keys17             \ 0 to 255)
  LDX #35
+ LDA #255
+ LDY #0
  JMP ChangeValue
 
+.keys17
+
  CMP #key6              \ 6 (update the ship's aggression level in INWK+32)
- BNE P%+5
+ BNE keys18
  JMP ChangeAggression
+
+.keys18
 
  LDX #0                 \ Set repeatingKey = 0 to indicate that the following
  STX repeatingKey       \ keys are non-repeating keys
 
  CMP #key2              \ 2 (toggle the ship's AI in bit 7 of INWK+32)
- BNE P%+9
+ BNE keys19
  LDX #32
  LDA #%10000000
  JMP ToggleValue
 
+.keys19
+
  CMP #key3              \ 3 (toggle the ship's Innocent Bystander status in
- BNE P%+9               \ bit 5 of INWK+36, NEWB)
+ BNE keys20             \ bit 5 of INWK+36, NEWB)
  LDX #36
  LDA #%00100000
  JMP ToggleValue
 
+.keys20
+
  CMP #key4              \ 4 (toggle the ship's Cop status in bit 6 of INWK+36,
- BNE P%+9               \ NEWB)
+ BNE keys21             \ NEWB)
  LDX #36
  LDA #%01000000
  JMP ToggleValue
 
+.keys21
+
  CMP #key5              \ 5 (toggle the ship's Hostile status in bit 6 of
- BNE P%+9               \ INWK+32)
+ BNE keys22             \ INWK+32)
  LDX #32
  LDA #%01000000
  JMP ToggleValue
 
+.keys22
+
  CMP #keyM              \ M (update the number of missiles in bits 0-2 of 
- BNE P%+5               \ INWK+31)
+ BNE keys23             \ INWK+31)
  JMP ChangeMissiles
 
+.keys23
+
  CMP #keyT              \ T (toggle the trader/bounty hunter/pirate flag in
- BNE P%+5               \ bits 0, 1, 3 of INWK+36, NEWB)
+ BNE keys24             \ bits 0, 1, 3 of INWK+36, NEWB)
  JMP ToggleShipType
 
+.keys24
+
  CMP #keyC              \ 4 (toggle the ship's Cop status in bit 6 of INWK+36,
- BNE P%+9               \ NEWB)
+ BNE keys25             \ NEWB)
  LDX #36
  LDA #%00010000
  JMP ToggleValue
 
+.keys25
+
  CMP #keyE              \ E (toggle the ship's E.C.M. status in bit 0 of
- BNE P%+9               \ INWK+32)
+ BNE keys26             \ INWK+32)
  LDX #32
  LDA #%00000001
  JMP ToggleValue
 
+.keys26
+
  CMP #f0                \ f0 (front view)
- BEQ keys13
+ BEQ keys27
 
  CMP #f1                \ f1 (rear view)
- BEQ keys13
+ BEQ keys27
 
  CMP #f2                \ f2 (left view)
- BEQ keys13
+ BEQ keys27
 
  CMP #f3                \ f3 (right view)
- BNE keys14
+ BNE keys28
 
-.keys13
+.keys27
 
  JMP ChangeView         \ Process a change of view
 
-.keys14
+.keys28
 
  CMP #keyO              \ O (toggle station/sun)
  BNE P%+5
@@ -764,8 +798,6 @@ ENDIF
  BNE P%+5
  JMP ExplodeShip
 
-.pkey1
-
  RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
@@ -796,52 +828,6 @@ ENDIF
 
  JMP DrawShip           \ Draw the ship and return from the subroutine using a
                         \ tail call
-
-\ ******************************************************************************
-\
-\       Name: ChangeView
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Change view to front, rear, left or right
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   A                   Internal key number for f0, f1, f2 or f3
-\
-\ Other entry points:
-\
-\   ChangeView+8        Change to view X, even if we are already on that view
-\                       (so this redraws the view)
-\
-\ ******************************************************************************
-
-.ChangeView
-
- AND #3                 \ If we get here then we have pressed f0-f3, so extract
- TAX                    \ bits 0-1 to set X = 0, 1, 2, 3 for f0, f1, f2, f3
-
- CPX VIEW               \ If we are already on this view, jump to view1 to
- BEQ view1              \ ignore the key press and return from the subroutine
-
-                        \ Otherwise this is a new view, so set it up
-
- JSR LOOK1              \ Otherwise this is a new view, so call LOOK1 to switch
-                        \ to view X and draw the stardust
-
- JSR NWSTARS            \ Set up a new stardust field (not sure why LOOK1
-                        \ doesn't draw the stardust - it should)
-
- JSR PrintSlotNumber    \ Print the current slot number at text location (0, 1)
-
- JSR PrintShipType      \ Print the current ship type on the screen
-
- JSR DrawShips          \ Draw all ships
-
-.view1
-
- RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
