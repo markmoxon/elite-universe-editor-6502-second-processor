@@ -467,6 +467,13 @@ MAGENTA_BLACK   = %00100010         \ 5, 0          0101, 0000
 
 .EditorDashboard
 
+IF _MASTER_VERSION
+
+ LDA #%00001111         \ Set bits 1 and 2 of the Access Control Register at
+ STA VIA+&34            \ SHEILA &34 to switch screen memory into &3000-&7FFF
+
+ENDIF
+
  LDA #0                 \ Set SC(1 0) = &7000
  STA SC
  LDA #&70
@@ -492,6 +499,13 @@ MAGENTA_BLACK   = %00100010         \ 5, 0          0101, 0000
 
  JSR ModifyDashboard    \ Modify row 4 of the dashboard
 
+IF _MASTER_VERSION
+
+ LDA #%00001001         \ Clear bits 1 and 2 of the Access Control Register at
+ STA VIA+&34            \ SHEILA &34 to switch main memory back into &3000-&7FFF
+
+ENDIF
+
  RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
@@ -504,6 +518,13 @@ MAGENTA_BLACK   = %00100010         \ 5, 0          0101, 0000
 \ ******************************************************************************
 
 .GameDashboard
+
+IF _MASTER_VERSION
+
+ LDA #%00001111         \ Set bits 1 and 2 of the Access Control Register at
+ STA VIA+&34            \ SHEILA &34 to switch screen memory into &3000-&7FFF
+
+ENDIF
 
  LDA #0                 \ Set SC(1 0) = &7000
  STA SC
@@ -529,6 +550,13 @@ MAGENTA_BLACK   = %00100010         \ 5, 0          0101, 0000
  JSR ModifyDashboard    \ Modify row 3 of the dashboard
 
  JSR ModifyDashboard    \ Modify row 4 of the dashboard
+
+IF _MASTER_VERSION
+
+ LDA #%00001001         \ Clear bits 1 and 2 of the Access Control Register at
+ STA VIA+&34            \ SHEILA &34 to switch main memory back into &3000-&7FFF
+
+ENDIF
 
  RTS                    \ Return from the subroutine
 
