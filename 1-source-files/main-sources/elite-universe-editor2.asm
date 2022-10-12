@@ -1664,9 +1664,16 @@ ENDIF
 
  JSR ExitDiscMenu       \ Revert the changes made for the disc access menu
 
+IF _6502SP_VERSION
 
  LDA #251               \ Switch to the main game dashboard
  JSR SwitchDashboard
+
+ELIF _MASTER_VERSION
+
+ JSR GameDashboard      \ Switch to the main game dashboard
+
+ENDIF
 
                         \ Do the following from DEATH2:
 
@@ -2990,8 +2997,6 @@ IF _6502SP_VERSION
 
  RTS                    \ Return from the subroutine
 
-ENDIF
-
 \ ******************************************************************************
 \
 \       Name: dashboardBuff
@@ -3034,5 +3039,7 @@ ENDIF
  JMP OSWORD             \ Send an OSWORD command to the I/O processor to
                         \ draw the dashboard, returning from the subroutine
                         \ using a tail call
+
+ENDIF
 
 .endUniverseEditor2

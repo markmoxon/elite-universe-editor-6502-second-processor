@@ -134,16 +134,18 @@ ENDIF
 
 .UniverseEditor
 
+IF _6502SP_VERSION
+
  LDA #250               \ Switch to the Universe Editor dashboard
  JSR SwitchDashboard
-
-IF _6502SP_VERSION
 
  LDA #&24               \ Disable the TRB XX1+31 instruction in part 9 of LL9
  STA LL74+20            \ that disables the laser once it has fired, so that
                         \ lasers remain on-screen while in the editor
 
 ELIF _MASTER_VERSION
+
+ JSR EditorDashboard    \ Switch to the Universe Editor dashboard
 
  LDA #&24               \ Disable the STA XX1+31 instruction in part 9 of LL9
  STA LL74+16            \ that disables the laser once it has fired, so that
@@ -307,7 +309,7 @@ ELIF _MASTER_VERSION
 
 ENDIF
 
- LDA #%10100111         \ Re-enable  the clearing of bit 7 (lasers firing) in
+ LDA #%10100111         \ Re-enable the clearing of bit 7 (lasers firing) in
  STA WS1-3              \ WPSHPS
 
  LDA #&A5               \ Re-enable DOEXP
@@ -315,8 +317,16 @@ ENDIF
 
  JSR DFAULT             \ Restore correct commander name to NAME
 
+IF _6502SP_VERSION
+
  LDA #251               \ Switch to the main game dashboard
  JSR SwitchDashboard
+
+ELIF _MASTER_VERSION
+
+ JSR GameDashboard      \ Switch to the main game dashboard
+
+ENDIF
 
  JMP BR1                \ Quit the scene editor by returning to the start
 
