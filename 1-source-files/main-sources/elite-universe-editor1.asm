@@ -134,44 +134,7 @@ ENDIF
 
 .UniverseEditor
 
-IF _6502SP_VERSION
-
- LDA #250               \ Switch to the Universe Editor dashboard
- JSR SwitchDashboard
-
- LDA #&24               \ Disable the TRB XX1+31 instruction in part 9 of LL9
- STA LL74+20            \ that disables the laser once it has fired, so that
-                        \ lasers remain on-screen while in the editor
-
-ELIF _MASTER_VERSION
-
- JSR EditorDashboard    \ Switch to the Universe Editor dashboard
-
- LDA #&24               \ Disable the STA XX1+31 instruction in part 9 of LL9
- STA LL74+16            \ that disables the laser once it has fired, so that
-                        \ lasers remain on-screen while in the editor
-
-ENDIF
-
- LDA #%11100111         \ Disable the clearing of bit 7 (lasers firing) in
- STA WS1-3              \ WPSHPS
-
- LDA #&60               \ Disable DOEXP so that by default it draws an explosion
- STA DOEXP+9            \ cloud but doesn't recalculate it
-
- LDX #8                 \ The size of the default universe filename
-
-.scen0
-
- LDA defaultName,X      \ Copy the X-th character of the filename to NAME
- STA NAME,X
-
- DEX                    \ Decrement the loop counter
-
- BPL scen0              \ Loop back for the next byte of the universe filename
-
- STZ showingS           \ Zero the flags that keep track of the bulb indicators
- STZ showingE
+ JSR ApplyMods          \ Apply the mods required for the Universe Editor
 
  LDA #0                 \ Clear the top part of the screen, draw a white border,
  JSR TT66               \ and set the current view type in QQ11 to 0 (space
@@ -268,26 +231,66 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: QuitEditor
+\       Name: ApplyMods
 \       Type: Subroutine
 \   Category: Universe editor
-\    Summary: Quit the universe editor
+\    Summary: Apply mods for the universe editor
 \
 \ ******************************************************************************
 
-.QuitEditor
+.ApplyMods
 
- JSR PrintAreYouSure    \ Print "Are you sure?" at the bottom of the screen
+IF _6502SP_VERSION
 
- JSR GETYN              \ Call GETYN to wait until either "Y" or "N" is pressed
+ LDA #250               \ Switch to the Universe Editor dashboard
+ JSR SwitchDashboard
 
- BCS quit1              \ If "Y" was pressed, jump to quit1 to quit
+ LDA #&24               \ Disable the TRB XX1+31 instruction in part 9 of LL9
+ STA LL74+20            \ that disables the laser once it has fired, so that
+                        \ lasers remain on-screen while in the editor
 
- JSR PrintAreYouSure    \ Print "Are you sure?" at the bottom of the screen
+ELIF _MASTER_VERSION
 
- JMP scen3+3            \ Rejoin the main loop
+ JSR EditorDashboard    \ Switch to the Universe Editor dashboard
 
-.quit1
+ LDA #&24               \ Disable the STA XX1+31 instruction in part 9 of LL9
+ STA LL74+16            \ that disables the laser once it has fired, so that
+                        \ lasers remain on-screen while in the editor
+
+ENDIF
+
+ LDA #%11100111         \ Disable the clearing of bit 7 (lasers firing) in
+ STA WS1-3              \ WPSHPS
+
+ LDA #&60               \ Disable DOEXP so that by default it draws an explosion
+ STA DOEXP+9            \ cloud but doesn't recalculate it
+
+ LDX #8                 \ The size of the default universe filename
+
+.scen0
+
+ LDA defaultName,X      \ Copy the X-th character of the filename to NAME
+ STA NAME,X
+
+ DEX                    \ Decrement the loop counter
+
+ BPL scen0              \ Loop back for the next byte of the universe filename
+
+ STZ showingS           \ Zero the flags that keep track of the bulb indicators
+ STZ showingE
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: RevertMods
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Reverse mods for the universe editor
+\
+\ ******************************************************************************
+
+.RevertMods
 
  LDA showingS           \ If we are showing the station buld, call SPBLB to
  BEQ P%+5               \ remove it
@@ -319,16 +322,15 @@ ENDIF
 
 IF _6502SP_VERSION
 
- LDA #251               \ Switch to the main game dashboard
- JSR SwitchDashboard
+ LDA #251               \ Switch to the main game dashboard, returning from the
+ JMP SwitchDashboard    \ subroutine using a tail call
 
 ELIF _MASTER_VERSION
 
- JSR GameDashboard      \ Switch to the main game dashboard
+ JMP GameDashboard      \ Switch to the main game dashboard, returning from the
+                        \ subroutine using a tail call
 
 ENDIF
-
- JMP BR1                \ Quit the scene editor by returning to the start
 
 \ ******************************************************************************
 \

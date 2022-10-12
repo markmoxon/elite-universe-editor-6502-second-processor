@@ -29,6 +29,34 @@
 
 \ ******************************************************************************
 \
+\       Name: QuitEditor
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Quit the universe editor
+\
+\ ******************************************************************************
+
+.QuitEditor
+
+ JSR PrintAreYouSure    \ Print "Are you sure?" at the bottom of the screen
+
+ JSR GETYN              \ Call GETYN to wait until either "Y" or "N" is pressed
+
+ BCS quit1              \ If "Y" was pressed, jump to quit1 to quit
+
+ JSR PrintAreYouSure    \ Print "Are you sure?" at the bottom of the screen
+
+ JMP scen3+3            \ Rejoin the main loop
+
+.quit1
+
+ JSR RevertMods         \ Revert the mods we made when the Universe Editor
+                        \ started up
+
+ JMP BR1                \ Quit the scene editor by returning to the start
+
+\ ******************************************************************************
+\
 \       Name: PrintAreYouSure
 \       Type: Subroutine
 \   Category: Universe editor
@@ -1664,16 +1692,8 @@ ENDIF
 
  JSR ExitDiscMenu       \ Revert the changes made for the disc access menu
 
-IF _6502SP_VERSION
-
- LDA #251               \ Switch to the main game dashboard
- JSR SwitchDashboard
-
-ELIF _MASTER_VERSION
-
- JSR GameDashboard      \ Switch to the main game dashboard
-
-ENDIF
+ JSR RevertMods         \ Revert the mods we made when the Universe Editor
+                        \ started up
 
                         \ Do the following from DEATH2:
 
