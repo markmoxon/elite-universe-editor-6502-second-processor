@@ -46,7 +46,7 @@
 
  JSR PrintAreYouSure    \ Print "Are you sure?" at the bottom of the screen
 
- JMP scen3+3            \ Rejoin the main loop
+ JMP edit3              \ Rejoin the main loop after the key has been processed
 
 .quit1
 

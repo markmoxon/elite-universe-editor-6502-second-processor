@@ -130,6 +130,12 @@ ENDIF
 \   Category: Universe editor
 \    Summary: The entry point for the universe editor
 \
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   edit3               Rejoin the main loop after the key has been processed
+\
 \ ******************************************************************************
 
 .UniverseEditor
@@ -192,16 +198,16 @@ ENDIF
 
  JSR UpdateDashboard    \ Update the dashboard to show the planet's values
 
-.scen1
+.edit1
 
  JSR RDKEY              \ Scan the keyboard for a key press and return the
                         \ internal key number in X (or 0 for no key press)
 
- BNE scen1              \ If a key was already being held down when we entered
-                        \ this routine, keep looping back up to scen1, until
+ BNE edit1              \ If a key was already being held down when we entered
+                        \ this routine, keep looping back up to edit1, until
                         \ the key is released
 
-.scen2
+.edit2
 
  LDY #2                 \ Delay for 2 vertical syncs (2/50 = 0.04 seconds) to
  JSR DELAY              \ make the rate of key repeat manageable
@@ -209,11 +215,11 @@ ENDIF
  JSR RDKEY              \ Scan the keyboard, returning the internal key number
                         \ in X (or 0 for no key press)
 
- BEQ scen2              \ Keep looping up to scen2 until a key is pressed
-
-.scen3
+ BEQ edit2              \ Keep looping up to edit2 until a key is pressed
 
  JSR ProcessKey         \ Process the key press
+
+.edit3
 
  LDX currentSlot        \ Get the ship data for the current ship, so we know the
  JSR GetShipData        \ current ship data is always in INWK for the main loop
@@ -223,10 +229,10 @@ ENDIF
  LDA repeatingKey       \ Fetch the type of key press (0 = non-repeatable,
                         \ 1 = repeatable)
 
- BNE scen2              \ Loop back to wait for next key press (for repeatable
+ BNE edit2              \ Loop back to wait for next key press (for repeatable
                         \ keys)
 
- BEQ scen1              \ Loop back to wait for next key press (non-repeatable
+ BEQ edit1              \ Loop back to wait for next key press (non-repeatable
                         \ keys)
 
 \ ******************************************************************************
@@ -267,14 +273,14 @@ ENDIF
 
  LDX #8                 \ The size of the default universe filename
 
-.scen0
+.mods1
 
  LDA defaultName,X      \ Copy the X-th character of the filename to NAME
  STA NAME,X
 
  DEX                    \ Decrement the loop counter
 
- BPL scen0              \ Loop back for the next byte of the universe filename
+ BPL mods1              \ Loop back for the next byte of the universe filename
 
  STZ showingS           \ Zero the flags that keep track of the bulb indicators
  STZ showingE
@@ -1183,29 +1189,36 @@ ENDIF
  LDX #0                 \ Set the high byte of K(3 2 1) to 0
  STX K+2
 
- BIT shiftCtrl          \ IF SHIFT is being pressed, jump to move1
- BMI move1
+ BIT shiftCtrl          \ IF CTRL is being pressed, jump to move2
+ BVS move1
 
- LDY #1                 \ Set Y = 1 to use as the delta and jump to move2
- BNE move2
+ BMI move2              \ IF SHIFT is being pressed, jump to move2
+
+ LDY #1                 \ Set Y = 1 to use as the delta and jump to move3 (this
+ BNE move3              \ BNE is effectively a JMP as Y is never zero)
 
 .move1
 
- LDY #20                \ Set Y = 20 to use as the delta
+ LDY #200               \ Set Y = 200 to use as the delta and jump to move3
+ BNE move3              \ (this BNE is effectively a JMP as Y is never zero)
 
 .move2
 
- LDA TYPE               \ If this is the planet or sun, jump to move3
- BMI move3
-
- STY K+1                \ Set the low byte of K(3 2 1) to the delta
- BPL move4
+ LDY #20                \ Set Y = 20 to use as the delta
 
 .move3
 
- STY K+2                \ Set the high byte of K(3 2 1) to the delta
+ LDA TYPE               \ If this is the planet or sun, jump to move4
+ BMI move4
+
+ STY K+1                \ Set the low byte of K(3 2 1) to the delta
+ BPL move5
 
 .move4
+
+ STY K+2                \ Set the high byte of K(3 2 1) to the delta
+
+.move5
 
  LDX K                  \ Fetch the axis into X (the comments below are for the
                         \ x-axis)
