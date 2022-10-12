@@ -43004,8 +43004,8 @@ End macro DKS4
      3904   5C 35
      3906   5C 37
      3908   F3 3A
-     390A   68 3E
-     390C   8B 3E
+     390A   33 3E
+     390C   5B 3E
      390E   44 39
      3910   44 39
      3912   44 39
@@ -43613,341 +43613,292 @@ End macro DKS4
 .SETVDU19
      3D30   8D 20 3D   STA &3D20
      3D33   4C 01 2D   JMP &2D01
-.editorRows
+.rowOffsets
      3D36   0B
-     3D37   14
-     3D38   0C
-     3D39   14
-     3D3A   0D
-     3D3B   3C
-     3D3C   0E
-     3D3D   14
-     3D3E   15
-     3D3F   14
-     3D40   1C
-     3D41   00
-     3D42   1D
-     3D43   00
-     3D44   FF
-     3D45   01
-     3D46   1B
-     3D47   02
-     3D48   1B
-     3D49   03
-     3D4A   1B
-     3D4B   04
-     3D4C   1B
-     3D4D   05
+     3D37   0C
+     3D38   0D
+     3D39   0E
+     3D3A   15
+     3D3B   1C
+     3D3C   1D
+     3D3D   FF
+     3D3E   01
+     3D3F   02
+     3D40   03
+     3D41   04
+     3D42   05
+     3D43   09
+     3D44   0A
+     3D45   0B
+     3D46   0C
+     3D47   0D
+     3D48   11
+     3D49   12
+     3D4A   13
+     3D4B   14
+     3D4C   15
+     3D4D   19
      3D4E   1B
-     3D4F   09
-     3D50   33
-     3D51   0A
-     3D52   11
-     3D53   0B
-     3D54   11
-     3D55   0C
-     3D56   33
-     3D57   0D
-     3D58   11
-     3D59   11
-     3D5A   11
-     3D5B   12
+     3D4F   1C
+     3D50   1D
+     3D51   FF
+     3D52   01
+     3D53   02
+     3D54   03
+     3D55   04
+     3D56   05
+     3D57   09
+     3D58   0A
+     3D59   0B
+     3D5A   0C
+     3D5B   0D
      3D5C   11
-     3D5D   13
-     3D5E   11
+     3D5D   12
+     3D5E   13
      3D5F   14
-     3D60   11
-     3D61   15
-     3D62   11
-     3D63   19
-     3D64   00
-     3D65   1B
-     3D66   00
-     3D67   1C
-     3D68   00
-     3D69   1D
-     3D6A   00
-     3D6B   FF
-     3D6C   01
-     3D6D   1B
-     3D6E   02
-     3D6F   1B
-     3D70   03
-     3D71   1B
-     3D72   04
-     3D73   1B
-     3D74   05
-     3D75   1B
-     3D76   09
-     3D77   11
-     3D78   0A
-     3D79   11
-     3D7A   0B
-     3D7B   11
-     3D7C   0C
-     3D7D   11
-     3D7E   0D
-     3D7F   11
-     3D80   11
-     3D81   22
-     3D82   12
-     3D83   11
-     3D84   13
-     3D85   33
-     3D86   14
-     3D87   11
-     3D88   15
-     3D89   22
-     3D8A   19
-     3D8B   00
-     3D8C   1A
-     3D8D   00
-     3D8E   1B
-     3D8F   00
-     3D90   1C
+     3D60   15
+     3D61   19
+     3D62   1A
+     3D63   1B
+     3D64   1C
+     3D65   FF
+     3D66   11
+     3D67   12
+     3D68   13
+     3D69   14
+     3D6A   19
+     3D6B   1A
+     3D6C   1B
+     3D6D   1C
+     3D6E   FF
+     3D6F   09
+     3D70   0A
+     3D71   0B
+     3D72   0C
+     3D73   0D
+     3D74   11
+     3D75   14
+     3D76   1B
+     3D77   1C
+     3D78   1D
+     3D79   FF
+.editorRows
+     3D7A   14
+     3D7B   14
+     3D7C   3C
+     3D7D   14
+     3D7E   14
+     3D7F   00
+     3D80   00
+     3D81   FF
+     3D82   1B
+     3D83   1B
+     3D84   1B
+     3D85   1B
+     3D86   1B
+     3D87   33
+     3D88   11
+     3D89   11
+     3D8A   33
+     3D8B   11
+     3D8C   11
+     3D8D   11
+     3D8E   11
+     3D8F   11
+     3D90   11
      3D91   00
-     3D92   FF
-     3D93   11
-     3D94   11
-     3D95   12
-     3D96   22
-     3D97   13
-     3D98   22
-     3D99   14
-     3D9A   22
-     3D9B   15
+     3D92   00
+     3D93   00
+     3D94   00
+     3D95   FF
+     3D96   1B
+     3D97   1B
+     3D98   1B
+     3D99   1B
+     3D9A   1B
+     3D9B   11
      3D9C   11
-     3D9D   19
-     3D9E   00
-     3D9F   1A
+     3D9D   11
+     3D9E   11
+     3D9F   11
      3DA0   22
-     3DA1   1B
+     3DA1   11
      3DA2   22
-     3DA3   1C
+     3DA3   11
      3DA4   22
-     3DA5   FF
-     3DA6   09
-     3DA7   11
-     3DA8   0A
-     3DA9   11
-     3DAA   0B
-     3DAB   33
-     3DAC   0C
-     3DAD   11
-     3DAE   0D
-     3DAF   11
-     3DB0   11
-     3DB1   11
-     3DB2   14
-     3DB3   00
-     3DB4   1B
-     3DB5   22
-     3DB6   1C
-     3DB7   22
-     3DB8   1D
-     3DB9   22
-     3DBA   FF
-     3DBB   FF
+     3DA5   00
+     3DA6   00
+     3DA7   00
+     3DA8   00
+     3DA9   FF
+     3DAA   11
+     3DAB   22
+     3DAC   22
+     3DAD   22
+     3DAE   00
+     3DAF   22
+     3DB0   22
+     3DB1   22
+     3DB2   FF
+     3DB3   11
+     3DB4   11
+     3DB5   33
+     3DB6   11
+     3DB7   11
+     3DB8   11
+     3DB9   00
+     3DBA   22
+     3DBB   22
+     3DBC   22
+     3DBD   FF
 .gameRows
-     3DBC   0B
-     3DBD   00
-     3DBE   0C
+     3DBE   00
      3DBF   3C
-     3DC0   0D
+     3DC0   00
      3DC1   00
-     3DC2   0E
-     3DC3   00
-     3DC4   15
-     3DC5   00
-     3DC6   1C
-     3DC7   28
-     3DC8   1D
-     3DC9   28
-     3DCA   FF
-     3DCB   01
-     3DCC   1E
-     3DCD   02
-     3DCE   1E
-     3DCF   03
-     3DD0   1E
-     3DD1   04
-     3DD2   1E
-     3DD3   05
-     3DD4   1E
-     3DD5   09
-     3DD6   3C
-     3DD7   0A
-     3DD8   14
-     3DD9   0B
-     3DDA   14
-     3DDB   0C
-     3DDC   3C
-     3DDD   0D
-     3DDE   14
-     3DDF   11
-     3DE0   14
-     3DE1   12
-     3DE2   14
-     3DE3   13
-     3DE4   14
-     3DE5   14
-     3DE6   00
-     3DE7   15
+     3DC2   00
+     3DC3   28
+     3DC4   28
+     3DC5   FF
+     3DC6   1E
+     3DC7   1E
+     3DC8   1E
+     3DC9   1E
+     3DCA   1E
+     3DCB   3C
+     3DCC   14
+     3DCD   14
+     3DCE   3C
+     3DCF   14
+     3DD0   14
+     3DD1   14
+     3DD2   14
+     3DD3   00
+     3DD4   14
+     3DD5   28
+     3DD6   28
+     3DD7   28
+     3DD8   28
+     3DD9   FF
+     3DDA   1E
+     3DDB   1E
+     3DDC   1E
+     3DDD   1E
+     3DDE   1E
+     3DDF   28
+     3DE0   00
+     3DE1   28
+     3DE2   00
+     3DE3   00
+     3DE4   28
+     3DE5   28
+     3DE6   28
+     3DE7   28
      3DE8   14
-     3DE9   19
+     3DE9   28
      3DEA   28
-     3DEB   1B
+     3DEB   28
      3DEC   28
-     3DED   1C
-     3DEE   28
-     3DEF   1D
-     3DF0   28
-     3DF1   FF
-     3DF2   01
-     3DF3   1E
-     3DF4   02
-     3DF5   1E
-     3DF6   03
-     3DF7   1E
-     3DF8   04
-     3DF9   1E
-     3DFA   05
-     3DFB   1E
-     3DFC   09
-     3DFD   28
-     3DFE   0A
+     3DED   FF
+     3DEE   33
+     3DEF   11
+     3DF0   11
+     3DF1   11
+     3DF2   22
+     3DF3   00
+     3DF4   00
+     3DF5   00
+     3DF6   FF
+     3DF7   00
+     3DF8   00
+     3DF9   00
+     3DFA   00
+     3DFB   22
+     3DFC   33
+     3DFD   11
+     3DFE   00
      3DFF   00
-     3E00   0B
-     3E01   28
-     3E02   0C
-     3E03   00
-     3E04   0D
-     3E05   00
-     3E06   11
-     3E07   28
-     3E08   12
-     3E09   28
-     3E0A   13
-     3E0B   28
-     3E0C   14
-     3E0D   28
-     3E0E   15
-     3E0F   14
-     3E10   19
-     3E11   28
-     3E12   1A
-     3E13   28
-     3E14   1B
-     3E15   28
-     3E16   1C
-     3E17   28
-     3E18   FF
-     3E19   11
-     3E1A   33
-     3E1B   12
-     3E1C   11
-     3E1D   13
-     3E1E   11
-     3E1F   14
-     3E20   11
-     3E21   19
-     3E22   22
-     3E23   1A
-     3E24   00
-     3E25   1B
-     3E26   00
-     3E27   1C
-     3E28   00
-     3E29   FF
-     3E2A   09
-     3E2B   00
-     3E2C   0A
-     3E2D   00
-     3E2E   0B
-     3E2F   00
-     3E30   0C
-     3E31   00
-     3E32   0D
-     3E33   22
-     3E34   11
-     3E35   33
-     3E36   14
-     3E37   11
-     3E38   1B
-     3E39   00
-     3E3A   1C
-     3E3B   00
-     3E3C   1D
-     3E3D   00
-     3E3E   FF
-     3E3F   FF
+     3E00   00
+     3E01   FF
 .ModifyDashboard
-     3E40   A0 00      LDY #&00
+     3E02   A0 00      LDY #&00
 .mod1
-     3E42   B1 80      LDA (&80),Y
-     3E44   85 82      STA &82
-     3E46   30 10      BMI &3E58
-     3E48   C8         INY
-     3E49   8C 4E 2C   STY &2C4E
-     3E4C   B1 80      LDA (&80),Y
-     3E4E   A4 82      LDY &82
-     3E50   91 96      STA (&96),Y
-     3E52   AC 4E 2C   LDY &2C4E
-     3E55   C8         INY
-     3E56   D0 EA      BNE &3E42
+     3E04   B1 80      LDA (&80),Y
+     3E06   85 84      STA &84
+     3E08   30 0F      BMI &3E19
+     3E0A   8C 4E 2C   STY &2C4E
+     3E0D   B1 82      LDA (&82),Y
+     3E0F   A4 84      LDY &84
+     3E11   91 96      STA (&96),Y
+     3E13   AC 4E 2C   LDY &2C4E
+     3E16   C8         INY
+     3E17   D0 EB      BNE &3E04
 .mod2
-     3E58   C8         INY
-     3E59   98         TYA
-     3E5A   18         CLC
-     3E5B   65 80      ADC &80
-     3E5D   85 80      STA &80
-     3E5F   90 02      BCC &3E63
-     3E61   E6 81      INC &81
+     3E19   C8         INY
+     3E1A   98         TYA
+     3E1B   18         CLC
+     3E1C   65 80      ADC &80
+     3E1E   85 80      STA &80
+     3E20   90 02      BCC &3E24
+     3E22   E6 81      INC &81
 .mod3
-     3E63   E6 97      INC &97
-     3E65   E6 97      INC &97
-     3E67   60         RTS
+     3E24   98         TYA
+     3E25   18         CLC
+     3E26   65 82      ADC &82
+     3E28   85 82      STA &82
+     3E2A   90 02      BCC &3E2E
+     3E2C   E6 83      INC &83
+.mod4
+     3E2E   E6 97      INC &97
+     3E30   E6 97      INC &97
+     3E32   60         RTS
 .EditorDashboard
-     3E68   A9 00      LDA #&00
-     3E6A   85 96      STA &96
-     3E6C   A9 70      LDA #&70
-     3E6E   85 97      STA &97
-     3E70   A9 36      LDA #&36
-     3E72   85 80      STA &80
-     3E74   A9 3D      LDA #&3D
-     3E76   85 81      STA &81
-     3E78   20 40 3E   JSR &3E40
-     3E7B   20 40 3E   JSR &3E40
-     3E7E   20 40 3E   JSR &3E40
-     3E81   20 40 3E   JSR &3E40
-     3E84   20 40 3E   JSR &3E40
-     3E87   20 40 3E   JSR &3E40
-     3E8A   60         RTS
+     3E33   A9 00      LDA #&00
+     3E35   85 96      STA &96
+     3E37   A9 70      LDA #&70
+     3E39   85 97      STA &97
+     3E3B   A9 36      LDA #&36
+     3E3D   85 80      STA &80
+     3E3F   A9 3D      LDA #&3D
+     3E41   85 81      STA &81
+     3E43   A9 7A      LDA #&7A
+     3E45   85 82      STA &82
+     3E47   A9 3D      LDA #&3D
+     3E49   85 83      STA &83
+     3E4B   20 02 3E   JSR &3E02
+     3E4E   20 02 3E   JSR &3E02
+     3E51   20 02 3E   JSR &3E02
+     3E54   20 02 3E   JSR &3E02
+     3E57   20 02 3E   JSR &3E02
+     3E5A   60         RTS
 .GameDashboard
-     3E8B   A9 00      LDA #&00
-     3E8D   85 96      STA &96
-     3E8F   A9 70      LDA #&70
-     3E91   85 97      STA &97
-     3E93   A9 BC      LDA #&BC
-     3E95   85 80      STA &80
-     3E97   A9 3D      LDA #&3D
-     3E99   85 81      STA &81
-     3E9B   20 40 3E   JSR &3E40
-     3E9E   20 40 3E   JSR &3E40
-     3EA1   20 40 3E   JSR &3E40
-     3EA4   20 40 3E   JSR &3E40
-     3EA7   20 40 3E   JSR &3E40
-     3EAA   20 40 3E   JSR &3E40
-     3EAD   60         RTS
+     3E5B   A9 00      LDA #&00
+     3E5D   85 96      STA &96
+     3E5F   A9 70      LDA #&70
+     3E61   85 97      STA &97
+     3E63   A9 36      LDA #&36
+     3E65   85 80      STA &80
+     3E67   A9 3D      LDA #&3D
+     3E69   85 81      STA &81
+     3E6B   A9 BE      LDA #&BE
+     3E6D   85 82      STA &82
+     3E6F   A9 3D      LDA #&3D
+     3E71   85 83      STA &83
+     3E73   20 02 3E   JSR &3E02
+     3E76   20 02 3E   JSR &3E02
+     3E79   20 02 3E   JSR &3E02
+     3E7C   20 02 3E   JSR &3E02
+     3E7F   20 02 3E   JSR &3E02
+     3E82   60         RTS
 .endUniverseEditor3
 I.CODE
 Assembled at &2400 
-Ends at &3EAE 
-Code size is &1AAE 
+Ends at &3E83 
+Code size is &1A83 
 Execute at &2400 
 Reload at &2400 
 protlen = &24 
-S.I.CODE &2400  &3EAE  &2400  &2400 
+S.I.CODE &2400  &3E83  &2400  &2400 
 Saving file '3-assembled-output/I.CODE.bin'
 .ZP
      0090

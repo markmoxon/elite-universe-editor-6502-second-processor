@@ -41,6 +41,121 @@ MAGENTA_BLACK   = %00100010         \ 5, 0          0101, 0000
 
 \ ******************************************************************************
 \
+\       Name: rowOffsets
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: Screen modifications to change to the Universe Editor dashboard
+\
+\ ------------------------------------------------------------------------------
+\
+\ Each row has a table in the form: offset, screen byte.
+\
+\ ******************************************************************************
+
+.rowOffsets
+
+                        \ &7000
+
+ EQUB &0B               \ Right column of A in AC
+ EQUB &0C
+ EQUB &0D
+ EQUB &0E
+
+ EQUB &15               \ Left column of C in AC
+
+ EQUB &1C               \ Right column of C in AC
+ EQUB &1D
+
+ EQUB &FF               \ End row
+
+                        \ &7200
+
+ EQUB &01               \ Left column of A in AI
+ EQUB &02
+ EQUB &03
+ EQUB &04
+ EQUB &05
+
+ EQUB &09               \ Right column of A in AI
+ EQUB &0A
+ EQUB &0B
+ EQUB &0C
+ EQUB &0D
+
+ EQUB &11               \ Left column of I in AI
+ EQUB &12
+ EQUB &13
+ EQUB &14
+ EQUB &15
+
+ EQUB &19               \ Right column of I in AI
+ EQUB &1B
+ EQUB &1C
+ EQUB &1D
+
+ EQUB &FF               \ End row
+
+                        \ &7400
+
+ EQUB &01               \ Left column of I in IB
+ EQUB &02
+ EQUB &03
+ EQUB &04
+ EQUB &05
+
+ EQUB &09               \ Right column of I in IB
+ EQUB &0A
+ EQUB &0B
+ EQUB &0C
+ EQUB &0D
+
+ EQUB &11               \ Left column of B in IB
+ EQUB &12
+ EQUB &13
+ EQUB &14
+ EQUB &15
+
+ EQUB &19               \ Right column of B in IB
+ EQUB &1A
+ EQUB &1B
+ EQUB &1C
+
+ EQUB &FF               \ End row
+
+                        \ &7600
+
+ EQUB &11               \ Left column of O in CO
+ EQUB &12
+ EQUB &13
+ EQUB &14
+
+ EQUB &19               \ Right column of O in CO
+ EQUB &1A
+ EQUB &1B
+ EQUB &1C
+
+ EQUB &FF               \ End row
+
+                        \ &7800
+
+ EQUB &09               \ Right column of H in HS
+ EQUB &0A
+ EQUB &0B
+ EQUB &0C
+ EQUB &0D
+
+ EQUB &11               \ Left column of S in HS
+ EQUB &14
+
+ EQUB &1B               \ Right column of S in HS
+ EQUB &1C
+ EQUB &1D
+
+ EQUB &FF               \ End row
+
+
+\ ******************************************************************************
+\
 \       Name: editorRows
 \       Type: Variable
 \   Category: Universe editor
@@ -54,109 +169,105 @@ MAGENTA_BLACK   = %00100010         \ 5, 0          0101, 0000
 
 .editorRows
 
-                            \ &7000
+                        \ &7000
 
- EQUB &0B, BLACK_CYAN       \ Right column of A in AC
- EQUB &0C, BLACK_CYAN
- EQUB &0D, CYAN_CYAN
- EQUB &0E, BLACK_CYAN
+ EQUB BLACK_CYAN        \ Right column of A in AC
+ EQUB BLACK_CYAN
+ EQUB CYAN_CYAN
+ EQUB BLACK_CYAN
 
- EQUB &15, BLACK_CYAN       \ Left column of C in AC
+ EQUB BLACK_CYAN        \ Left column of C in AC
 
- EQUB &1C, BLACK_BLACK      \ Right column of C in AC
- EQUB &1D, BLACK_BLACK
+ EQUB BLACK_BLACK       \ Right column of C in AC
+ EQUB BLACK_BLACK
 
- EQUB &FF                   \ End row
+ EQUB &FF               \ End row
 
-                            \ &7200
+                        \ &7200
 
- EQUB &01, YELLOW_MAGENTA   \ Left column of A in AI
- EQUB &02, YELLOW_MAGENTA
- EQUB &03, YELLOW_MAGENTA
- EQUB &04, YELLOW_MAGENTA
- EQUB &05, YELLOW_MAGENTA
+ EQUB YELLOW_MAGENTA    \ Left column of A in AI
+ EQUB YELLOW_MAGENTA
+ EQUB YELLOW_MAGENTA
+ EQUB YELLOW_MAGENTA
+ EQUB YELLOW_MAGENTA
 
- EQUB &09, MAGENTA_MAGENTA  \ Right column of A in AI
- EQUB &0A, BLACK_MAGENTA
- EQUB &0B, BLACK_MAGENTA
- EQUB &0C, MAGENTA_MAGENTA
- EQUB &0D, BLACK_MAGENTA
+ EQUB MAGENTA_MAGENTA   \ Right column of A in AI
+ EQUB BLACK_MAGENTA
+ EQUB BLACK_MAGENTA
+ EQUB MAGENTA_MAGENTA
+ EQUB BLACK_MAGENTA
 
- EQUB &11, BLACK_MAGENTA    \ Left column of I in AI
- EQUB &12, BLACK_MAGENTA
- EQUB &13, BLACK_MAGENTA
- EQUB &14, BLACK_MAGENTA
- EQUB &15, BLACK_MAGENTA
+ EQUB BLACK_MAGENTA     \ Left column of I in AI
+ EQUB BLACK_MAGENTA
+ EQUB BLACK_MAGENTA
+ EQUB BLACK_MAGENTA
+ EQUB BLACK_MAGENTA
 
- EQUB &19, BLACK_BLACK      \ Right column of I in AI
- EQUB &1B, BLACK_BLACK
- EQUB &1C, BLACK_BLACK
- EQUB &1D, BLACK_BLACK
+ EQUB BLACK_BLACK       \ Right column of I in AI
+ EQUB BLACK_BLACK
+ EQUB BLACK_BLACK
+ EQUB BLACK_BLACK
 
- EQUB &FF                   \ End row
+ EQUB &FF               \ End row
 
-                            \ &7400
+                        \ &7400
 
- EQUB &01, YELLOW_MAGENTA   \ Left column of I in IB
- EQUB &02, YELLOW_MAGENTA
- EQUB &03, YELLOW_MAGENTA
- EQUB &04, YELLOW_MAGENTA
- EQUB &05, YELLOW_MAGENTA
+ EQUB YELLOW_MAGENTA    \ Left column of I in IB
+ EQUB YELLOW_MAGENTA
+ EQUB YELLOW_MAGENTA
+ EQUB YELLOW_MAGENTA
+ EQUB YELLOW_MAGENTA
 
- EQUB &09, BLACK_MAGENTA    \ Right column of I in IB
- EQUB &0A, BLACK_MAGENTA
- EQUB &0B, BLACK_MAGENTA
- EQUB &0C, BLACK_MAGENTA
- EQUB &0D, BLACK_MAGENTA
+ EQUB BLACK_MAGENTA     \ Right column of I in IB
+ EQUB BLACK_MAGENTA
+ EQUB BLACK_MAGENTA
+ EQUB BLACK_MAGENTA
+ EQUB BLACK_MAGENTA
 
- EQUB &11, MAGENTA_BLACK    \ Left column of B in IB
- EQUB &12, BLACK_MAGENTA
- EQUB &13, MAGENTA_MAGENTA
- EQUB &14, BLACK_MAGENTA
- EQUB &15, MAGENTA_BLACK
+ EQUB MAGENTA_BLACK     \ Left column of B in IB
+ EQUB BLACK_MAGENTA
+ EQUB MAGENTA_BLACK
+ EQUB BLACK_MAGENTA
+ EQUB MAGENTA_BLACK
 
- EQUB &19, BLACK_BLACK      \ Right column of B in IB
- EQUB &1A, BLACK_BLACK
- EQUB &1B, BLACK_BLACK
- EQUB &1C, BLACK_BLACK
+ EQUB BLACK_BLACK       \ Right column of B in IB
+ EQUB BLACK_BLACK
+ EQUB BLACK_BLACK
+ EQUB BLACK_BLACK
 
- EQUB &FF                   \ End row
+ EQUB &FF               \ End row
 
-                            \ &7600
+                        \ &7600
 
- EQUB &11, BLACK_MAGENTA    \ Left column of O in CO
- EQUB &12, MAGENTA_BLACK
- EQUB &13, MAGENTA_BLACK
- EQUB &14, MAGENTA_BLACK
- EQUB &15, BLACK_MAGENTA
+ EQUB BLACK_MAGENTA     \ Left column of O in CO
+ EQUB MAGENTA_BLACK
+ EQUB MAGENTA_BLACK
+ EQUB MAGENTA_BLACK
 
- EQUB &19, BLACK_BLACK      \ Right column of O in CO
- EQUB &1A, MAGENTA_BLACK
- EQUB &1B, MAGENTA_BLACK
- EQUB &1C, MAGENTA_BLACK
+ EQUB BLACK_BLACK       \ Right column of O in CO
+ EQUB MAGENTA_BLACK
+ EQUB MAGENTA_BLACK
+ EQUB MAGENTA_BLACK
 
- EQUB &FF                   \ End row
+ EQUB &FF               \ End row
 
-                            \ &7800
+                        \ &7800
 
- EQUB &09, BLACK_MAGENTA    \ Right column of H in HS
- EQUB &0A, BLACK_MAGENTA
- EQUB &0B, MAGENTA_MAGENTA
- EQUB &0C, BLACK_MAGENTA
- EQUB &0D, BLACK_MAGENTA
+ EQUB BLACK_MAGENTA     \ Right column of H in HS
+ EQUB BLACK_MAGENTA
+ EQUB MAGENTA_MAGENTA
+ EQUB BLACK_MAGENTA
+ EQUB BLACK_MAGENTA
 
- EQUB &11, BLACK_MAGENTA    \ Left column of S in HS
- EQUB &14, BLACK_BLACK
+ EQUB BLACK_MAGENTA     \ Left column of S in HS
+ EQUB BLACK_BLACK
 
- EQUB &1B, MAGENTA_BLACK    \ Right column of S in HS
- EQUB &1C, MAGENTA_BLACK
- EQUB &1D, MAGENTA_BLACK
+ EQUB MAGENTA_BLACK     \ Right column of S in HS
+ EQUB MAGENTA_BLACK
+ EQUB MAGENTA_BLACK
 
- EQUB &FF                   \ End row
+ EQUB &FF               \ End row
 
-                            \ &7A00
-
- EQUB &FF                   \ End row
 
 \ ******************************************************************************
 \
@@ -175,106 +286,103 @@ MAGENTA_BLACK   = %00100010         \ 5, 0          0101, 0000
 
                         \ &7000
 
- EQUB &0B, BLACK_BLACK      \ Right column of F in FS
- EQUB &0C, CYAN_CYAN
- EQUB &0D, BLACK_BLACK
- EQUB &0E, BLACK_BLACK
+ EQUB BLACK_BLACK       \ Right column of F in FS
+ EQUB CYAN_CYAN
+ EQUB BLACK_BLACK
+ EQUB BLACK_BLACK
 
- EQUB &15, BLACK_BLACK      \ Left column of F in FS
+ EQUB BLACK_BLACK       \ Left column of F in FS
 
- EQUB &1C, CYAN_BLACK       \ Right column of F in FS
- EQUB &1D, CYAN_BLACK
+ EQUB CYAN_BLACK        \ Right column of F in FS
+ EQUB CYAN_BLACK
 
- EQUB &FF
+ EQUB &FF               \ End row
 
-                            \ &7200
+                        \ &7200
 
- EQUB &01, YELLOW_CYAN      \ Left column of A in AS
- EQUB &02, YELLOW_CYAN
- EQUB &03, YELLOW_CYAN
- EQUB &04, YELLOW_CYAN
- EQUB &05, YELLOW_CYAN
+ EQUB YELLOW_CYAN       \ Left column of A in AS
+ EQUB YELLOW_CYAN
+ EQUB YELLOW_CYAN
+ EQUB YELLOW_CYAN
+ EQUB YELLOW_CYAN
 
- EQUB &09, CYAN_CYAN        \ Right column of A in AS
- EQUB &0A, BLACK_CYAN
- EQUB &0B, BLACK_CYAN
- EQUB &0C, CYAN_CYAN
- EQUB &0D, BLACK_CYAN
+ EQUB CYAN_CYAN         \ Right column of A in AS
+ EQUB BLACK_CYAN
+ EQUB BLACK_CYAN
+ EQUB CYAN_CYAN
+ EQUB BLACK_CYAN
 
- EQUB &11, BLACK_CYAN       \ Left column of S in AS
- EQUB &12, BLACK_CYAN
- EQUB &13, BLACK_CYAN
- EQUB &14, BLACK_BLACK
- EQUB &15, BLACK_CYAN
+ EQUB BLACK_CYAN        \ Left column of S in AS
+ EQUB BLACK_CYAN
+ EQUB BLACK_CYAN
+ EQUB BLACK_BLACK
+ EQUB BLACK_CYAN
 
- EQUB &19, CYAN_BLACK       \ Right column of S in AS
- EQUB &1B, CYAN_BLACK
- EQUB &1C, CYAN_BLACK
- EQUB &1D, CYAN_BLACK
+ EQUB CYAN_BLACK        \ Right column of S in AS
+ EQUB CYAN_BLACK
+ EQUB CYAN_BLACK
+ EQUB CYAN_BLACK
 
- EQUB &FF                   \ End row
+ EQUB &FF               \ End row
 
-                            \ &7400
+                        \ &7400
 
- EQUB &01, YELLOW_CYAN      \ Left column of F in FU
- EQUB &02, YELLOW_CYAN
- EQUB &03, YELLOW_CYAN
- EQUB &04, YELLOW_CYAN
- EQUB &05, YELLOW_CYAN
+ EQUB YELLOW_CYAN       \ Left column of F in FU
+ EQUB YELLOW_CYAN
+ EQUB YELLOW_CYAN
+ EQUB YELLOW_CYAN
+ EQUB YELLOW_CYAN
 
- EQUB &09, CYAN_BLACK       \ Right column of F in FU
- EQUB &0A, BLACK_BLACK
- EQUB &0B, CYAN_BLACK
- EQUB &0C, BLACK_BLACK
- EQUB &0D, BLACK_BLACK
+ EQUB CYAN_BLACK        \ Right column of F in FU
+ EQUB BLACK_BLACK
+ EQUB CYAN_BLACK
+ EQUB BLACK_BLACK
+ EQUB BLACK_BLACK
 
- EQUB &11, CYAN_BLACK       \ Left column of U in FU
- EQUB &12, CYAN_BLACK
- EQUB &13, CYAN_BLACK
- EQUB &14, CYAN_BLACK
- EQUB &15, BLACK_CYAN
+ EQUB CYAN_BLACK        \ Left column of U in FU
+ EQUB CYAN_BLACK
+ EQUB CYAN_BLACK
+ EQUB CYAN_BLACK
+ EQUB BLACK_CYAN
 
- EQUB &19, CYAN_BLACK       \ Right column of U in FU
- EQUB &1A, CYAN_BLACK
- EQUB &1B, CYAN_BLACK
- EQUB &1C, CYAN_BLACK
+ EQUB CYAN_BLACK        \ Right column of U in FU
+ EQUB CYAN_BLACK
+ EQUB CYAN_BLACK
+ EQUB CYAN_BLACK
 
- EQUB &FF                   \ End row
+ EQUB &FF               \ End row
 
-                            \ &7600
+                        \ &7600
 
- EQUB &11, MAGENTA_MAGENTA  \ Left column of T in CT
- EQUB &12, BLACK_MAGENTA
- EQUB &13, BLACK_MAGENTA
- EQUB &14, BLACK_MAGENTA
+ EQUB MAGENTA_MAGENTA   \ Left column of T in CT
+ EQUB BLACK_MAGENTA
+ EQUB BLACK_MAGENTA
+ EQUB BLACK_MAGENTA
 
- EQUB &19, MAGENTA_BLACK    \ Right column of T in CT
- EQUB &1A, BLACK_BLACK
- EQUB &1B, BLACK_BLACK
- EQUB &1C, BLACK_BLACK
+ EQUB MAGENTA_BLACK     \ Right column of T in CT
+ EQUB BLACK_BLACK
+ EQUB BLACK_BLACK
+ EQUB BLACK_BLACK
 
- EQUB &FF                   \ End row
+ EQUB &FF               \ End row
 
-                            \ &7800
+                        \ &7800
 
- EQUB &09, BLACK_BLACK      \ Right column of L in LT
- EQUB &0A, BLACK_BLACK
- EQUB &0B, BLACK_BLACK
- EQUB &0C, BLACK_BLACK
- EQUB &0D, MAGENTA_BLACK
+ EQUB BLACK_BLACK       \ Right column of L in LT
+ EQUB BLACK_BLACK
+ EQUB BLACK_BLACK
+ EQUB BLACK_BLACK
+ EQUB MAGENTA_BLACK
 
- EQUB &11, MAGENTA_MAGENTA  \ Left column of T in LT
- EQUB &14, BLACK_MAGENTA
+ EQUB MAGENTA_MAGENTA   \ Left column of T in LT
+ EQUB BLACK_MAGENTA
 
- EQUB &1B, BLACK_BLACK    \ Right column of T in LT
- EQUB &1C, BLACK_BLACK
- EQUB &1D, BLACK_BLACK
+ EQUB BLACK_BLACK       \ Right column of T in LT
+ EQUB BLACK_BLACK
+ EQUB BLACK_BLACK
 
- EQUB &FF                   \ End row
+ EQUB &FF               \ End row
 
-                            \ &7A00
-
- EQUB &FF                   \ End row
 
 \ ******************************************************************************
 \
@@ -287,33 +395,32 @@ MAGENTA_BLACK   = %00100010         \ 5, 0          0101, 0000
 \
 \ Arguments:
 \
-\   SC(1 0)             Start address of screen row
+\   P(1 0)              The starting point in the table of offsets
 \
-\   P(1 0)              Table of modifications
+\   R(1 0)              The starting point in the table of pokes
+\
+\   SC(1 0)             Start address of screen row
 \
 \ ******************************************************************************
 
 .ModifyDashboard
 
- LDY #0                 \ Set Y to use as an index into the byte table
+ LDY #0                 \ Set Y to use as an index into the byte tables
 
 .mod1
 
- LDA (P),Y              \ Set R to the offset within the screen row for this
- STA R                  \ byte
+ LDA (P),Y              \ Set T to the offset within the screen row for this
+ STA T                  \ byte
 
  BMI mod2               \ If this is the last entry, then the offset will be
                         \ &FF, so jump to mod2 to return from the subroutine
 
- INY                    \ Increment the index to point to the next byte, which
-                        \ is the value to poke into screen memory
-
  STY K                  \ Store the index in K so we can retrieve it below
 
- LDA (P),Y              \ Set A to the byte we need to poke into screen memory
+ LDA (R),Y              \ Set A to the byte we need to poke into screen memory
 
- LDY R                  \ Store the byte in screen memory at the offset we
- STA (SC),Y             \ stored in R
+ LDY T                  \ Store the byte in screen memory at the offset we
+ STA (SC),Y             \ stored in T
 
  LDY K                  \ Retrieve the index from K
 
@@ -334,6 +441,15 @@ MAGENTA_BLACK   = %00100010         \ 5, 0          0101, 0000
  INC P+1
 
 .mod3
+
+ TYA                    \ Set R(1 0) = R(1 0) + Y + 1
+ CLC                    \
+ ADC R                  \ so R(1 0) points to the next table
+ STA R
+ BCC mod4
+ INC R+1
+
+.mod4
 
  INC SCH                \ Set SC(1 0) = SC(1 0) + 2, to point to the next screen
  INC SCH                \ row
@@ -356,10 +472,15 @@ MAGENTA_BLACK   = %00100010         \ 5, 0          0101, 0000
  LDA #&70
  STA SC+1
 
- LDA #LO(editorRows)    \ Set P(1 0) = editorRows
+ LDA #LO(rowOffsets)    \ Set P(1 0) = rowOffsets
  STA P
- LDA #HI(editorRows)
+ LDA #HI(rowOffsets)
  STA P+1
+
+ LDA #LO(editorRows)    \ Set R(1 0) = editorRows
+ STA R
+ LDA #HI(editorRows)
+ STA R+1
 
  JSR ModifyDashboard    \ Modify row 0 of the dashboard
 
@@ -370,8 +491,6 @@ MAGENTA_BLACK   = %00100010         \ 5, 0          0101, 0000
  JSR ModifyDashboard    \ Modify row 3 of the dashboard
 
  JSR ModifyDashboard    \ Modify row 4 of the dashboard
-
- JSR ModifyDashboard    \ Modify row 5 of the dashboard
 
  RTS                    \ Return from the subroutine
 
@@ -391,10 +510,15 @@ MAGENTA_BLACK   = %00100010         \ 5, 0          0101, 0000
  LDA #&70
  STA SC+1
 
- LDA #LO(gameRows)      \ Set P(1 0) = gameRows
+ LDA #LO(rowOffsets)    \ Set P(1 0) = rowOffsets
  STA P
- LDA #HI(gameRows)
+ LDA #HI(rowOffsets)
  STA P+1
+
+ LDA #LO(gameRows)      \ Set R(1 0) = gameRows
+ STA R
+ LDA #HI(gameRows)
+ STA R+1
 
  JSR ModifyDashboard    \ Modify row 0 of the dashboard
 
@@ -405,8 +529,6 @@ MAGENTA_BLACK   = %00100010         \ 5, 0          0101, 0000
  JSR ModifyDashboard    \ Modify row 3 of the dashboard
 
  JSR ModifyDashboard    \ Modify row 4 of the dashboard
-
- JSR ModifyDashboard    \ Modify row 5 of the dashboard
 
  RTS                    \ Return from the subroutine
 
