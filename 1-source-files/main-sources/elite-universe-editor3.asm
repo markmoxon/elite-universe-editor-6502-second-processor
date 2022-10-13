@@ -44,11 +44,11 @@ MAGENTA_BLACK   = %00100010         \ 5, 0          0101, 0000
 \       Name: rowOffsets
 \       Type: Variable
 \   Category: Universe editor
-\    Summary: Screen modifications to change to the Universe Editor dashboard
+\    Summary: Screen modifications to change the dashboard
 \
 \ ------------------------------------------------------------------------------
 \
-\ Each row has a table in the form: offset, screen byte.
+\ This table contains offsets for the modifications on each screen row.
 \
 \ ******************************************************************************
 
@@ -163,7 +163,8 @@ MAGENTA_BLACK   = %00100010         \ 5, 0          0101, 0000
 \
 \ ------------------------------------------------------------------------------
 \
-\ Each row has a table in the form: offset, screen byte.
+\ This table contains bytes to poke into the offsets to switch the dashboard to
+\ the Universe Editor.
 \
 \ ******************************************************************************
 
@@ -278,7 +279,8 @@ MAGENTA_BLACK   = %00100010         \ 5, 0          0101, 0000
 \
 \ ------------------------------------------------------------------------------
 \
-\ Each row has a table in the form: offset, screen byte.
+\ This table contains bytes to poke into the offsets to switch the dashboard
+\ back for the main game.
 \
 \ ******************************************************************************
 
@@ -389,7 +391,7 @@ MAGENTA_BLACK   = %00100010         \ 5, 0          0101, 0000
 \       Name: ModifyDashboard
 \       Type: Subroutine
 \   Category: Universe editor
-\    Summary: Poke to the screen to modify the dashboard
+\    Summary: Poke a set of bytes to a screen row to modify the dashboard
 \
 \ ------------------------------------------------------------------------------
 \
@@ -400,6 +402,12 @@ MAGENTA_BLACK   = %00100010         \ 5, 0          0101, 0000
 \   R(1 0)              The starting point in the table of pokes
 \
 \   SC(1 0)             Start address of screen row
+\
+\ Returns:
+\
+\   P(1 0)              The address ofthe next offset
+\
+\   R(1 0)              The address of the next poke
 \
 \ ******************************************************************************
 

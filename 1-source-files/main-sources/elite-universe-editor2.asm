@@ -225,6 +225,9 @@
 
 .SetupPrompt
 
+ LDA #0                 \ Set the delay in DLY to 0, so any new in-flight
+ STA DLY                \ messages will be shown instantly
+
 IF _6502SP_VERSION
 
  LDA #YELLOW            \ Send a #SETCOL YELLOW command to the I/O processor to
@@ -334,9 +337,9 @@ ENDIF
 
  LDX #0                 \ Otherwise wrap round to slot 0, the planet
 
- BEQ SwitchToSlot       \ Jump to SwitchToSlot to get the planet's data (this BEQ
-                        \ is effectively a JMP as X is always 0), returning from
-                        \ the subroutine using a tail call
+ BEQ SwitchToSlot       \ Jump to SwitchToSlot to get the planet's data (this
+                        \ BEQ is effectively a JMP as X is always 0), returning
+                        \ from the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -359,8 +362,8 @@ ENDIF
                         \ Otherwise we have gone past slot 0, so we need to find
                         \ the last ship slot
 
- LDX #1                 \ Start at the first ship slot (slot 2) and work forwards
-                        \ until we find an empty slot
+ LDX #1                 \ Start at the first ship slot (slot 1) and work
+                        \ forwards until we find an empty slot
 
 .prev1
 
@@ -566,7 +569,7 @@ ENDIF
 
  LDX TYPE               \ Get the current ship type
 
- BMI high8              \ If this is the planet or sun, jump to high8
+ BMI high2              \ If this is the planet or sun, jump to high2
 
                         \ If we get here then this is a ship or the station
 
@@ -588,7 +591,7 @@ ELIF _MASTER_VERSION
 
 ENDIF
 
- JSR high2              \ Repeat the following subroutine twice
+ JSR high1              \ Repeat the following subroutine twice
 
  LDX currentSlot        \ Get the ship data for the current slot, as otherwise
  JSR GetShipData        \ we will leave the wrong axes in INWK, and return from
@@ -597,7 +600,7 @@ ENDIF
  LDY #5                 \ Wait for 5/50 of a second (0.1 seconds)
  JSR DELAY
 
-.high2
+.high1
 
  LDA NEWB               \ Set bit 7 of the ship to indicate it has docked (so
  ORA #%10000000         \ the call to LL9 removes it from the screen)
@@ -624,7 +627,7 @@ ENDIF
  JMP LL9                \ Redraw the existing ship, returning from the
                         \ subroutine using a tail call
 
-.high8
+.high2
 
                         \ If we get here then this is the planet or sun
 
@@ -641,14 +644,14 @@ ELIF _MASTER_VERSION
 
 ENDIF
 
-.high7
+.high3
 
- JSR high9              \ Repeat the following subroutine twice
+ JSR high4              \ Repeat the following subroutine twice
 
  LDY #5                 \ Wait for 5/50 of a second (0.1 seconds)
  JSR DELAY
 
-.high9
+.high4
 
  LDA #48                \ Move the planet or sun far away so it gets erased by
  STA INWK+8             \ the call to LL9
@@ -899,7 +902,8 @@ IF _SNG47
 
  LDX #8                 \ Set up a counter in X to count from 9 to 1, so that we
                         \ copy the string starting at INWK+4+1 (i.e. INWK+5) to
-                        \ deleteCommand+9+1 (i.e. DELI+10 onwards, or "1.1234567")
+                        \ deleteCommand+9+1 (i.e. DELI+10 onwards, or
+                        \ "1.1234567")
                         \
                         \ This is 9 in the original, which is a bug
 
@@ -971,8 +975,8 @@ IF _6502SP_VERSION
 
 ELIF _MASTER_VERSION
 
- LDX #LO(deleteCommand) \ Set (Y X) to point to the OS command at deleteCommand, which
- LDY #HI(deleteCommand) \ contains the DFS command for deleting this file
+ LDX #LO(deleteCommand) \ Set (Y X) to point to the OS command at deleteCommand,
+ LDY #HI(deleteCommand) \ which contains the DFS command for deleting this file
 
 
  JSR OSCLI              \ Call OSCLI to execute the OS command at (Y X), which
@@ -982,8 +986,8 @@ ELIF _MASTER_VERSION
 
 ENDIF
 
- JMP ReturnToDiscMenu   \ Jump to ReturnToDiscMenu to display the disc access menu
-                        \ and return from the subroutine using a tail call
+ JMP ReturnToDiscMenu   \ Jump to ReturnToDiscMenu to display the disc access
+                        \ menu and return from the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -1112,8 +1116,8 @@ ENDIF
  JSR t                  \ Scan the keyboard until a key is pressed, returning
                         \ the ASCII code in A and X
 
- CMP #'1'               \ If A < ASCII "1", jump to disc9 to exit as the key
- BCC disc9              \ press doesn't match a menu option
+ CMP #'1'               \ If A < ASCII "1", jump to disc5 to exit as the key
+ BCC disc5              \ press doesn't match a menu option
 
  CMP #'4'               \ If "4" was not pressed, jump to disc1
  BNE disc1
@@ -1135,12 +1139,12 @@ ENDIF
 
 .disc2
 
- BCS disc9              \ If A >= ASCII "5", jump to disc9 to exit as the key
+ BCS disc5              \ If A >= ASCII "5", jump to disc5 to exit as the key
                         \ press is either option 6 (exit), or it doesn't match a
                         \ menu option (as we already checked for "5" above)
 
  CMP #'2'               \ If A >= ASCII "2" (i.e. save or catalogue), skip to
- BCS disc8              \ disc8
+ BCS disc3              \ disc3
 
                         \ Option 1: Load
 
@@ -1154,12 +1158,12 @@ ENDIF
  JSR StoreName          \ Transfer the universe filename from INWK to NAME, to
                         \ set it as the current filename
 
- JMP disc9              \ Jump to disc9 to return from the subroutine
+ JMP disc5              \ Jump to disc5 to return from the subroutine
 
-.disc8
+.disc3
 
- BEQ disc7              \ We get here following the CMP #'2' above, so this
-                        \ jumps to disc7 if option 2 (save) was chosen
+ BEQ disc4              \ We get here following the CMP #'2' above, so this
+                        \ jumps to disc4 if option 2 (save) was chosen
 
                         \ Option 3: Catalogue
 
@@ -1171,7 +1175,7 @@ ENDIF
 
  JMP ReturnToDiscMenu   \ Show the disc menu again
 
-.disc7
+.disc4
 
                         \ Option 2: Save
 
@@ -1179,7 +1183,7 @@ ENDIF
 
  JMP ReturnToDiscMenu   \ Show the disc menu again
 
-.disc9
+.disc5
 
                         \ Option 6: Exit
 
@@ -1598,14 +1602,14 @@ ENDIF
                         \ characters, and is terminated by a carriage return,
                         \ so set up a counter in X to copy 8 characters
 
-.snam1
+.name1
 
  LDA INWK+5,X           \ Copy the X-th byte of INWK+5 to the X-th byte of NA%
  STA NAME,X
 
  DEX                    \ Decrement the loop counter
 
- BPL snam1              \ Loop back until we have copied all 8 bytes
+ BPL name1              \ Loop back until we have copied all 8 bytes
 
  RTS                    \ Return from the subroutine
 
@@ -1664,7 +1668,8 @@ ENDIF
  PLA                    \ Restore A from the stack
 
  BCS slod3              \ If the C flag is set, then an invalid drive number was
-                        \ entered, so jump to slod3 to return from the subroutine
+                        \ entered, so jump to slod3 to return from the
+                        \ subroutine
 
 IF _6502SP_VERSION
 
@@ -2032,8 +2037,8 @@ ENDIF
  LDA INWK+31            \ Get the number of missiles
  AND #%00000111
 
- CMP #5                 \ If there are 0 to 4 missiles, jump to upda2 to show
- BCC upda2              \ them in green
+ CMP #5                 \ If there are 0 to 4 missiles, jump to upda1 to show
+ BCC upda1              \ them in green
 
  LDY #YELLOW2           \ Modify the msblob routine so it shows missiles in
  STY SAL8+1             \ yellow
@@ -2041,7 +2046,7 @@ ENDIF
  SEC                    \ Subtract 4 from the missile count, so we just show the
  SBC #4                 \ missiles in positions 5-7
 
-.upda2
+.upda1
 
  STA NOMSL              \ Set NOMSL to the number of missiles to show
 
@@ -2057,7 +2062,7 @@ ENDIF
  JSR SetSBulb           \ Show or hide the space station bulb according to the
                         \ setting of bit 4 of INWK+36 (NEWB)
 
-.upda3
+.upda2
 
  JSR UpdateCompass      \ Update the compass
 
@@ -2264,8 +2269,8 @@ ENDIF
                         \ Bit 0 is set, so we are already a trader, and we move
                         \ on to bounty hunter
 
- LDA #%00000010         \ Set bit 1 of A (bounty hunter) and jump to styp6
- BNE styp6
+ LDA #%00000010         \ Set bit 1 of A (bounty hunter) and jump to styp4
+ BNE styp4
 
 .styp1
 
@@ -2276,8 +2281,8 @@ ENDIF
                         \ Bit 1 is set, so we are already a bounty hunter, and
                         \ we move on to pirate
 
- LDA #%00001000         \ Set bit 3 of A (pirate) and jump to styp6
- BNE styp6
+ LDA #%00001000         \ Set bit 3 of A (pirate) and jump to styp4
+ BNE styp4
 
 .styp2
 
@@ -2289,14 +2294,14 @@ ENDIF
                         \ Bit 3 is set, so we are already a pirate, and we move
                         \ on to no status
 
- LDA #%00000000         \ Clear all bits of T (no status) and jump to styp6
- BEQ styp6
+ LDA #%00000000         \ Clear all bits of T (no status) and jump to styp4
+ BEQ styp4
 
 .styp3
 
  LDA #%00000001         \ Set bit 0 of A (trader)
 
-.styp6
+.styp4
 
  STA T                  \ Store the bits we want to set in T
 
@@ -2602,6 +2607,54 @@ ENDIF
  JMP TAS2               \ Call TAS2 to build XX15 from K3, returning from the
                         \ subroutine using a tail call
 
+\ ******************************************************************************
+\
+\       Name: TargetMissile
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Set the target for a missile
+\
+\ ******************************************************************************
+
+.TargetMissile
+
+ LDX TYPE               \ If this is not a missile, jump to miss1 to make an
+ CPX #MSL               \ error beep and return from the subroutine
+ BNE miss1
+
+ JSR SetupPrompt        \ Move the cursor and set the colour for a prompt
+
+ LDA #185               \ Print text token 25 ("SHIP") followed by a question
+ JSR prq                \ mark
+
+\ JSR TT162              \ Print a space
+
+ LDA currentSlot        \ Set QQ25 to currentSlot so this is the maximum value
+ STA QQ25               \ allowed in gnum
+
+ JSR gnum               \ Call gnum to get a number from the keyboard, which
+                        \ will be the slot number for the target ship, returning
+                        \ the number entered in A and R
+
+ BEQ miss1              \ If the number entered is 0 (the planet) or too large,
+ BCS miss1              \ jump to miss1 to make an error beep and return from
+                        \ the subroutine
+
+ ASL A                  \ Shift the target number left so it's in bits 1-5
+
+ ORA #%10000001         \ Store the target number in the missile's AI byte, with
+ STA INWK+32            \ bits 0 and 7 set to indicate the target is locked and
+                        \ AI is enabled
+
+ JMP STORE              \ Call STORE to copy the ship data block at INWK back to
+                        \ the K% workspace at INF, returning from the subroutine
+                        \ using a tail call
+
+.miss1
+
+ JSR MakeErrorBeep      \ Make an error beep
+
+ RTS                    \ Return from the subroutine
 
 IF _MASTER_VERSION
 
@@ -3106,6 +3159,8 @@ IF _MASTER_VERSION
 
 ENDIF
 
+IF _6502SP_VERSION
+
 \ ******************************************************************************
 \
 \       Name: GETYN
@@ -3120,8 +3175,6 @@ ENDIF
 \   C flag              Set if "Y" was pressed, clear if "N" was pressed
 \
 \ ******************************************************************************
-
-IF _6502SP_VERSION
 
 .GETYN
 

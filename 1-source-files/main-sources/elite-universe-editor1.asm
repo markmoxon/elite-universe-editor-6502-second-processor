@@ -46,6 +46,7 @@ keyH = &54
 keyK = &46
 keyL = &56
 keyM = &65
+keyN = &55
 keyO = &36
 keyP = &37
 keyQ = &10
@@ -95,6 +96,7 @@ keyH = &48
 keyK = &4B
 keyL = &4C
 keyM = &4D
+keyN = &4E
 keyO = &4F
 keyP = &50
 keyQ = &51
@@ -767,6 +769,10 @@ ENDIF
  BNE P%+5
  JMP HighlightScanner
 
+ CMP #keyN              \ N (target missile)
+ BNE P%+5
+ JMP TargetMissile
+
  CMP #keyAt             \ @ (show disc access menu)
  BNE P%+5
  JMP ShowDiscMenu
@@ -846,15 +852,15 @@ ENDIF
 .draw1
 
  LDA FRIN,X             \ If the slot is empty, return from the subroutine as
- BEQ draw2              \ we are done
+ BEQ draw4              \ we are done
 
  PHX                    \ Store the counter on the stack
 
  JSR GetShipData        \ Fetch the details for the ship in slot X
 
  LDA INWK+31            \ If bit 5 of byte #31 is clear, then the ship is not
- AND #%00100000         \ exploding, so jump to draw3 to skip the following
- BEQ draw3
+ AND #%00100000         \ exploding, so jump to draw2 to skip the following
+ BEQ draw2
 
                         \ The ship is exploding
 
@@ -866,13 +872,13 @@ ENDIF
 \ LDA #&60               \ Disable DOEXP again
 \ STA DOEXP+9
 
- BNE draw4
+ BNE draw3
 
-.draw3
+.draw2
 
  JSR DrawShip           \ Draw the ship
 
-.draw4
+.draw3
 
  PLX                    \ Retrieve the counter from the stack
 
@@ -881,7 +887,7 @@ ENDIF
  CPX #NOSH              \ Loop back until we have drawn all the ships
  BCC draw1
 
-.draw2
+.draw4
 
  RTS                    \ Return from the subroutine
 
@@ -1012,7 +1018,7 @@ ENDIF
 
  JSR STORE              \ Store the updated sun
 
- BNE swap5              \ Jump to swap4 (this BNE is effectively a JMP as A is
+ BNE swap4              \ Jump to swap3 (this BNE is effectively a JMP as A is
                         \ never zero)
 
 .swap1
@@ -1031,7 +1037,7 @@ ENDIF
  LDA #1                 \ Set the tech level for a Coriolis station
  STA tek
 
- BNE swap4              \ Jump to swap4 (this BNE is effectively a JMP as A is
+ BNE swap3              \ Jump to swap3 (this BNE is effectively a JMP as A is
                         \ never zero)
 
 .swap2
@@ -1043,7 +1049,7 @@ ENDIF
  LDA #10                \ Set the tech level for a Dodo station
  STA tek
 
-.swap4
+.swap3
 
  JSR NWSPS+3            \ Add a new space station to our local bubble of
                         \ universe, skipping the drawing of the space station
@@ -1056,7 +1062,7 @@ ENDIF
 
  JSR STORE              \ Store the updated station
 
-.swap5
+.swap4
 
  JMP DrawShip           \ Draw the ship and return from the subroutine using a
                         \ tail call
@@ -1444,9 +1450,6 @@ ENDIF
 \ ******************************************************************************
 
 .AddShip
-
- LDA #0                 \ Set the delay in DLY to 0, so any new in-flight
- STA DLY                \ messages will be shown instantly
 
  JSR SetupPrompt        \ Move the cursor and set the colour for a prompt
 
