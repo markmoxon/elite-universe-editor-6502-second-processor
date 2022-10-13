@@ -474,6 +474,11 @@ IF _MASTER_VERSION
 
 ENDIF
 
+ LDA #MAGENTA_MAGENTA   \ Fix the incorrect colour in the A of AL (which is a
+ STA &7A0C              \ bug in the original release), so we can tell from a
+                        \ screenshot if the Universe Editor has been run (as
+                        \ we do not revert this fix)
+
  LDA #0                 \ Set SC(1 0) = &7000
  STA SC
  LDA #&70
