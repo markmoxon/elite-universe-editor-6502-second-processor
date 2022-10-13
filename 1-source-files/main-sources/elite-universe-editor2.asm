@@ -75,6 +75,37 @@
 
 \ ******************************************************************************
 \
+\       Name: ConfirmChoice
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Display a prompt and ask for confirmation
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   C flag              Set if "Y" was pressed, clear if "N" was pressed
+\
+\
+\ ******************************************************************************
+
+.ConfirmChoice
+
+ JSR PrintAreYouSure    \ Print "Are you sure?" at the bottom of the screen
+
+ JSR GETYN              \ Call GETYN to wait until either "Y" or "N" is pressed
+
+ PHP                    \ Store the response in the C flag on the stack
+
+ JSR PrintAreYouSure    \ Print "Are you sure?" at the bottom of the screen to
+                        \ erase it
+
+ PLP                    \ Restore the response from the stack
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
 \       Name: QuitEditor
 \       Type: Subroutine
 \   Category: Universe editor
@@ -84,13 +115,10 @@
 
 .QuitEditor
 
- JSR PrintAreYouSure    \ Print "Are you sure?" at the bottom of the screen
-
- JSR GETYN              \ Call GETYN to wait until either "Y" or "N" is pressed
+ JSR ConfirmChoice      \ Print "Are you sure?" at the bottom of the screen and
+                        \ wait for a response
 
  BCS quit1              \ If "Y" was pressed, jump to quit1 to quit
-
- JSR PrintAreYouSure    \ Print "Are you sure?" at the bottom of the screen
 
  JMP edit3              \ Rejoin the main loop after the key has been processed
 
@@ -114,7 +142,7 @@
 
  JSR SetupPrompt        \ Move the cursor and set the colour for a prompt
 
- LDA #5                 \ Print extended token 224 ("ARE YOU SURE?") and return
+ LDA #5                 \ Print extended token 5 ("ARE YOU SURE?") and return
  JMP PrintToken         \ from the subroutine using a tail call
 
 \ ******************************************************************************
@@ -1155,23 +1183,22 @@ ENDIF
 
                         \ Option 6: Exit
 
- JSR ExitDiscMenu       \ Clear the screen and reverse all the modifications we
-                        \ did above
+ JSR RevertDiscMods     \ Reverse all the modifications we did above
 
-.disc10
-
- RTS                    \ Return from the subroutine
+ LDX #0                 \ Draw the front view, returning from the subroutine
+ STX VIEW               \ using a tail call
+ JMP ChangeView+8
 
 \ ******************************************************************************
 \
-\       Name: ExitDiscMenu
+\       Name: RevertDiscMods
 \       Type: Subroutine
 \   Category: Universe editor
-\    Summary: Exit the disc access menu
+\    Summary: Reverse the mods we added for the disc access menu
 \
 \ ******************************************************************************
 
-.ExitDiscMenu
+.RevertDiscMods
 
  LDA #'E'               \ Change the directory back to E
  STA S1%+3
@@ -1230,7 +1257,7 @@ IF _6502SP_VERSION
  STA SVE+2
  CLI
 
- JSR BRKBK              \ Jump to BRKBK to set BRKV back to the standard BRKV
+ JMP BRKBK              \ Jump to BRKBK to set BRKV back to the standard BRKV
                         \ handler for the game, and return from the subroutine
                         \ using a tail call
 
@@ -1241,11 +1268,9 @@ ELIF _MASTER_VERSION
  LDA #HI(SVE)
  STA DEATH-1
 
-ENDIF
+ RTS                    \ Return from the subroutine
 
- LDX #0                 \ Draw the front view, returning from the subroutine
- STX VIEW               \ using a tail call
- JMP ChangeView+8
+ENDIF
 
 \ ******************************************************************************
 \
@@ -1723,23 +1748,24 @@ ENDIF
 
 .PlayUniverse
 
- JSR PrintAreYouSure    \ Print "Are you sure?" at the bottom of the screen
-
- JSR GETYN              \ Call GETYN to wait until either "Y" or "N" is pressed
+ JSR ConfirmChoice      \ Print "Are you sure?" at the bottom of the screen and
+                        \ wait for a response
 
  BCS play1              \ If "Y" was pressed, jump to play1 to play the universe
 
- JSR PrintAreYouSure    \ Print "Are you sure?" at the bottom of the screen to
-                        \ remove it
-
- JMP ReturnToDiscMenu   \ Return to the disc menu
+ JMP ReturnToDiscMenu   \ Otherwise return to the disc menu
 
 .play1
 
- JSR ExitDiscMenu       \ Revert the changes made for the disc access menu
+ JSR RevertDiscMods     \ Revert the mods we made for the disc access menu
 
  JSR RevertMods         \ Revert the mods we made when the Universe Editor
                         \ started up
+
+ LDX #1                 \ Force-load the front space view
+ STX QQ11
+ DEX
+ JSR LOOK1
 
                         \ Do the following from DEATH2:
 
@@ -1887,13 +1913,36 @@ ENDIF
 
                         \ We are done setting up, so now we play the game:
 
- LDX #0                 \ Force-load the front space view
- JSR LOOK1+14
-
  LDA #1                 \ Reset DELTA (speed) to 1, so we go as slowly as
  STA DELTA              \ possible at the start
 
- JMP TT100              \ Jump to TT100 to restart the main loop from the start
+ JSR M%                 \ Call the M% routine to do the main flight loop once,
+                        \ which will display the universe
+
+ LDX #5                 \ Set a countdown timer, counting down from 5
+ STX ECMA
+
+.play4
+
+ JSR ee3                \ Print the 8-bit number in X at text location (0, 1),
+                        \ i.e. print the countdown in the top-left corner
+
+ LDY #44                \ Wait for 44/50 of a second (0.88 seconds)
+ JSR DELAY
+
+ LDX ECMA               \ Fetch the counter
+
+ JSR ee3                \ Re-print the 8-bit number in X at text location (0, 1)
+                        \ to remove it
+
+ DEC ECMA               \ Decrement the counter
+
+ LDX ECMA               \ Fetch the counter
+
+ BNE play4              \ Loop back to keep counting down until we reach zero
+
+ JMP TT100+3            \ Jump to TT100, just after the JSR M%, to join the main
+                        \ loop and play the game
 
 \ ******************************************************************************
 \
