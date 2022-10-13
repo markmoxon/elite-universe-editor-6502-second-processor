@@ -1769,36 +1769,16 @@ ENDIF
 
                         \ Do the following from DEATH2:
 
- LDA #&2C               \ Disable JSR ZERO and JSR DIALS in RES2
+ LDA #&60               \ Modify the JSR ZERO in RES2 so it's an RTS, which
+ STA yu+3               \ stops RES2 from resetting the ship slots, ship heap
+                        \ and dashboard
+
+ JSR RES2               \ Reset a number of flight variables and workspaces, but
+                        \ without resetting the ship slots, ship heap or
+                        \ dashboard
+
+ LDA #&20               \ Re-enable the JSR ZERO in RES2
  STA yu+3
-
-IF _6502SP_VERSION
-
- LDA #&60               \ Turn JSR DIALS in RES2 into an RTS
- STA yu+16
-
-ELIF _MASTER_VERSION
-
- LDA #&60               \ Turn ZINF fallthrough in RES2 into an RTS
- STA ZINF
-
-ENDIF
-
- JSR RES2               \ Reset a number of flight variables and workspaces
-
- LDA #&20               \ Re-enable JSR ZERO and JSR DIALS in RES2
- STA yu+3
-
-IF _6502SP_VERSION
-
- STA yu+16              \ Re-enable JSR DIALS in RES2
-
-ELIF _MASTER_VERSION
-
- LDA #&A0               \ Re-enable ZINF fallthrough in RES2
- STA ZINF
-
-ENDIF
 
  LDA #&FF               \ Recharge the forward and aft shields
  STA FSH
@@ -1813,6 +1793,8 @@ ENDIF
                         \ We now do what ZERO would have done, but leaving
                         \ the ship slots alone, and we then call DIALS and ZINF
                         \ as we disabled them above
+
+ JSR U%                 \ Clear the key logger
 
  LDX #(de-auto)         \ We're going to zero the UP workspace variables from
                         \ auto to de, so set a counter in X for the correct
@@ -1829,7 +1811,7 @@ ENDIF
  BPL play2              \ Loop back to zero the next variable until we have done
                         \ them all
 
- JSR DIALS              \ Update the dashboard to zero all the above values
+ JSR DIALS              \ Update the dashboard to show all the above values
 
  JSR ZINF               \ Call ZINF to reset the INWK ship workspace
 
@@ -1919,8 +1901,8 @@ ENDIF
  JSR M%                 \ Call the M% routine to do the main flight loop once,
                         \ which will display the universe
 
- LDX #5                 \ Set a countdown timer, counting down from 5
- STX ECMA
+ LDX #5                 \ Set a countdown timer, counting down from 5 (we can
+ STX ECMA               \ use ECMA, as this is only used when E.C.M. is active)
 
 .play4
 
