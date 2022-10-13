@@ -31092,15 +31092,33 @@ ENDIF
  LDA #10                \ Print a line feed to move the text cursor down a line
  JSR TT26
 
- LDA #6                 \ Move the text cursor to column 6 again
+                        \ --- Mod: Original Acornsoft code removed: ----------->
+
+\ LDA #6                \ Move the text cursor to column 6 again
+\ JSR DOXC
+
+\ LDA PATG              \ If PATG = 0, skip the following two lines, which
+\ BEQ awe               \ print the author credits (PATG can be toggled by
+\                       \ pausing the game and pressing "X")
+
+\ LDA #13               \ Print extended token 13 ("BY D.BRABEN & I.BELL")
+\ JSR DETOK
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA #8                 \ Move the text cursor to column 8
  JSR DOXC
 
- LDA PATG               \ If PATG = 0, skip the following two lines, which
- BEQ awe                \ print the author credits (PATG can be toggled by
-                        \ pausing the game and pressing "X")
+ LDA #6                 \ Print extended token 6 ("UNIVERSE EDITOR")
+ JSR PrintToken
 
- LDA #13                \ Print extended token 13 ("BY D.BRABEN & I.BELL")
- JSR DETOK
+ NOP                    \ Pad out the code to the same width to prevent build
+ NOP                    \ issues
+ NOP
+ NOP
+ NOP
+
+                        \ --- End of added code ------------------------------->
 
 .awe
 

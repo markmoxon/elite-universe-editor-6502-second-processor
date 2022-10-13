@@ -2970,6 +2970,18 @@ ENDIF
  ECHR '?'
  EQUB VE
 
+ ECHR 'U'               \ Token 6:    "UNIVERSE EDITOR"
+ ECHR 'N'
+ ECHR 'I'
+ ETWO 'V', 'E'
+ ECHR 'R'
+ ETWO 'S', 'E'
+ ECHR ' '
+ ETWO 'E', 'D'
+ ETWO 'I', 'T'
+ ETWO 'O', 'R'
+ EQUB VE
+
 IF _MASTER_VERSION
 
 \ ******************************************************************************

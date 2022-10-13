@@ -8700,6 +8700,9 @@ CPU 0                   \ Switch back to normal 6502 asembly
 
                         \ --- Mod: Code added for Universe Editor: ------------>
 
+_6502SP_VERSION = TRUE
+_MASTER_VERSION = FALSE
+
 INCLUDE "1-source-files/main-sources/elite-universe-editor3.asm"
 
                         \ --- End of added code ------------------------------->
