@@ -314,7 +314,7 @@ IF _6502SP_VERSION
 ELIF _MASTER_VERSION
 
  LDA #&85               \ Re-enable the STA XX1+31 instruction in part 9 of LL9
- STA LL74+20
+ STA LL74+16
 
 ENDIF
 
@@ -995,7 +995,10 @@ ENDIF
 
  JSR EraseShip          \ Erase the existing space station
 
- JSR KS4                \ Switch to the sun, erasing the space station bulb
+ JSR KS4                \ Switch to the sun, showing the space station bulb
+
+ JSR SPBLB              \ Call SPBLB to redraw the space station bulb, which
+                        \ will erase it from the dashboard
 
  JSR SetSBulb           \ Show or hide the space station bulb according to the
                         \ setting of bit 4 of INWK+36 (NEWB)
@@ -1020,6 +1023,10 @@ ENDIF
                         \ can't have both the sun and the space station at the
                         \ same time
 
+ LDA #SST               \ Set the ship type to the space station
+ STA TYPE
+
+ JSR ZINF               \ Reset the station coordinates
 
  LDA #1                 \ Set the tech level for a Coriolis station
  STA tek
@@ -1038,16 +1045,9 @@ ENDIF
 
 .swap4
 
- LDA #SST               \ Set the ship type to the space station
- STA TYPE
-
- LDA #%00010000         \ Set the showingS flag to denote that we are showing
- STA showingS           \ the space station bulb
-
- JSR ZINF               \ Reset the station coordinates
-
- JSR NWSPS              \ Add a new space station to our local bubble of
-                        \ universe
+ JSR NWSPS+3            \ Add a new space station to our local bubble of
+                        \ universe, skipping the drawing of the space station
+                        \ bulb
 
  JSR SetSBulb           \ Show or hide the space station bulb according to the
                         \ setting of bit 4 of INWK+36 (NEWB)
@@ -1249,6 +1249,10 @@ ENDIF
  JSR TWIST2             \ switch planet types straight away)
  LDA #%10000000
  JSR TWIST2
+
+ LDA #127               \ Set the pitch and roll counters to 127 (no damping
+ STA INWK+29            \ so the planet's rotation doesn't slow down)
+ STA INWK+30
 
  LDA #2                 \ This is a planet/sun, so set A = 2 to store as the
                         \ sign-byte distance
@@ -1519,6 +1523,8 @@ ENDIF
  JSR InitialiseShip     \ Initialise the ship coordinates
 
  JSR CreateShip         \ Create the new ship
+
+ JSR PrintShipType      \ Print the current ship type on the screen
 
 .add5
 
