@@ -1283,6 +1283,10 @@ ENDIF
  CMP #SST               \ If this is a space station, jump to init4 to set a
  BEQ init4              \ distance of 5
 
+ LDA INWK+32            \ This is a ship, so enable AI by setting bit 7 of
+ ORA #%10000000         \ INWK+32
+ STA INWK+32
+
  LDA #2                 \ Set A = 2 to store as the high-byte distance for the
                         \ new ship, so it's is a little way in front of us
 
