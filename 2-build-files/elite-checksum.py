@@ -147,7 +147,14 @@ if Encrypt:
 
 # Write output file for P.CODE
 
+# Modified for Universe Editor
+editor_block = bytearray() 
+editor_file = open("3-assembled-output/EDITOR1.bin", "rb")
+editor_block.extend(editor_file.read())
+editor_file.close()
+
 output_file = open("3-assembled-output/P.CODE.bin", "wb")
+output_file.write(editor_block)
 output_file.write(data_block)
 output_file.close()
 
