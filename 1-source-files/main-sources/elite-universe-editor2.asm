@@ -2642,9 +2642,8 @@ ENDIF
 
  ASL A                  \ Shift the target number left so it's in bits 1-5
 
- ORA #%10000001         \ Store the target number in the missile's AI byte, with
- STA INWK+32            \ bits 0 and 7 set to indicate the target is locked and
-                        \ AI is enabled
+ ORA #%10000000         \ Store the target number in the missile's AI byte, with
+ STA INWK+32            \ bit 7 set so AI is enabled
 
  JMP STORE              \ Call STORE to copy the ship data block at INWK back to
                         \ the K% workspace at INF, returning from the subroutine
