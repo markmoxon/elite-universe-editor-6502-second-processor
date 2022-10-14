@@ -91,14 +91,15 @@
 
 .ConfirmChoice
 
- JSR PrintAreYouSure    \ Print "Are you sure?" at the bottom of the screen
+ LDA #5                 \ Print extended token 5 ("ARE YOU SURE?") as a prompt
+ JSR PrintPrompt
 
  JSR GETYN              \ Call GETYN to wait until either "Y" or "N" is pressed
 
  PHP                    \ Store the response in the C flag on the stack
 
- JSR PrintAreYouSure    \ Print "Are you sure?" at the bottom of the screen to
-                        \ erase it
+ LDA #5                 \ Print extended token 5 ("ARE YOU SURE?") as a prompt
+ JSR PrintPrompt        \ to remove it
 
  PLP                    \ Restore the response from the stack
 
@@ -128,22 +129,6 @@
                         \ started up
 
  JMP BR1                \ Quit the scene editor by returning to the start
-
-\ ******************************************************************************
-\
-\       Name: PrintAreYouSure
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Print "Are you sure?" at the bottom of the screen
-\
-\ ******************************************************************************
-
-.PrintAreYouSure
-
- JSR SetupPrompt        \ Move the cursor and set the colour for a prompt
-
- LDA #5                 \ Print extended token 5 ("ARE YOU SURE?") and return
- JMP PrintToken         \ from the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -211,7 +196,7 @@
 
 \ ******************************************************************************
 \
-\       Name: SetupPrompt
+\       Name: PrintPrompt
 \       Type: Subroutine
 \   Category: Universe editor
 \    Summary: Show a prompt on-screen
@@ -223,7 +208,9 @@
 \
 \ ******************************************************************************
 
-.SetupPrompt
+.PrintPrompt
+
+ PHA                    \ Store the token number on the stack
 
  LDA #0                 \ Set the delay in DLY to 0, so any new in-flight
  STA DLY                \ messages will be shown instantly
@@ -240,7 +227,7 @@ ELIF _MASTER_VERSION
 
 ENDIF
 
- LDX #0                 \ Set QQ17 = 0 to switch to ALL CAPS
+ LDA #%10000000         \ Set bit 7 of QQ17 to switch to Sentence Case
  STX QQ17
 
  LDA #10                \ Move the text cursor to column 10
@@ -248,6 +235,9 @@ ENDIF
 
  LDA #22                \ Move the text cursor to row 22
  JSR DOYC
+
+ PLA                    \ Print the token
+ JSR PrintToken
 
  RTS                    \ Return from the subroutine
 
@@ -807,6 +797,9 @@ ENDIF
  PHA
  LDA V+1
  PHA
+
+ JSR MT19               \ Call MT19 to capitalise the next letter (i.e. set
+                        \ Sentence Case for this word only)
 
  LDA #LO(UniverseToken) \ Set V to the low byte of UniverseToken
  STA V
@@ -2201,13 +2194,26 @@ ELIF _MASTER_VERSION
 
 ENDIF
 
- LDA #24                \ Move the text cursor to column 24 on row 1
- JSR DOXC
- LDA #1
+ LDA #1                 \ Move the text cursor to column 24 on row 1
  JSR DOYC
+ LDA #24
+ JSR DOXC
 
- JSR MT19               \ Call MT19 to capitalise the next letter (i.e. set
-                        \ Sentence Case for this word only)
+ LDA TYPE               \ If this is not a missile, jump to ptyp0
+ CMP #MSL
+ BNE ptyp0
+
+ LDA INWK+32            \ Extract the target number from bits 1-5 into X
+ LSR A
+ AND #%00011111
+ TAX
+
+ LDY #0                 \ Set Y = 0 for the high byte in pr6
+
+ JMP pr6                \ Print the number in (Y X) and return from the
+                        \ subroutine using a tail call
+
+.ptyp0
 
  LDA #%10000000         \ Set bit 7 of QQ17 to switch to Sentence Case
  STA QQ17
@@ -2607,54 +2613,6 @@ ENDIF
  JMP TAS2               \ Call TAS2 to build XX15 from K3, returning from the
                         \ subroutine using a tail call
 
-\ ******************************************************************************
-\
-\       Name: TargetMissile
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Set the target for a missile
-\
-\ ******************************************************************************
-
-.TargetMissile
-
- LDX TYPE               \ If this is not a missile, jump to miss1 to make an
- CPX #MSL               \ error beep and return from the subroutine
- BNE miss1
-
- JSR SetupPrompt        \ Move the cursor and set the colour for a prompt
-
- LDA #185               \ Print text token 25 ("SHIP") followed by a question
- JSR prq                \ mark
-
-\ JSR TT162              \ Print a space
-
- LDA currentSlot        \ Set QQ25 to currentSlot so this is the maximum value
- STA QQ25               \ allowed in gnum
-
- JSR gnum               \ Call gnum to get a number from the keyboard, which
-                        \ will be the slot number for the target ship, returning
-                        \ the number entered in A and R
-
- BEQ miss1              \ If the number entered is 0 (the planet) or too large,
- BCS miss1              \ jump to miss1 to make an error beep and return from
-                        \ the subroutine
-
- ASL A                  \ Shift the target number left so it's in bits 1-5
-
- ORA #%10000000         \ Store the target number in the missile's AI byte, with
- STA INWK+32            \ bit 7 set so AI is enabled
-
- JMP STORE              \ Call STORE to copy the ship data block at INWK back to
-                        \ the K% workspace at INF, returning from the subroutine
-                        \ using a tail call
-
-.miss1
-
- JSR MakeErrorBeep      \ Make an error beep
-
- RTS                    \ Return from the subroutine
-
 IF _MASTER_VERSION
 
 \ ******************************************************************************
@@ -3041,10 +2999,9 @@ ENDIF
  ECHR 'E'
  EQUB VE
 
- EJMP 1
  ECHR 'A'               \ Token 5:    "ARE YOU SURE?"
- ETWO 'R', 'E'          \
- ECHR ' '               \ Encoded as:   "A<242> [179] SU<242>?"
+ ETWO 'R', 'E'
+ ECHR ' '
  ETOK 179
  ECHR ' '
  ECHR 'S'
@@ -3063,6 +3020,19 @@ ENDIF
  ETWO 'E', 'D'
  ETWO 'I', 'T'
  ETWO 'O', 'R'
+ EQUB VE
+
+ ECHR 'S'               \ Token 7:    "SLOT?"
+ ETWO 'L', 'O'
+ ECHR 'T'
+ ECHR '?'
+ EQUB VE
+
+ ECHR 'T'               \ Token 8:    "TYPE?"
+ ECHR 'Y'
+ ECHR 'P'
+ ECHR 'E'
+ ECHR '?'
  EQUB VE
 
 IF _MASTER_VERSION

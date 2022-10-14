@@ -27,550 +27,138 @@
 \
 \ ******************************************************************************
 
-BLACK_BLACK     = %00000000         \ 0, 0          0000, 0000
-BLACK_CYAN      = %00010100         \ 0, 6          0000, 0110
-CYAN_BLACK      = %00101000         \ 6, 0          0110, 0000
-CYAN_CYAN       = %00111100         \ 6, 6          0110, 0110
-
-YELLOW_CYAN     = %00011110         \ 3, 6          0011, 0110
-YELLOW_MAGENTA  = %00011011         \ 3, 5          0011, 0101
-
-MAGENTA_MAGENTA = %00110011         \ 5, 5          0101, 0101
-BLACK_MAGENTA   = %00010001         \ 0, 5          0000, 0101
-MAGENTA_BLACK   = %00100010         \ 5, 0          0101, 0000
+GUARD &8200
 
 \ ******************************************************************************
 \
-\       Name: rowOffsets
-\       Type: Variable
-\   Category: Universe editor
-\    Summary: Screen modifications to change the dashboard
-\
-\ ------------------------------------------------------------------------------
-\
-\ This table contains offsets for the modifications on each screen row.
-\
-\ ******************************************************************************
-
-.rowOffsets
-
-                        \ &7000
-
- EQUB &0B               \ Right column of A in AC
- EQUB &0C
- EQUB &0D
- EQUB &0E
-
- EQUB &15               \ Left column of C in AC
-
- EQUB &1C               \ Right column of C in AC
- EQUB &1D
-
- EQUB &FF               \ End row
-
-                        \ &7200
-
- EQUB &01               \ Left column of A in AI
- EQUB &02
- EQUB &03
- EQUB &04
- EQUB &05
-
- EQUB &09               \ Right column of A in AI
- EQUB &0A
- EQUB &0B
- EQUB &0C
- EQUB &0D
-
- EQUB &11               \ Left column of I in AI
- EQUB &12
- EQUB &13
- EQUB &14
- EQUB &15
-
- EQUB &19               \ Right column of I in AI
- EQUB &1B
- EQUB &1C
- EQUB &1D
-
- EQUB &FF               \ End row
-
-                        \ &7400
-
- EQUB &01               \ Left column of I in IB
- EQUB &02
- EQUB &03
- EQUB &04
- EQUB &05
-
- EQUB &09               \ Right column of I in IB
- EQUB &0A
- EQUB &0B
- EQUB &0C
- EQUB &0D
-
- EQUB &11               \ Left column of B in IB
- EQUB &12
- EQUB &13
- EQUB &14
- EQUB &15
-
- EQUB &19               \ Right column of B in IB
- EQUB &1A
- EQUB &1B
- EQUB &1C
-
- EQUB &FF               \ End row
-
-                        \ &7600
-
- EQUB &11               \ Left column of O in CO
- EQUB &12
- EQUB &13
- EQUB &14
-
- EQUB &19               \ Right column of O in CO
- EQUB &1A
- EQUB &1B
- EQUB &1C
-
- EQUB &FF               \ End row
-
-                        \ &7800
-
- EQUB &09               \ Right column of H in HS
- EQUB &0A
- EQUB &0B
- EQUB &0C
- EQUB &0D
-
- EQUB &11               \ Left column of S in HS
- EQUB &14
-
- EQUB &1B               \ Right column of S in HS
- EQUB &1C
- EQUB &1D
-
- EQUB &FF               \ End row
-
-
-\ ******************************************************************************
-\
-\       Name: editorRows
-\       Type: Variable
-\   Category: Universe editor
-\    Summary: Screen modifications to change to the Universe Editor dashboard
-\
-\ ------------------------------------------------------------------------------
-\
-\ This table contains bytes to poke into the offsets to switch the dashboard to
-\ the Universe Editor.
-\
-\ ******************************************************************************
-
-.editorRows
-
-                        \ &7000
-
- EQUB BLACK_CYAN        \ Right column of A in AC
- EQUB BLACK_CYAN
- EQUB CYAN_CYAN
- EQUB BLACK_CYAN
-
- EQUB BLACK_CYAN        \ Left column of C in AC
-
- EQUB BLACK_BLACK       \ Right column of C in AC
- EQUB BLACK_BLACK
-
- EQUB &FF               \ End row
-
-                        \ &7200
-
- EQUB YELLOW_MAGENTA    \ Left column of A in AI
- EQUB YELLOW_MAGENTA
- EQUB YELLOW_MAGENTA
- EQUB YELLOW_MAGENTA
- EQUB YELLOW_MAGENTA
-
- EQUB MAGENTA_MAGENTA   \ Right column of A in AI
- EQUB BLACK_MAGENTA
- EQUB BLACK_MAGENTA
- EQUB MAGENTA_MAGENTA
- EQUB BLACK_MAGENTA
-
- EQUB BLACK_MAGENTA     \ Left column of I in AI
- EQUB BLACK_MAGENTA
- EQUB BLACK_MAGENTA
- EQUB BLACK_MAGENTA
- EQUB BLACK_MAGENTA
-
- EQUB BLACK_BLACK       \ Right column of I in AI
- EQUB BLACK_BLACK
- EQUB BLACK_BLACK
- EQUB BLACK_BLACK
-
- EQUB &FF               \ End row
-
-                        \ &7400
-
- EQUB YELLOW_MAGENTA    \ Left column of I in IB
- EQUB YELLOW_MAGENTA
- EQUB YELLOW_MAGENTA
- EQUB YELLOW_MAGENTA
- EQUB YELLOW_MAGENTA
-
- EQUB BLACK_MAGENTA     \ Right column of I in IB
- EQUB BLACK_MAGENTA
- EQUB BLACK_MAGENTA
- EQUB BLACK_MAGENTA
- EQUB BLACK_MAGENTA
-
- EQUB MAGENTA_BLACK     \ Left column of B in IB
- EQUB BLACK_MAGENTA
- EQUB MAGENTA_BLACK
- EQUB BLACK_MAGENTA
- EQUB MAGENTA_BLACK
-
- EQUB BLACK_BLACK       \ Right column of B in IB
- EQUB BLACK_BLACK
- EQUB BLACK_BLACK
- EQUB BLACK_BLACK
-
- EQUB &FF               \ End row
-
-                        \ &7600
-
- EQUB BLACK_MAGENTA     \ Left column of O in CO
- EQUB MAGENTA_BLACK
- EQUB MAGENTA_BLACK
- EQUB MAGENTA_BLACK
-
- EQUB BLACK_BLACK       \ Right column of O in CO
- EQUB MAGENTA_BLACK
- EQUB MAGENTA_BLACK
- EQUB MAGENTA_BLACK
-
- EQUB &FF               \ End row
-
-                        \ &7800
-
- EQUB BLACK_MAGENTA     \ Right column of H in HS
- EQUB BLACK_MAGENTA
- EQUB MAGENTA_MAGENTA
- EQUB BLACK_MAGENTA
- EQUB BLACK_MAGENTA
-
- EQUB BLACK_MAGENTA     \ Left column of S in HS
- EQUB BLACK_BLACK
-
- EQUB MAGENTA_BLACK     \ Right column of S in HS
- EQUB MAGENTA_BLACK
- EQUB MAGENTA_BLACK
-
- EQUB &FF               \ End row
-
-
-\ ******************************************************************************
-\
-\       Name: gameRows
-\       Type: Variable
-\   Category: Universe editor
-\    Summary: Screen modifications to change to the main game dashboard
-\
-\ ------------------------------------------------------------------------------
-\
-\ This table contains bytes to poke into the offsets to switch the dashboard
-\ back for the main game.
-\
-\ ******************************************************************************
-
-.gameRows
-
-                        \ &7000
-
- EQUB BLACK_BLACK       \ Right column of F in FS
- EQUB CYAN_CYAN
- EQUB BLACK_BLACK
- EQUB BLACK_BLACK
-
- EQUB BLACK_BLACK       \ Left column of F in FS
-
- EQUB CYAN_BLACK        \ Right column of F in FS
- EQUB CYAN_BLACK
-
- EQUB &FF               \ End row
-
-                        \ &7200
-
- EQUB YELLOW_CYAN       \ Left column of A in AS
- EQUB YELLOW_CYAN
- EQUB YELLOW_CYAN
- EQUB YELLOW_CYAN
- EQUB YELLOW_CYAN
-
- EQUB CYAN_CYAN         \ Right column of A in AS
- EQUB BLACK_CYAN
- EQUB BLACK_CYAN
- EQUB CYAN_CYAN
- EQUB BLACK_CYAN
-
- EQUB BLACK_CYAN        \ Left column of S in AS
- EQUB BLACK_CYAN
- EQUB BLACK_CYAN
- EQUB BLACK_BLACK
- EQUB BLACK_CYAN
-
- EQUB CYAN_BLACK        \ Right column of S in AS
- EQUB CYAN_BLACK
- EQUB CYAN_BLACK
- EQUB CYAN_BLACK
-
- EQUB &FF               \ End row
-
-                        \ &7400
-
- EQUB YELLOW_CYAN       \ Left column of F in FU
- EQUB YELLOW_CYAN
- EQUB YELLOW_CYAN
- EQUB YELLOW_CYAN
- EQUB YELLOW_CYAN
-
- EQUB CYAN_BLACK        \ Right column of F in FU
- EQUB BLACK_BLACK
- EQUB CYAN_BLACK
- EQUB BLACK_BLACK
- EQUB BLACK_BLACK
-
- EQUB CYAN_BLACK        \ Left column of U in FU
- EQUB CYAN_BLACK
- EQUB CYAN_BLACK
- EQUB CYAN_BLACK
- EQUB BLACK_CYAN
-
- EQUB CYAN_BLACK        \ Right column of U in FU
- EQUB CYAN_BLACK
- EQUB CYAN_BLACK
- EQUB CYAN_BLACK
-
- EQUB &FF               \ End row
-
-                        \ &7600
-
- EQUB MAGENTA_MAGENTA   \ Left column of T in CT
- EQUB BLACK_MAGENTA
- EQUB BLACK_MAGENTA
- EQUB BLACK_MAGENTA
-
- EQUB MAGENTA_BLACK     \ Right column of T in CT
- EQUB BLACK_BLACK
- EQUB BLACK_BLACK
- EQUB BLACK_BLACK
-
- EQUB &FF               \ End row
-
-                        \ &7800
-
- EQUB BLACK_BLACK       \ Right column of L in LT
- EQUB BLACK_BLACK
- EQUB BLACK_BLACK
- EQUB BLACK_BLACK
- EQUB MAGENTA_BLACK
-
- EQUB MAGENTA_MAGENTA   \ Left column of T in LT
- EQUB BLACK_MAGENTA
-
- EQUB BLACK_BLACK       \ Right column of T in LT
- EQUB BLACK_BLACK
- EQUB BLACK_BLACK
-
- EQUB &FF               \ End row
-
-
-\ ******************************************************************************
-\
-\       Name: ModifyDashboard
+\       Name: ResetShip
 \       Type: Subroutine
 \   Category: Universe editor
-\    Summary: Poke a set of bytes to a screen row to modify the dashboard
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   P(1 0)              The starting point in the table of offsets
-\
-\   R(1 0)              The starting point in the table of pokes
-\
-\   SC(1 0)             Start address of screen row
-\
-\ Returns:
-\
-\   P(1 0)              The address ofthe next offset
-\
-\   R(1 0)              The address of the next poke
+\    Summary: Reset the position of the current ship
 \
 \ ******************************************************************************
 
-.ModifyDashboard
+.ResetShip
 
- LDY #0                 \ Set Y to use as an index into the byte tables
+ JSR MV5                \ Draw the current ship on the scanner to remove it
 
-.mod1
+ LDA #26                \ Modify ZINF so it only resets the coordinates and
+ STA ZINF+1             \ orientation vectors (and keeps other ship settings)
 
- LDA (P),Y              \ Set T to the offset within the screen row for this
- STA T                  \ byte
+ JSR ZINF               \ Reset the coordinates and orientation vectors
 
- BMI mod2               \ If this is the last entry, then the offset will be
-                        \ &FF, so jump to mod2 to return from the subroutine
+ LDA #NI%-1             \ Undo the modification
+ STA ZINF+1
 
- STY K                  \ Store the index in K so we can retrieve it below
+ JSR InitialiseShip     \ Initialise the ship coordinates
 
- LDA (R),Y              \ Set A to the byte we need to poke into screen memory
+ JSR STORE              \ Call STORE to copy the ship data block at INWK back to
+                        \ the K% workspace at INF
 
- LDY T                  \ Store the byte in screen memory at the offset we
- STA (SC),Y             \ stored in T
+ JMP DrawShip           \ Draw the ship and return from the subroutine using a
+                        \ tail call
 
- LDY K                  \ Retrieve the index from K
+\ ******************************************************************************
+\
+\       Name: ApplyMods
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Apply mods for the universe editor
+\
+\ ******************************************************************************
 
- INY                    \ Increment the index to point to the next entry in the
-                        \ table
+.ApplyMods
 
- BNE mod1               \ Loop back for the next byte (this BNE is effectively a
-                        \ JMP as Y is never zero)
+IF _6502SP_VERSION
 
-.mod2
+ LDA #250               \ Switch to the Universe Editor dashboard
+ JSR SwitchDashboard
 
- INY                    \ Set P(1 0) = P(1 0) + Y + 1
- TYA                    \
- CLC                    \ so P(1 0) points to the next table
- ADC P
- STA P
- BCC mod3
- INC P+1
+ LDA #&24               \ Disable the TRB XX1+31 instruction in part 9 of LL9
+ STA LL74+20            \ that disables the laser once it has fired, so that
+                        \ lasers remain on-screen while in the editor
 
-.mod3
+ELIF _MASTER_VERSION
 
- TYA                    \ Set R(1 0) = R(1 0) + Y + 1
- CLC                    \
- ADC R                  \ so R(1 0) points to the next table
- STA R
- BCC mod4
- INC R+1
+ JSR EditorDashboard    \ Switch to the Universe Editor dashboard
 
-.mod4
+ LDA #&24               \ Disable the STA XX1+31 instruction in part 9 of LL9
+ STA LL74+16            \ that disables the laser once it has fired, so that
+                        \ lasers remain on-screen while in the editor
 
- INC SCH                \ Set SC(1 0) = SC(1 0) + 2, to point to the next screen
- INC SCH                \ row
+ENDIF
+
+ LDA #%11100111         \ Disable the clearing of bit 7 (lasers firing) in
+ STA WS1-3              \ WPSHPS
+
+ LDA #&60               \ Disable DOEXP so that by default it draws an explosion
+ STA DOEXP+9            \ cloud but doesn't recalculate it
+
+ LDX #8                 \ The size of the default universe filename
+
+.mods1
+
+ LDA defaultName,X      \ Copy the X-th character of the filename to NAME
+ STA NAME,X
+
+ DEX                    \ Decrement the loop counter
+
+ BPL mods1              \ Loop back for the next byte of the universe filename
+
+ STZ showingS           \ Zero the flags that keep track of the bulb indicators
+ STZ showingE
 
  RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
-\       Name: EditorDashboard
+\       Name: RevertMods
 \       Type: Subroutine
 \   Category: Universe editor
-\    Summary: Implement the OSWORD 250 command (display the editor dashboard)
+\    Summary: Reverse mods for the universe editor
 \
 \ ******************************************************************************
 
-.EditorDashboard
+.RevertMods
 
-IF _MASTER_VERSION
+ LDA showingS           \ If we are showing the station buld, call SPBLB to
+ BEQ P%+5               \ remove it
+ JSR SPBLB
 
- LDA #%00001111         \ Set bits 1 and 2 of the Access Control Register at
- STA VIA+&34            \ SHEILA &34 to switch screen memory into &3000-&7FFF
+ LDA showingE           \ If we are showing the E.C.M. bulb, call ECBLB to
+ BEQ P%+5               \ remove it
+ JSR ECBLB
 
-ENDIF
+IF _6502SP_VERSION
 
- LDA #MAGENTA_MAGENTA   \ Fix the incorrect colour in the A of AL (which is a
- STA &7A0C              \ bug in the original release), so we can tell from a
-                        \ screenshot if the Universe Editor has been run (as
-                        \ we do not revert this fix)
+ LDA #&14               \ Re-enable the TRB XX1+31 instruction in part 9 of LL9
+ STA LL74+20
 
- LDA #0                 \ Set SC(1 0) = &7000
- STA SC
- LDA #&70
- STA SC+1
+ELIF _MASTER_VERSION
 
- LDA #LO(rowOffsets)    \ Set P(1 0) = rowOffsets
- STA P
- LDA #HI(rowOffsets)
- STA P+1
-
- LDA #LO(editorRows)    \ Set R(1 0) = editorRows
- STA R
- LDA #HI(editorRows)
- STA R+1
-
- JSR ModifyDashboard    \ Modify row 0 of the dashboard
-
- JSR ModifyDashboard    \ Modify row 1 of the dashboard
-
- JSR ModifyDashboard    \ Modify row 2 of the dashboard
-
- JSR ModifyDashboard    \ Modify row 3 of the dashboard
-
- JSR ModifyDashboard    \ Modify row 4 of the dashboard
-
-IF _MASTER_VERSION
-
- LDA #%00001001         \ Clear bits 1 and 2 of the Access Control Register at
- STA VIA+&34            \ SHEILA &34 to switch main memory back into &3000-&7FFF
+ LDA #&85               \ Re-enable the STA XX1+31 instruction in part 9 of LL9
+ STA LL74+16
 
 ENDIF
 
- RTS                    \ Return from the subroutine
+ LDA #%10100111         \ Re-enable the clearing of bit 7 (lasers firing) in
+ STA WS1-3              \ WPSHPS
 
-\ ******************************************************************************
-\
-\       Name: GameDashboard
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Implement the OSWORD 251 command (display the game dashboard)
-\
-\ ******************************************************************************
+ LDA #&A5               \ Re-enable DOEXP
+ STA DOEXP+9
 
-.GameDashboard
+ JSR DFAULT             \ Restore correct commander name to NAME
 
-IF _MASTER_VERSION
+IF _6502SP_VERSION
 
- LDA #%00001111         \ Set bits 1 and 2 of the Access Control Register at
- STA VIA+&34            \ SHEILA &34 to switch screen memory into &3000-&7FFF
+ LDA #251               \ Switch to the main game dashboard, returning from the
+ JMP SwitchDashboard    \ subroutine using a tail call
 
-ENDIF
+ELIF _MASTER_VERSION
 
- LDA #0                 \ Set SC(1 0) = &7000
- STA SC
- LDA #&70
- STA SC+1
-
- LDA #LO(rowOffsets)    \ Set P(1 0) = rowOffsets
- STA P
- LDA #HI(rowOffsets)
- STA P+1
-
- LDA #LO(gameRows)      \ Set R(1 0) = gameRows
- STA R
- LDA #HI(gameRows)
- STA R+1
-
- JSR ModifyDashboard    \ Modify row 0 of the dashboard
-
- JSR ModifyDashboard    \ Modify row 1 of the dashboard
-
- JSR ModifyDashboard    \ Modify row 2 of the dashboard
-
- JSR ModifyDashboard    \ Modify row 3 of the dashboard
-
- JSR ModifyDashboard    \ Modify row 4 of the dashboard
-
-IF _MASTER_VERSION
-
- LDA #%00001001         \ Clear bits 1 and 2 of the Access Control Register at
- STA VIA+&34            \ SHEILA &34 to switch main memory back into &3000-&7FFF
+ JMP GameDashboard      \ Switch to the main game dashboard, returning from the
+                        \ subroutine using a tail call
 
 ENDIF
-
- RTS                    \ Return from the subroutine
 
 .endUniverseEditor3

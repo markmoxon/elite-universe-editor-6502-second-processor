@@ -46293,6 +46293,12 @@ ENDIF
 
  RTS                    \ Return from the subroutine
 
+                        \ --- Mod: Code added for Universe Editor: ------------>
+
+INCLUDE "1-source-files/main-sources/elite-universe-editor3.asm"
+
+                        \ --- End of added code ------------------------------->
+
 \ ******************************************************************************
 \
 \       Name: F%

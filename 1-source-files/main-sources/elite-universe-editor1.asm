@@ -239,109 +239,6 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: ApplyMods
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Apply mods for the universe editor
-\
-\ ******************************************************************************
-
-.ApplyMods
-
-IF _6502SP_VERSION
-
- LDA #250               \ Switch to the Universe Editor dashboard
- JSR SwitchDashboard
-
- LDA #&24               \ Disable the TRB XX1+31 instruction in part 9 of LL9
- STA LL74+20            \ that disables the laser once it has fired, so that
-                        \ lasers remain on-screen while in the editor
-
-ELIF _MASTER_VERSION
-
- JSR EditorDashboard    \ Switch to the Universe Editor dashboard
-
- LDA #&24               \ Disable the STA XX1+31 instruction in part 9 of LL9
- STA LL74+16            \ that disables the laser once it has fired, so that
-                        \ lasers remain on-screen while in the editor
-
-ENDIF
-
- LDA #%11100111         \ Disable the clearing of bit 7 (lasers firing) in
- STA WS1-3              \ WPSHPS
-
- LDA #&60               \ Disable DOEXP so that by default it draws an explosion
- STA DOEXP+9            \ cloud but doesn't recalculate it
-
- LDX #8                 \ The size of the default universe filename
-
-.mods1
-
- LDA defaultName,X      \ Copy the X-th character of the filename to NAME
- STA NAME,X
-
- DEX                    \ Decrement the loop counter
-
- BPL mods1              \ Loop back for the next byte of the universe filename
-
- STZ showingS           \ Zero the flags that keep track of the bulb indicators
- STZ showingE
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: RevertMods
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Reverse mods for the universe editor
-\
-\ ******************************************************************************
-
-.RevertMods
-
- LDA showingS           \ If we are showing the station buld, call SPBLB to
- BEQ P%+5               \ remove it
- JSR SPBLB
-
- LDA showingE           \ If we are showing the E.C.M. bulb, call ECBLB to
- BEQ P%+5               \ remove it
- JSR ECBLB
-
-IF _6502SP_VERSION
-
- LDA #&14               \ Re-enable the TRB XX1+31 instruction in part 9 of LL9
- STA LL74+20
-
-ELIF _MASTER_VERSION
-
- LDA #&85               \ Re-enable the STA XX1+31 instruction in part 9 of LL9
- STA LL74+16
-
-ENDIF
-
- LDA #%10100111         \ Re-enable the clearing of bit 7 (lasers firing) in
- STA WS1-3              \ WPSHPS
-
- LDA #&A5               \ Re-enable DOEXP
- STA DOEXP+9
-
- JSR DFAULT             \ Restore correct commander name to NAME
-
-IF _6502SP_VERSION
-
- LDA #251               \ Switch to the main game dashboard, returning from the
- JMP SwitchDashboard    \ subroutine using a tail call
-
-ELIF _MASTER_VERSION
-
- JMP GameDashboard      \ Switch to the main game dashboard, returning from the
-                        \ subroutine using a tail call
-
-ENDIF
-
-\ ******************************************************************************
-\
 \       Name: keyTable
 \       Type: Variable
 \   Category: Universe editor
@@ -420,16 +317,14 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: ProcessKey
+\       Name: CheckShiftCtrl
 \       Type: Subroutine
 \   Category: Universe editor
-\    Summary: Process key presses
+\    Summary: Check for SHIFT and CTRL
 \
 \ ******************************************************************************
 
-.ProcessKey
-
- PHA                    \ Store the key press on the stack
+.CheckShiftCtrl
 
  STZ shiftCtrl          \ We now test for SHIFT and CTRL and set bit 7 and 6 of
                         \ shiftCtrl accordingly, so zero the byte first
@@ -487,6 +382,23 @@ ENDIF
  ROR shiftCtrl          \ Shift the C flag into bit 7 of shiftCtrl, moving the
                         \ CTRL bit into bit 6, so we now have SHIFT and CTRL
                         \ captured in bits 7 and 6 of shiftCtrl
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: ProcessKey
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Process key presses
+\
+\ ******************************************************************************
+
+.ProcessKey
+
+ PHA                    \ Store the key press on the stack
+
+ JSR CheckShiftCtrl     \ Check for SHIFT and CTRL and set shiftCtrl accordingly
 
  LDX #1                 \ Set repeatingKey = 1 to indicate that the following
  STX repeatingKey       \ keys are repeating keys
@@ -805,35 +717,6 @@ ENDIF
  JMP ExplodeShip
 
  RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: ResetShip
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Reset the position of the current ship
-\
-\ ******************************************************************************
-
-.ResetShip
-
- JSR MV5                \ Draw the current ship on the scanner to remove it
-
- LDA #26                \ Modify ZINF so it only resets the coordinates and
- STA ZINF+1             \ orientation vectors (and keeps other ship settings)
-
- JSR ZINF               \ Reset the coordinates and orientation vectors
-
- LDA #NI%-1             \ Undo the modification
- STA ZINF+1
-
- JSR InitialiseShip     \ Initialise the ship coordinates
-
- JSR STORE              \ Call STORE to copy the ship data block at INWK back to
-                        \ the K% workspace at INF
-
- JMP DrawShip           \ Draw the ship and return from the subroutine using a
-                        \ tail call
 
 \ ******************************************************************************
 \
@@ -1451,20 +1334,22 @@ ENDIF
 
 .AddShip
 
- JSR SetupPrompt        \ Move the cursor and set the colour for a prompt
-
- LDA #185               \ Print text token 25 ("SHIP") followed by a question
- JSR prq                \ mark
+ LDA #8                 \ Print extended text token 8 ("TYPE?") as a prompt
+ JSR PrintPrompt
 
  JSR TT217              \ Scan the keyboard until a key is pressed, and return
                         \ the key's ASCII code in A (and X)
 
- CMP #'1'               \ Check key is '1' or higher
- BCS add1
+ PHA                    \ Store the key press on the stack
 
- BCC add6               \ Key is invalid, so jump to add6 to make an error beep
-                        \ and return from the subroutine (this BCC is
-                        \ effectively a JMP as we just passed through a BCS)
+ LDA #8                 \ Print extended text token 8 ("TYPE?") as a prompt to
+ JSR PrintPrompt        \ remove it
+
+ PLA                    \ Retrieve the key press from the stack
+
+ CMP #'1'               \ If key is less than '1' then it is invalid, so jump
+ BCC add6               \ to add6 to make an error beep and return from the
+                        \ subroutine
 
 .add1
 
@@ -1484,8 +1369,8 @@ IF _6502SP_VERSION
                         \ Key is 'A' to 'W' (which includes the Elite logo as
                         \ 'W')
 
- SBC #'a'-11            \ Otherwise calculate ship type with 'A' = 10 (the C
-                        \ flag is clear for this calculation)
+ SBC #'a'-11            \ Otherwise calculate ship type with 'A' giving 10 (the
+                        \ C flag is clear for this calculation, hence the 11)
 
 ELIF _MASTER_VERSION
 
@@ -1500,8 +1385,8 @@ ELIF _MASTER_VERSION
                         \ Key is 'A' to 'V' (which does not include the Elite
                         \ logo)
 
- SBC #'A'-11            \ Otherwise calculate ship type with 'A' = 10 (the C
-                        \ flag is clear for this calculation)
+ SBC #'A'-11            \ Otherwise calculate ship type with 'A' giving 10 (the
+                        \ C flag is clear for this calculation, hence the 11)
 
 ENDIF
 
@@ -1523,6 +1408,10 @@ ENDIF
 
 .add4
 
+ PHA
+ JSR PrintShipType      \ Print the current ship type on the screen to remove it
+ PLA
+
  STA TYPE               \ Store the new ship type
 
  JSR ZINF               \ Call ZINF to reset INWK and the orientation vectors
@@ -1531,20 +1420,13 @@ ENDIF
 
  JSR CreateShip         \ Create the new ship
 
- JSR PrintShipType      \ Print the current ship type on the screen
-
-.add5
-
- JSR SetupPrompt        \ Move the cursor and set the colour for a prompt
-
- LDA #185               \ Print text token 25 ("SHIP") followed by a question
- JMP prq                \ mark and return from the subroutine using a tail call
+ JMP PrintShipType      \ Print the current ship type on the screen and return
+                        \ from the subroutine using a tail call
 
 .add6
 
- JSR MakeErrorBeep      \ Make an error beep
-
- JMP add5               \ Jump to add5 to remove the ship prompt
+ JMP MakeErrorBeep      \ Make an error beep and return from the subroutine
+                        \ using a tail call
 
 \ ******************************************************************************
 \
@@ -1745,5 +1627,94 @@ ENDIF
 
  JMP SwitchToSlot       \ Switch to slot X to load the new ship's data,
                         \ returning from the subroutine using a tail call
+
+
+\ ******************************************************************************
+\
+\       Name: TargetMissile
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Set the target for a missile
+\
+\ ******************************************************************************
+
+.TargetMissile
+
+ LDX TYPE               \ If this is not a missile, jump to MakeErrorBeep to
+ CPX #MSL               \ make an error beep and return from the subroutine
+ BNE MakeErrorBeep      \ using a tail call
+
+ LDA #7                 \ Print extended text token 7 ("SLOT?") as a prompt
+ JSR PrintPrompt
+
+ JSR TT217              \ Scan the keyboard until a key is pressed, and return
+                        \ the key's ASCII code in A (and X)
+
+ CMP #'0'               \ If the key pressed is outside the range 0 to 9, jump
+ BCC miss5              \ to miss5 to make an error beep and return from the
+ CMP #'9'+1             \ subroutine
+ BCS miss5
+
+ SEC                    \ Convert the value from ASCII to a number, 0 to 9
+ SBC #'0'
+
+ PHA                    \ Check whether SHIFT is being held down
+ JSR CheckShiftCtrl
+ PLA
+
+ BIT shiftCtrl          \ If not, jump to miss1 to skip the following 
+ BPL miss1    
+
+ CLC                    \ SHIFT is being held down, so add 10 to the slot number
+ ADC #10
+
+.miss1
+
+ CMP #0                 \ If the number entered is 0 (the planet), jump to miss4
+ BEQ miss4              \ to target our ship
+
+                        \ We now have the slot number in A, so we add it as the
+                        \ missile target
+
+ ASL A                  \ Shift the target number left so it's in bits 1-5
+
+ ORA #%10000000         \ Store the target number in the missile's AI byte, with
+                        \ bit 7 set so AI is enabled
+
+.miss2
+
+ PHA                    \ Store the new INWK+32 byte on the stack
+
+ JSR PrintShipType      \ Print the old target on the screen to remove it
+
+ PLA                    \ Update the new INWK+32 byte
+ STA INWK+32
+
+ JSR PrintShipType      \ Print the new target on the screen
+
+ JSR BEEP               \ Make a confirmation beep
+
+ JSR STORE              \ Call STORE to copy the ship data block at INWK back to
+                        \ the K% workspace at INF
+
+.miss3
+
+ LDA #7                 \ Print extended text token 7 ("SLOT?") as a prompt to
+ JMP PrintPrompt        \ remove it, and return from the subroutine using a tail
+                        \ call
+
+.miss4
+
+ LDA #%11000000         \ Set bit 7 of INWK+32 to make the missile hostile, so
+                        \ it targets our ship, with bit 7 set so AI is enabled
+
+ BNE miss2              \ Jump to miss2 to store the new INWK+32 (this BNE is
+                        \ effectively a JMP as A is never zero)
+
+.miss5
+
+ JSR MakeErrorBeep      \ Make an error beep
+
+ JMP miss3              \ Jump to miss3 to remove the prompt
 
 .endUniverseEditor1
