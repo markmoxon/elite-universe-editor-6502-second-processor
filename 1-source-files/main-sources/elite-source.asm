@@ -3745,8 +3745,8 @@ ENDIF
 \ ------------------------------------------------------------------------------
 \
 \ The drive part of this string (the "0") is updated with the chosen drive in
-\ the QUS1 routine, but the directory part (the "E") is fixed. The variable is
-\ followed directly by the commander file at NA%, which starts with the
+\ the GTNMEW routine, but the directory part (the "E") is fixed. The variable
+\ is followed directly by the commander file at NA%, which starts with the
 \ commander name, so the full string at S1% is in the format ":0.E.JAMESON",
 \ which gives the full filename of the commander file.
 \
@@ -30803,7 +30803,7 @@ IF _EXECUTIVE
 
  LDX #3                 \ Call TALK with X = 3 to say "Elite" using the Watford
  JSR TALK               \ Electronics Beeb Speech Synthesiser (if one is fitted
-                        \ speech has been enabled)
+                        \ and speech has been enabled)
 
 ENDIF
 
@@ -30862,9 +30862,9 @@ ENDIF
                         \ them are targeted
 
  LDA #7                 \ Call TITLE to show a rotating Asp Mk II (#ASP) and
- LDX #ASP               \ token 7 ("LOAD NEW {single cap}COMMANDER {all caps}
- JSR TITLE              \ (Y/N)?{sentence case}{cr}{cr}""), returning with the
-                        \ internal number of the key pressed in A
+ LDX #ASP               \ token 7 ("PRESS SPACE OR FIRE,{single cap}COMMANDER.
+ JSR TITLE              \ {cr}{cr}"), returning with the internal number of the
+                        \ key pressed in A
 
  JSR ping               \ Set the target system coordinates (QQ9, QQ10) to the
                         \ current system coordinates (QQ0, QQ1) we just loaded
