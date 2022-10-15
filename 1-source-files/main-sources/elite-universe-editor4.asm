@@ -1784,25 +1784,19 @@ ENDIF
 
  STA ENERGY             \ Recharge the energy banks
 
- STZ ALPHA              \ Reset ALPHA (roll angle alpha) and ALP1 (magnitude of
- STZ ALP1               \ roll angle alpha) to 0, as RES2 sets them to 3, which
-                        \ makes us roll (which we don't want)
-
                         \ We now do what ZERO would have done, but leaving
                         \ the ship slots alone, and we then call DIALS and ZINF
                         \ as we disabled them above
 
- JSR U%                 \ Clear the key logger
-
- LDX #(de-auto)         \ We're going to zero the UP workspace variables from
-                        \ auto to de, so set a counter in X for the correct
+ LDX #(JSTY-auto)       \ We're going to zero the UP workspace variables from
+                        \ auto to JSTY, so set a counter in X for the correct
                         \ number of bytes
 
  LDA #0                 \ Set A = 0 so we can zero the variables
 
 .play2
 
- STA auto,X             \ Zero the X-th byte of FRIN to de
+ STA auto,X             \ Zero the X-th byte of FRIN to JSTY
 
  DEX                    \ Decrement the loop counter
 
@@ -1821,6 +1815,8 @@ IF _6502SP_VERSION
                         \ the I/O processor
 
 ENDIF
+
+ JSR U%                 \ Clear the key logger
 
  LDA #3                 \ Move the text cursor to column 3
  JSR DOXC
@@ -1870,12 +1866,6 @@ ENDIF
 
  BPL play3              \ Loop back to play3 if we still have more bytes to
                         \ copy
-
- INX                    \ Set X = 0 (as we ended the above loop with X = &FF)
-
- STX EV                 \ Set EV, the extra vessels spawning counter, to 0, as
-                        \ we are entering a new system with no extra vessels
-                        \ spawned
 
  LDA QQ3                \ Set the current system's economy in QQ28 to the
  STA QQ28               \ selected system's economy from QQ3
