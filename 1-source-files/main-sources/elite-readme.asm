@@ -37,7 +37,7 @@ _EXECUTIVE              = (_VARIANT = 3)
  EQUB 10, 13
  EQUS "---------------------------------------"
  EQUB 10, 13
- EQUS "Acornsoft Elite"
+ EQUS "Acornsoft Elite (flicker-free version)"
  EQUB 10, 13
  EQUB 10, 13
  EQUS "Version: BBC with 6502 Second Processor"
@@ -64,6 +64,13 @@ ELIF _EXECUTIVE
 
 ENDIF
 
+ EQUB 10, 13
+ EQUS "Contains the flicker-free ship drawing"
+ EQUB 10, 13
+ EQUS "routines from the BBC Master version,"
+ EQUB 10, 13
+ EQUS "backported by Mark Moxon"
+ EQUB 10, 13
  EQUB 10, 13
  EQUS "See www.bbcelite.com for details"
  EQUB 10, 13
