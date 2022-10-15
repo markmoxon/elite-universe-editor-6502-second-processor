@@ -1788,15 +1788,15 @@ ENDIF
                         \ the ship slots alone, and we then call DIALS and ZINF
                         \ as we disabled them above
 
- LDX #(JSTY-auto)       \ We're going to zero the UP workspace variables from
-                        \ auto to JSTY, so set a counter in X for the correct
+ LDX #(de-auto)         \ We're going to zero the UP workspace variables from
+                        \ auto to de, so set a counter in X for the correct
                         \ number of bytes
 
  LDA #0                 \ Set A = 0 so we can zero the variables
 
 .play2
 
- STA auto,X             \ Zero the X-th byte of FRIN to JSTY
+ STA auto,X             \ Zero the X-th byte of FRIN to de
 
  DEX                    \ Decrement the loop counter
 
