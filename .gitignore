@@ -25,5 +25,5 @@ run.bat
 
 # Build files
 elite-header.h.asm
-*.bin
+3-assembled-output/*.bin
 *.ssd
