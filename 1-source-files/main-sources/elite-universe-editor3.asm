@@ -145,7 +145,8 @@ ENDIF
  LDA #&A5               \ Re-enable DOEXP
  STA DOEXP+9
 
- JSR DFAULT             \ Restore correct commander name to NAME
+ JSR DFAULT             \ Call DFAULT to reset the current commander data
+                        \ block to the last saved commander
 
 IF _6502SP_VERSION
 

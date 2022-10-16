@@ -46,8 +46,14 @@
 
  JSR ApplyMods          \ Apply the mods required for the Universe Editor
 
- LDA #0                 \ Clear the top part of the screen, draw a white border,
- JSR TT66               \ and set the current view type in QQ11 to 0 (space
+ JSR DFAULT             \ Call DFAULT to reset the current commander data
+                        \ block to the last saved commander
+
+ LDA #0                 \ Remove the escape pod so we always show the standard
+ STA ESCP               \ palette for the editor
+
+ JSR TT66               \ Clear the top part of the screen, draw a white border,
+                        \ and set the current view type in QQ11 to 0 (space
                         \ view)
 
  JSR SIGHT              \ Draw the laser crosshairs
