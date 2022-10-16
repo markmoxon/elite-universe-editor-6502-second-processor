@@ -838,9 +838,9 @@ ENDIF
                         \ name on the Master Compact) and catalogue that disc
                         \ or directory
 
- BCS ReturnToDiscMenu   \ If the C flag is set then an invalid drive number was
+ BCS dele2              \ If the C flag is set then an invalid drive number was
                         \ entered as part of the catalogue process, so jump to
-                        \ ReturnToDiscMenu to display the disc access menu
+                        \ dele2 to return from the subroutine
 
 IF _6502SP_VERSION
 
@@ -872,8 +872,8 @@ ENDIF
  JSR MT26               \ Call MT26 to fetch a line of text from the keyboard
                         \ to INWK+5, with the text length in Y
 
- TYA                    \ If no text was entered (Y = 0) then jump to
- BEQ ReturnToDiscMenu   \ ReturnToDiscMenu to display the disc access menu
+ TYA                    \ If no text was entered (Y = 0) then jump to dele2 to
+ BEQ dele2              \ return from the subroutine
 
                         \ We now copy the entered filename from INWK to DELI, so
                         \ that it overwrites the filename part of the string,
@@ -979,8 +979,9 @@ ELIF _MASTER_VERSION
 
 ENDIF
 
- JMP ReturnToDiscMenu   \ Jump to ReturnToDiscMenu to display the disc access
-                        \ menu and return from the subroutine using a tail call
+.dele2
+
+ RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
@@ -992,6 +993,9 @@ ENDIF
 \ ******************************************************************************
 
 .ShowDiscMenu
+
+ TSX                    \ Transfer the stack pointer to X and store it in stack,
+ STX stack              \ so we can restore it in the break handler
 
  LDA #LO(NAME)          \ Change TR1 so it uses the universe name in NAME as the
  STA GTL2+1             \ default when no filename is entered
@@ -1074,9 +1078,6 @@ IF _6502SP_VERSION
  JSR ZEBC               \ Call ZEBC to zero-fill pages &B and &C
 
 ENDIF
-
- TSX                    \ Transfer the stack pointer to X and store it in stack,
- STX stack              \ so we can restore it in the MEBRK routine
 
 IF _6502SP_VERSION
 
@@ -1707,7 +1708,7 @@ ENDIF
 
  PLA                    \ Restore A from the stack
 
- BNE slod2              \ If A is non-zero then we need to load the file, so
+ BNE slod1              \ If A is non-zero then we need to load the file, so
                         \ jump to slod2
 
  LDX #LO(saveCommand)   \ Set (Y X) to point to the save command
@@ -1766,6 +1767,10 @@ ENDIF
  JSR LOOK1
 
                         \ Do the following from DEATH2:
+
+ LDX #&FF               \ Set the stack pointer to &01FF, which is the standard
+ TXS                    \ location for the 6502 stack, so this instruction
+                        \ effectively resets the stack
 
  LDA #&60               \ Modify the JSR ZERO in RES2 so it's an RTS, which
  STA yu+3               \ stops RES2 from resetting the ship slots, ship heap
