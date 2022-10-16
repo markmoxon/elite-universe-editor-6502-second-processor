@@ -44,10 +44,10 @@
 
 .UniverseEditor
 
- JSR ApplyMods          \ Apply the mods required for the Universe Editor
-
  JSR DFAULT             \ Call DFAULT to reset the current commander data
                         \ block to the last saved commander
+
+ JSR ApplyMods          \ Apply the mods required for the Universe Editor
 
  LDA #0                 \ Remove the escape pod so we always show the standard
  STA ESCP               \ palette for the editor
