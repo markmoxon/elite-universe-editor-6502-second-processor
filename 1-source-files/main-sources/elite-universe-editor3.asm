@@ -29,135 +29,335 @@
 
 \ ******************************************************************************
 \
-\       Name: ResetShip
+\       Name: SaveLoadFile
 \       Type: Subroutine
 \   Category: Universe editor
-\    Summary: Reset the position of the current ship
+\    Summary: Save or load a universe file
+\
+\ ------------------------------------------------------------------------------
+\
+\ The filename should be stored at INWK, terminated with a carriage return (13).
+\ The routine asks for a drive number and updates the filename accordingly
+\ before performing the load or save.
+\
+\ Arguments:
+\
+\   A                   File operation to be performed. Can be one of the
+\                       following:
+\
+\                         * 0 (save file)
+\
+\                         * &FF (load file)
+\
+\ Returns:
+\
+\   C flag              Set if an invalid drive number was entered
 \
 \ ******************************************************************************
 
-.ResetShip
+.SaveLoadFile
 
- JSR MV5                \ Draw the current ship on the scanner to remove it
+ PHA                    \ Store A on the stack so we can restore it after the
+                        \ call to GTDRV
 
- LDA #26                \ Modify ZINF so it only resets the coordinates and
- STA ZINF+1             \ orientation vectors (and keeps other ship settings)
-
- JSR ZINF               \ Reset the coordinates and orientation vectors
-
- LDA #NI%-1             \ Undo the modification
- STA ZINF+1
-
- JSR InitialiseShip     \ Initialise the ship coordinates
-
- JSR STORE              \ Call STORE to copy the ship data block at INWK back to
-                        \ the K% workspace at INF
-
- JMP DrawShip           \ Draw the ship and return from the subroutine using a
-                        \ tail call
-
-\ ******************************************************************************
-\
-\       Name: ApplyMods
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Apply mods for the universe editor
-\
-\ ******************************************************************************
-
-.ApplyMods
+ JSR GTDRV              \ Get an ASCII disc drive drive number from the keyboard
+                        \ in A, setting the C flag if an invalid drive number
+                        \ was entered
 
 IF _6502SP_VERSION
 
- LDA #250               \ Switch to the Universe Editor dashboard
- JSR SwitchDashboard
-
- LDA #&24               \ Disable the TRB XX1+31 instruction in part 9 of LL9
- STA LL74+20            \ that disables the laser once it has fired, so that
-                        \ lasers remain on-screen while in the editor
+ STA INWK+1             \ Store the ASCII drive number in INWK+1, which is the
+                        \ drive character of the filename string ":0.E."
 
 ELIF _MASTER_VERSION
 
- JSR EditorDashboard    \ Switch to the Universe Editor dashboard
+ STA saveCommand+6      \ Store the ASCII drive number in saveCommand+6, which
+                        \ is the drive character of the filename string ":1.U."
 
- LDA #&24               \ Disable the STA XX1+31 instruction in part 9 of LL9
- STA LL74+16            \ that disables the laser once it has fired, so that
-                        \ lasers remain on-screen while in the editor
+ STA loadCommand+6      \ Store the ASCII drive number in loadCommand+6, which
+                        \ is the drive character of the filename string ":1.U."
 
 ENDIF
 
- LDA #%11100111         \ Disable the clearing of bit 7 (lasers firing) in
- STA WS1-3              \ WPSHPS
+ PLA                    \ Restore A from the stack
 
- LDA #&60               \ Disable DOEXP so that by default it draws an explosion
- STA DOEXP+9            \ cloud but doesn't recalculate it
+ BCS slod3              \ If the C flag is set, then an invalid drive number was
+                        \ entered, so jump to slod3 to return from the
+                        \ subroutine
 
- LDX #8                 \ The size of the default universe filename
+IF _6502SP_VERSION
 
-.mods1
+ PHA                    \ Store A on the stack so we can restore it after the
+                        \ call to DODOSVN
 
- LDA defaultName,X      \ Copy the X-th character of the filename to NAME
- STA NAME,X
+ LDA #255               \ Set the SVN flag to 255 to indicate that disc access
+ JSR DODOSVN            \ is in progress
 
- DEX                    \ Decrement the loop counter
+ PLA                    \ Restore A from the stack
 
- BPL mods1              \ Loop back for the next byte of the universe filename
+ LDX #INWK              \ Store a pointer to INWK at the start of the block at
+ STX &0C00              \ &0C00, storing #INWK in the low byte because INWK is
+                        \ in zero page
 
- STZ showingS           \ Zero the flags that keep track of the bulb indicators
- STZ showingE
+ LDX #0                 \ Set (Y X) = &0C00
+ LDY #&C
+
+ JSR OSFILE             \ Call OSFILE to do the file operation specified in
+                        \ &0C00 (i.e. save or load a file depending on the value
+                        \ of A)
+
+ JSR CLDELAY            \ Pause for 1280 empty loops
+
+ LDA #0                 \ Set the SVN flag to 0 indicate that disc access has
+ JSR DODOSVN            \ finished
+
+ELIF _MASTER_VERSION
+
+ PHA                    \ Store A on the stack so we can restore it after the
+                        \ call to SWAPZP/NMIRELEASE
+
+IF _SNG47
+
+ JSR SWAPZP             \ Call SWAPZP to restore the top part of zero page
+
+ELIF _COMPACT
+
+ JSR NMIRELEASE         \ Release the NMI workspace (&00A0 to &00A7)
+
+ENDIF
+
+ PLA                    \ Restore A from the stack
+
+ BNE slod1              \ If A is non-zero then we need to load the file, so
+                        \ jump to slod2
+
+ LDX #LO(saveCommand)   \ Set (Y X) to point to the save command
+ LDY #HI(saveCommand)
+
+ BNE slod2              \ Jump to slod2 (this BNE is effectively a JMP as Y is
+                        \ never zero
+
+.slod1
+
+ LDX #LO(loadCommand)   \ Set (Y X) to point to the load command
+ LDY #HI(loadCommand)
+
+.slod2
+
+ JSR OSCLI              \ Call OSCLI to run the load or save OS command
+
+ JSR SWAPZP             \ Call SWAPZP to restore the top part of zero page
+
+ENDIF
+
+ CLC                    \ Clear the C flag
+
+.slod3
 
  RTS                    \ Return from the subroutine
 
+
 \ ******************************************************************************
 \
-\       Name: RevertMods
+\       Name: DeleteUniverse
 \       Type: Subroutine
 \   Category: Universe editor
-\    Summary: Reverse mods for the universe editor
+\    Summary: Catalogue a disc, ask for a filename to delete, and delete the
+\             file
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine asks for a disc drive number, and if it is a valid number (0-3)
+\ it displays a catalogue of the disc in that drive. It then asks for a filename
+\ to delete, updates the OS command at deleteCommand so that when that command
+\ is run, it it deletes the correct file, and then it does the deletion.
+\
+\ Other entry points:
+\
+\   DELT-1              Contains an RTS
 \
 \ ******************************************************************************
 
-.RevertMods
+.DeleteUniverse
 
- LDA showingS           \ If we are showing the station buld, call SPBLB to
- BEQ P%+5               \ remove it
- JSR SPBLB
+ JSR CATS               \ Call CATS to ask for a drive number (or a directory
+                        \ name on the Master Compact) and catalogue that disc
+                        \ or directory
 
- LDA showingE           \ If we are showing the E.C.M. bulb, call ECBLB to
- BEQ P%+5               \ remove it
- JSR ECBLB
-
-IF _6502SP_VERSION
-
- LDA #&14               \ Re-enable the TRB XX1+31 instruction in part 9 of LL9
- STA LL74+20
-
-ELIF _MASTER_VERSION
-
- LDA #&85               \ Re-enable the STA XX1+31 instruction in part 9 of LL9
- STA LL74+16
-
-ENDIF
-
- LDA #%10100111         \ Re-enable the clearing of bit 7 (lasers firing) in
- STA WS1-3              \ WPSHPS
-
- LDA #&A5               \ Re-enable DOEXP
- STA DOEXP+9
-
- JSR DFAULT             \ Call DFAULT to reset the current commander data
-                        \ block to the last saved commander
+ BCS dele2              \ If the C flag is set then an invalid drive number was
+                        \ entered as part of the catalogue process, so jump to
+                        \ dele2 to return from the subroutine
 
 IF _6502SP_VERSION
 
- LDA #251               \ Switch to the main game dashboard, returning from the
- JMP SwitchDashboard    \ subroutine using a tail call
+ LDA CTLI+1             \ The call to CATS above put the drive number into
+ STA DELI+7             \ CTLI+1, so copy the drive number into DELI+7 so that
+                        \ the drive number in the "DELETE:0.E.1234567" string
+                        \ gets updated (i.e. the number after the colon)
+
+ LDA #9                 \ Print extended token 9 ("{clear bottom of screen}FILE
+ JSR DETOK              \ TO DELETE?")
 
 ELIF _MASTER_VERSION
 
- JMP GameDashboard      \ Switch to the main game dashboard, returning from the
-                        \ subroutine using a tail call
+IF _SNG47
+
+ LDA CTLI+4             \ The call to CATS above put the drive number into
+ STA deleteCommand+8    \ deleteCommand+4, so copy the drive number into
+                        \ deleteCommand+8 so that the drive number in the
+                        \ "DELETE :1.U.1234567" string gets updated (i.e. the
+                        \ number after the colon)
 
 ENDIF
+
+ LDA #8                 \ Print extended token 8 ("{single cap}COMMANDER'S
+ JSR DETOK              \ NAME? ")
+
+ENDIF
+
+ JSR MT26               \ Call MT26 to fetch a line of text from the keyboard
+                        \ to INWK+5, with the text length in Y
+
+ TYA                    \ If no text was entered (Y = 0) then jump to dele2 to
+ BEQ dele2              \ return from the subroutine
+
+                        \ We now copy the entered filename from INWK to DELI, so
+                        \ that it overwrites the filename part of the string,
+                        \ i.e. the "E.1234567" part of "DELETE:0.E.1234567"
+
+IF _6502SP_VERSION
+
+ LDX #9                 \ Set up a counter in X to count from 9 to 1, so that we
+                        \ copy the string starting at INWK+4+1 (i.e. INWK+5) to
+                        \ DELI+8+1 (i.e. DELI+9 onwards, or "E.1234567")
+
+ELIF _MASTER_VERSION
+
+IF _SNG47
+
+                        \ We now copy the entered filename from INWK to DELI, so
+                        \ that it overwrites the filename part of the string,
+                        \ i.e. the "E.1234567" part of "DELETE :1.1234567"
+
+ LDX #8                 \ Set up a counter in X to count from 9 to 1, so that we
+                        \ copy the string starting at INWK+4+1 (i.e. INWK+5) to
+                        \ deleteCommand+9+1 (i.e. DELI+10 onwards, or
+                        \ "1.1234567")
+                        \
+                        \ This is 9 in the original, which is a bug
+
+ELIF _COMPACT
+
+                        \ We now copy the entered filename from INWK to DELI, so
+                        \ that it overwrites the filename part of the string,
+                        \ i.e. the "1234567890" part of "DELETE 1234567890"
+
+ LDX #8                 \ Set up a counter in X to count from 8 to 0, so that we
+                        \ copy the string starting at INWK+5+0 (i.e. INWK+5) to
+                        \ DELI+7+0 (i.e. DELI+7 onwards, or "1234567890")
+
+ENDIF
+
+ENDIF
+
+.dele1
+
+IF _6502SP_VERSION
+
+ LDA INWK+4,X           \ Copy the X-th byte of INWK+4 to the X-th byte of
+ STA DELI+8,X           \ DELI+8
+
+ DEX                    \ Decrement the loop counter
+
+ BNE dele1              \ Loop back to delt1 to copy the next character until we
+                        \ have copied the whole filename
+
+ELIF _MASTER_VERSION
+
+IF _SNG47
+
+ LDA INWK+4,X           \ Copy the X-th byte of INWK+4 to the X-th byte of
+ STA deleteCommand+11,X \ deleteCommand+11
+
+ DEX                    \ Decrement the loop counter
+
+ BNE dele1              \ Loop back to dele1 to copy the next character until we
+                        \ have copied the whole filename
+
+ JSR SWAPZP             \ Call SWAPZP to restore the top part of zero page
+
+ELIF _COMPACT
+
+ LDA INWK+5,X           \ Copy the X-th byte of INWK+5 to the X-th byte of
+ STA DELI+7,X           \ DELI+7
+
+ DEX                    \ Decrement the loop counter
+
+ BPL dele1              \ Loop back to dele1 to copy the next character until we
+                        \ have copied the whole filename
+
+ JSR NMIRELEASE         \ Release the NMI workspace (&00A0 to &00A7)
+
+ENDIF
+
+ENDIF
+
+IF _6502SP_VERSION
+
+ LDX #LO(DELI)          \ Set (Y X) to point to the OS command at DELI, which
+ LDY #HI(DELI)          \ contains the DFS command for deleting this file
+
+
+ JSR SCLI2              \ Call SCLI2 to execute the OS command at (Y X), which
+                        \ deletes the file, setting the SVN flag while it's
+                        \ running to indicate disc access is in progress
+
+ELIF _MASTER_VERSION
+
+ LDX #LO(deleteCommand) \ Set (Y X) to point to the OS command at deleteCommand,
+ LDY #HI(deleteCommand) \ which contains the DFS command for deleting this file
+
+
+ JSR OSCLI              \ Call OSCLI to execute the OS command at (Y X), which
+                        \ catalogues the disc
+
+ JSR SWAPZP             \ Call SWAPZP to restore the top part of zero page
+
+ENDIF
+
+.dele2
+
+ RTS                    \ Return from the subroutine
+
+
+.ChangeDirectory
+
+IF _MASTER_VERSION
+
+IF _SNG47
+
+ JSR SWAPZP             \ Call SWAPZP to restore the top part of zero page
+
+ELIF _COMPACT
+
+ JSR NMIRELEASE         \ Release the NMI workspace (&00A0 to &00A7)
+
+ENDIF
+
+ENDIF
+
+ LDX #LO(dirCommand)    \ Set (Y X) to point to dirCommand ("DIR U")
+ LDY #HI(dirCommand)
+
+ JSR OSCLI              \ Call OSCLI to run the OS command in dirCommand, which
+                        \ changes the disc directory to E
+
+IF _MASTER_VERSION
+
+ JSR SWAPZP             \ Call SWAPZP to restore the top part of zero page
+
+ENDIF
+
+ RTS                    \ Return from the subroutine
 
 .endUniverseEditor3
