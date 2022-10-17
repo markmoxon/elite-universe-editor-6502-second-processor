@@ -158,8 +158,6 @@
 
                         \ x-plus        x-minus
                         \ z-plus        z-minus
-                        \ xrot-plus     xrot-minus
-                        \ zrot-plus     zrot-minus
 
 IF _6502SP_VERSION
 
@@ -167,29 +165,21 @@ IF _6502SP_VERSION
 
  EQUB &79, &19          \ Right arrow   Left arrow
  EQUB &62, &68          \ SPACE         ?
- EQUB &51, &42          \ S             X
- EQUB &67, &66          \ >             <
 
                         \ Rear view
 
  EQUB &19, &79          \ Left arrow    Right arrow
  EQUB &68, &62          \ ?             SPACE
- EQUB &51, &42          \ S             X
- EQUB &67, &66          \ >             <
 
                         \ Left view
 
  EQUB &68, &62          \ ?             SPACE
  EQUB &79, &19          \ Right arrow   Left arrow
- EQUB &51, &42          \ S             X
- EQUB &67, &66          \ >             <
 
                         \ Right view
 
  EQUB &62, &68          \ SPACE         ?
  EQUB &19, &79          \ Left arrow    Right arrow
- EQUB &51, &42          \ S             X
- EQUB &67, &66          \ >             <
 
 ELIF _MASTER_VERSION
 
@@ -197,29 +187,21 @@ ELIF _MASTER_VERSION
 
  EQUB &8D, &8C          \ Right arrow   Left arrow
  EQUB &20, &2F          \ SPACE         ?
- EQUB &53, &58          \ S             X
- EQUB &2E, &2C          \ >             <
 
                         \ Rear view
 
  EQUB &8C, &8D          \ Left arrow    Right arrow
  EQUB &2F, &20          \ ?             SPACE
- EQUB &53, &58          \ S             X
- EQUB &2E, &2C          \ >             <
 
                         \ Left view
 
  EQUB &2F, &20          \ ?             SPACE
  EQUB &8D, &8C          \ Right arrow   Left arrow
- EQUB &53, &58          \ S             X
- EQUB &2E, &2C          \ >             <
 
                         \ Right view
 
  EQUB &20, &2F          \ SPACE         ?
  EQUB &8C, &8D          \ Left arrow    Right arrow
- EQUB &53, &58          \ S             X
- EQUB &2E, &2C          \ >             <
 
 ENDIF
 
@@ -311,8 +293,7 @@ ENDIF
  LDX #1                 \ Set repeatingKey = 1 to indicate that the following
  STX repeatingKey       \ keys are repeating keys
 
- LDA VIEW               \ Set Y = VIEW * 8, to act as an index into keyTable
- ASL A
+ LDA VIEW               \ Set Y = VIEW * 4, to act as an index into keyTable
  ASL A
  ASL A
  TAY
@@ -389,7 +370,7 @@ ENDIF
 
 .keys8
 
- CMP keyTable+4,Y       \ S (rotate ship around the x-axis)
+ CMP #keyS              \ S (rotate ship around the x-axis)
  BNE keys9
 
  LDX #0                 \ Rotate (roofv, nosev) by a small positive angle
@@ -400,7 +381,7 @@ ENDIF
 
 .keys9
 
- CMP keyTable+5,Y       \ X (rotate ship around the x-axis)
+ CMP #keyX              \ X (rotate ship around the x-axis)
  BNE keys10
 
  LDX #%10000000         \ Rotate (roofv, nosev) by a small negative angle
@@ -411,7 +392,7 @@ ENDIF
 
 .keys10
 
- CMP keyTable+6,Y       \ > (rotate ship around the x-axis)
+ CMP #keyGt             \ > (rotate ship around the x-axis)
  BNE keys11
 
  LDX #0                 \ Rotate (roofv, sidev) by a small positive angle
@@ -422,7 +403,7 @@ ENDIF
 
 .keys11
 
- CMP keyTable+7,Y       \ < (rotate ship around the x-axis)
+ CMP #keyLt             \ < (rotate ship around the x-axis)
  BNE keys12
 
  LDX #%10000000         \ Rotate (roofv, sidev) by a small negative angle
@@ -1551,5 +1532,120 @@ ENDIF
  JSR MakeErrorBeep      \ Make an error beep
 
  JMP miss3              \ Jump to miss3 to remove the prompt
+
+\ ******************************************************************************
+\
+\       Name: GetShipVector
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Calculate the vector to the selected ship into XX15
+\
+\ ******************************************************************************
+
+.GetShipVector
+
+ LDY #8                 \ First we need to copy the ship's coordinates
+                        \ into K3, so set a counter to copy the first 9 bytes
+                        \ (the 3-byte x, y and z coordinates) from the ship's
+                        \ data block in K% (pointed to by INF) into K3
+
+.svec1
+
+ LDA (INF),Y            \ Copy the X-th byte from the ship's data block at
+ STA K3,Y               \ INF to the X-th byte of K3
+
+ DEY                    \ Decrement the loop counter
+
+ BPL svec1              \ Loop back to svec1 until we have copied all 9 bytes
+
+ JMP TAS2               \ Call TAS2 to build XX15 from K3, returning from the
+                        \ subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: dashboardBuff
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: Buffer for changing the dashboard
+\
+\ ******************************************************************************
+
+IF _6502SP_VERSION
+
+.dashboardBuff
+
+ EQUB 2                 \ The number of bytes to transmit with this command
+
+ EQUB 2                 \ The number of bytes to receive with this command
+
+ENDIF
+
+\ ******************************************************************************
+\
+\       Name: SwitchDashboard
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Change the dashboard
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The dashboard to display:
+\
+\                         * 250 = the Universe Editor dashboard
+\
+\                         * 251 = the main game dashboard
+\
+\ ******************************************************************************
+
+IF _6502SP_VERSION
+
+.SwitchDashboard
+
+ LDX #LO(dashboardBuff) \ Set (Y X) to point to the dashboardBuff parameter
+ LDY #HI(dashboardBuff) \ block
+
+ JMP OSWORD             \ Send an OSWORD command to the I/O processor to
+                        \ draw the dashboard, returning from the subroutine
+                        \ using a tail call
+
+ENDIF
+
+\ ******************************************************************************
+\
+\       Name: GETYN
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Wait until either "Y" or "N" is pressed
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   C flag              Set if "Y" was pressed, clear if "N" was pressed
+\
+\ ******************************************************************************
+
+IF _6502SP_VERSION
+
+.GETYN
+
+ JSR t                  \ Scan the keyboard until a key is pressed, returning
+                        \ the ASCII code in A and X
+
+ CMP #'y'               \ If "Y" was pressed, return from the subroutine with
+ BEQ gety1              \ the C flag set (as the CMP sets the C flag)
+
+ CMP #'n'               \ If "N" was not pressed, loop back to keep scanning
+ BNE GETYN              \ for key presses
+
+ CLC                    \ Clear the C flag
+
+.gety1
+
+ RTS                    \ Return from the subroutine
+
+ENDIF
 
 .endUniverseEditor2

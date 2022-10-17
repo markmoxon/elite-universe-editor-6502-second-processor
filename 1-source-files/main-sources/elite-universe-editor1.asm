@@ -221,35 +221,32 @@
  PHX                    \ Store X and Y on the stack
  PHY
 
- JSR MV5                \ Draw the ship on the scanner to remove it
-
- PLY                    \ Store X and Y on the stack
- PLX
- PHX
- PHY
-
  JSR MVS5               \ Rotate vector_x by a small angle
 
- PLA                    \ Retrieve X and Y from the stack and add 2 to each of
- CLC                    \ them to point to the next axis
- ADC #2
- TAY
- PLA
- ADC #2
- TAX
+ PLA                    \ Retrieve Y from the stack and add 2 to point to the
+ TAY                    \ next axis
+ INY
+ INY
+
+ PLA                    \ Retrieve X from the stack and add 2 to point to the
+ TAX                    \ next axis
+ INX
+ INX
 
  PHX                    \ Store X and Y on the stack
  PHY
 
  JSR MVS5               \ Rotate vector_y by a small angle
 
- PLA                    \ Retrieve X and Y from the stack and add 2 to each of
- CLC                    \ them to point to the next axis
- ADC #2
- TAY
- PLA
- ADC #2
- TAX
+ PLA                    \ Retrieve Y from the stack and add 2 to point to the
+ TAY                    \ next axis
+ INY
+ INY
+
+ PLA                    \ Retrieve X from the stack and add 2 to point to the
+ TAX                    \next axis
+ INX
+ INX
 
  JSR MVS5               \ Rotate vector_z by a small angle
 
@@ -261,8 +258,8 @@
  JSR STORE              \ Call STORE to copy the ship data block at INWK back to
                         \ the K% workspace at INF
 
- JMP DrawShip           \ Draw the ship and return from the subroutine using a
-                        \ tail call
+ JMP DrawShip+3         \ Draw the ship (not on the scanner) and return from the
+                        \ subroutine using a tail call
 
 
 .endUniverseEditor1

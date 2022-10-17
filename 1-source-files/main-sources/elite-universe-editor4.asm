@@ -1581,6 +1581,10 @@ ENDIF
 
  STA ENERGY             \ Recharge the energy banks
 
+ LDA #128               \ Set the roll and pitch inputs to zero
+ STA JSTX
+ STA JSTY
+
                         \ We now do what ZERO would have done, but leaving
                         \ the ship slots alone, and we then call DIALS and ZINF
                         \ as we disabled them above
@@ -2372,34 +2376,6 @@ ENDIF
 
  RTS                    \ Return from the subroutine
 
-\ ******************************************************************************
-\
-\       Name: GetShipVector
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Calculate the vector to the selected ship into XX15
-\
-\ ******************************************************************************
-
-.GetShipVector
-
- LDY #8                 \ First we need to copy the ship's coordinates
-                        \ into K3, so set a counter to copy the first 9 bytes
-                        \ (the 3-byte x, y and z coordinates) from the ship's
-                        \ data block in K% (pointed to by INF) into K3
-
-.svec1
-
- LDA (INF),Y            \ Copy the X-th byte from the ship's data block at
- STA K3,Y               \ INF to the X-th byte of K3
-
- DEY                    \ Decrement the loop counter
-
- BPL svec1              \ Loop back to svec1 until we have copied all 9 bytes
-
- JMP TAS2               \ Call TAS2 to build XX15 from K3, returning from the
-                        \ subroutine using a tail call
-
 IF _MASTER_VERSION
 
 \ ******************************************************************************
@@ -2822,8 +2798,6 @@ ENDIF
  ECHR '?'
  EQUB VE
 
-IF _MASTER_VERSION
-
 \ ******************************************************************************
 \
 \       Name: TWIST
@@ -2838,6 +2812,8 @@ IF _MASTER_VERSION
 \   TWIST2              Pitch in the direction given in A
 \
 \ ******************************************************************************
+
+IF _MASTER_VERSION
 
 .TWIST2
 
@@ -2863,6 +2839,8 @@ IF _MASTER_VERSION
  LDY #13                \ in the direction given in RAT2 and return from the
  JMP MVS5               \ subroutine using a tail call
 
+ENDIF
+
 \ ******************************************************************************
 \
 \       Name: STORE
@@ -2877,6 +2855,8 @@ IF _MASTER_VERSION
 \   INF                 The ship data block in the K% workspace to copy INWK to
 \
 \ ******************************************************************************
+
+IF _MASTER_VERSION
 
 .STORE
 
@@ -2895,6 +2875,8 @@ IF _MASTER_VERSION
 
  RTS                    \ Return from the subroutine
 
+ENDIF
+
 \ ******************************************************************************
 \
 \       Name: ZEBC
@@ -2904,6 +2886,8 @@ IF _MASTER_VERSION
 \
 \ ******************************************************************************
 
+IF _MASTER_VERSION
+
 .ZEBC
 
  LDX #&C                \ Call ZES1 with X = &C to zero-fill page &C
@@ -2912,85 +2896,6 @@ IF _MASTER_VERSION
  DEX                    \ Decrement X to &B
 
  JMP ZES1               \ Jump to ZES1 to zero-fill page &B
-
-ENDIF
-
-IF _6502SP_VERSION
-
-\ ******************************************************************************
-\
-\       Name: GETYN
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Wait until either "Y" or "N" is pressed
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   C flag              Set if "Y" was pressed, clear if "N" was pressed
-\
-\ ******************************************************************************
-
-.GETYN
-
- JSR t                  \ Scan the keyboard until a key is pressed, returning
-                        \ the ASCII code in A and X
-
- CMP #'y'               \ If "Y" was pressed, return from the subroutine with
- BEQ gety1              \ the C flag set (as the CMP sets the C flag)
-
- CMP #'n'               \ If "N" was not pressed, loop back to keep scanning
- BNE GETYN              \ for key presses
-
- CLC                    \ Clear the C flag
-
-.gety1
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: dashboardBuff
-\       Type: Variable
-\   Category: Universe editor
-\    Summary: Buffer for changing the dashboard
-\
-\ ******************************************************************************
-
-.dashboardBuff
-
- EQUB 2                 \ The number of bytes to transmit with this command
-
- EQUB 2                 \ The number of bytes to receive with this command
-
-\ ******************************************************************************
-\
-\       Name: SwitchDashboard
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Change the dashboard
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   A                   The dashboard to display:
-\
-\                         * 250 = the Universe Editor dashboard
-\
-\                         * 251 = the main game dashboard
-\
-\ ******************************************************************************
-
-.SwitchDashboard
-
- LDX #LO(dashboardBuff) \ Set (Y X) to point to the dashboardBuff parameter
- LDY #HI(dashboardBuff) \ block
-
- JMP OSWORD             \ Send an OSWORD command to the I/O processor to
-                        \ draw the dashboard, returning from the subroutine
-                        \ using a tail call
 
 ENDIF
 

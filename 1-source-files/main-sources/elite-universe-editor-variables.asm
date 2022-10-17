@@ -51,8 +51,10 @@ keyO = &36
 keyP = &37
 keyQ = &10
 keyR = &33
+keyS = &51
 keyT = &23
 keyW = &21
+keyX = &42
 
 key1 = &30
 key2 = &31
@@ -72,6 +74,8 @@ keyDown = &29
 keyEscape = &70
 keyReturn = &49
 keyUp = &39
+keyGt = &67
+keyLt = &66
 
 ELIF _MASTER_VERSION
 
@@ -101,8 +105,10 @@ keyO = &4F
 keyP = &50
 keyQ = &51
 keyR = &52
+keyS = &53
 keyT = &54
 keyW = &57
+keyX = &58
 
 key1 = &31
 key2 = &32
@@ -122,5 +128,7 @@ keyDown = &8E
 keyEscape = &1B
 keyReturn = &0D
 keyUp = &8F
+keyGt = &2E
+keyLt = &2C
 
 ENDIF
