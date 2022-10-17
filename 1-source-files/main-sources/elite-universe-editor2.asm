@@ -860,91 +860,6 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: RotateShip
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Rotate ship in space
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   The first vector to rotate:
-\
-\                         * If X = 15, rotate roofv_x
-\                                      then roofv_y
-\                                      then roofv_z
-\
-\                         * If X = 21, rotate sidev_x
-\                                      then sidev_y
-\                                      then sidev_z
-\
-\   Y                   The second vector to rotate:
-\
-\                         * If Y = 9,  rotate nosev_x
-\                                      then nosev_y
-\                                      then nosev_z
-\
-\                         * If Y = 21, rotate sidev_x
-\                                      then sidev_y
-\                                      then sidev_z
-\
-\   RAT2                The direction of the pitch or roll to perform, positive
-\                       or negative (i.e. the sign of the roll or pitch counter
-\                       in bit 7)
-\
-\ ******************************************************************************
-
-.RotateShip
-
- PHX                    \ Store X and Y on the stack
- PHY
-
- JSR MV5                \ Draw the ship on the scanner to remove it
-
- PLY                    \ Store X and Y on the stack
- PLX
- PHX
- PHY
-
- JSR MVS5               \ Rotate vector_x by a small angle
-
- PLA                    \ Retrieve X and Y from the stack and add 2 to each of
- CLC                    \ them to point to the next axis
- ADC #2
- TAY
- PLA
- ADC #2
- TAX
-
- PHX                    \ Store X and Y on the stack
- PHY
-
- JSR MVS5               \ Rotate vector_y by a small angle
-
- PLA                    \ Retrieve X and Y from the stack and add 2 to each of
- CLC                    \ them to point to the next axis
- ADC #2
- TAY
- PLA
- ADC #2
- TAX
-
- JSR MVS5               \ Rotate vector_z by a small angle
-
- JSR TIDY               \ Call TIDY to tidy up the orientation vectors, to
-                        \ prevent the ship from getting elongated and out of
-                        \ shape due to the imprecise nature of trigonometry
-                        \ in assembly language
-
- JSR STORE              \ Call STORE to copy the ship data block at INWK back to
-                        \ the K% workspace at INF
-
- JMP DrawShip           \ Draw the ship and return from the subroutine using a
-                        \ tail call
-
-\ ******************************************************************************
-\
 \       Name: MoveShip
 \       Type: Subroutine
 \   Category: Universe editor
@@ -1256,63 +1171,75 @@ ENDIF
  PLA                    \ Retrieve the key press from the stack
 
  CMP #'1'               \ If key is less than '1' then it is invalid, so jump
- BCC add6               \ to add6 to make an error beep and return from the
+ BCC add5               \ to add5 to make an error beep and return from the
                         \ subroutine
 
-.add1
+ BEQ add2               \ If key pressed is '1', skip the following
 
- CMP #'9'+1             \ If key is '1' to '9', jump to add2 to process
- BCC add2
+ CMP #'9'+1             \ If key is '2' to '9' then it is valid, so jump to
+ BCC add1               \ add1 to close up the gap left by '2'
 
 IF _6502SP_VERSION
 
- CMP #'a'               \ If key is less than 'A', it is invalid, so jump to
- BCC add6               \ add6 to make an error beep and return from the
-                        \ subroutine
-
  CMP #'x'               \ If key is 'X' or greater, it is invalid, so jump to
- BCS add6               \ add6 to make an error beep and return from the
+ BCS add5               \ add5 to make an error beep and return from the
                         \ subroutine
 
-                        \ Key is 'A' to 'W' (which includes the Elite logo as
-                        \ 'W')
+ CMP #'a'               \ If key is less than 'A', it is invalid, so jump to
+ BCC add5               \ add5 to make an error beep and return from the
+                        \ subroutine
 
- SBC #'a'-11            \ Otherwise calculate ship type with 'A' giving 10 (the
-                        \ C flag is clear for this calculation, hence the 11)
+ SBC #'a'-':'           \ Reduce 'A' to 'Z' so that 'A' is after '9' (we know
+                        \ the C flag is set as we just passed through a BCC)
 
 ELIF _MASTER_VERSION
 
- CMP #'A'               \ If key is less than 'A', it is invalid, so jump to
- BCC add6               \ add6 to make an error beep and return from the
-                        \ subroutine
-
  CMP #'W'               \ If key is 'W' or greater, it is invalid, so jump to
- BCS add6               \ add6 to make an error beep and return from the
+ BCS add5               \ add5 to make an error beep and return from the
                         \ subroutine
 
-                        \ Key is 'A' to 'V' (which does not include the Elite
-                        \ logo)
+ CMP #'A'               \ If key is less than 'A', it is invalid, so jump to
+ BCC add5               \ add5 to make an error beep and return from the
+                        \ subroutine
 
- SBC #'A'-11            \ Otherwise calculate ship type with 'A' giving 10 (the
-                        \ C flag is clear for this calculation, hence the 11)
+ SBC #'A'-':'           \ Reduce 'A' to 'Z' so that 'A' is after '9' (we know
+                        \ the C flag is set as we just passed through a BCC)
 
 ENDIF
 
- BCS add4               \ Jump to add4 (this BCS is effectively a JMP as the C
-                        \ flag will be set from the subtraction)
+.add1
+
+ CLC                    \ The key pressed is '2' or more, so add 1 to the key
+ ADC #1                 \ number, so we close up the gap caused by the space
+                        \ station having type 2
 
 .add2
 
-                        \ Key is '1' to '9'
+ SEC                    \ By this point, our key value is from '0' upwards, so
+ SBC #'0'               \ we can calculate the ship type from the key pressed
+                        \ by subtracting '0' (so '1' gives us a value of 1 etc.)
 
- CMP #'2'               \ If key is '2' then we reuse this for the Cougar (as
- BNE add3               \ the value of 2 would otherwise be the space station),
- LDA #'0' + COU         \ so set A so the subtraction gives us the type in COU
+IF _6502SP_VERSION
+
+                        \ This is the 6502SP version, so swap around the values
+                        \ of the Cougar and Logo (so the Logo uses key 'W')
+
+ CMP #32                \ If key is 'V' then this is the Cougar
+ BNE add3
+
+ LDA #COU               \ Set the type for the Cougar
+
+ BNE add4               \ Jump to add4 (this BNE is effectively a JMP as A is
+                        \ never zero)
 
 .add3
 
- SEC                    \ Calculate the ship type from the key pressed
- SBC #'0'
+ CMP #33               \ If key is 'W' then this is the Elite logo
+ BNE add4
+
+ LDA #LGO               \ Set the type for the Logo
+
+ENDIF
 
 .add4
 
@@ -1331,7 +1258,7 @@ ENDIF
  JMP PrintShipType      \ Print the current ship type on the screen and return
                         \ from the subroutine using a tail call
 
-.add6
+.add5
 
  JMP MakeErrorBeep      \ Make an error beep and return from the subroutine
                         \ using a tail call

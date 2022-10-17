@@ -179,4 +179,90 @@
 
  RTS                    \ Return from the subroutine
 
+\ ******************************************************************************
+\
+\       Name: RotateShip
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Rotate ship in space
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The first vector to rotate:
+\
+\                         * If X = 15, rotate roofv_x
+\                                      then roofv_y
+\                                      then roofv_z
+\
+\                         * If X = 21, rotate sidev_x
+\                                      then sidev_y
+\                                      then sidev_z
+\
+\   Y                   The second vector to rotate:
+\
+\                         * If Y = 9,  rotate nosev_x
+\                                      then nosev_y
+\                                      then nosev_z
+\
+\                         * If Y = 21, rotate sidev_x
+\                                      then sidev_y
+\                                      then sidev_z
+\
+\   RAT2                The direction of the pitch or roll to perform, positive
+\                       or negative (i.e. the sign of the roll or pitch counter
+\                       in bit 7)
+\
+\ ******************************************************************************
+
+.RotateShip
+
+ PHX                    \ Store X and Y on the stack
+ PHY
+
+ JSR MV5                \ Draw the ship on the scanner to remove it
+
+ PLY                    \ Store X and Y on the stack
+ PLX
+ PHX
+ PHY
+
+ JSR MVS5               \ Rotate vector_x by a small angle
+
+ PLA                    \ Retrieve X and Y from the stack and add 2 to each of
+ CLC                    \ them to point to the next axis
+ ADC #2
+ TAY
+ PLA
+ ADC #2
+ TAX
+
+ PHX                    \ Store X and Y on the stack
+ PHY
+
+ JSR MVS5               \ Rotate vector_y by a small angle
+
+ PLA                    \ Retrieve X and Y from the stack and add 2 to each of
+ CLC                    \ them to point to the next axis
+ ADC #2
+ TAY
+ PLA
+ ADC #2
+ TAX
+
+ JSR MVS5               \ Rotate vector_z by a small angle
+
+ JSR TIDY               \ Call TIDY to tidy up the orientation vectors, to
+                        \ prevent the ship from getting elongated and out of
+                        \ shape due to the imprecise nature of trigonometry
+                        \ in assembly language
+
+ JSR STORE              \ Call STORE to copy the ship data block at INWK back to
+                        \ the K% workspace at INF
+
+ JMP DrawShip           \ Draw the ship and return from the subroutine using a
+                        \ tail call
+
+
 .endUniverseEditor1
