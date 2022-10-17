@@ -27,6 +27,9 @@
 \
 \ ******************************************************************************
 
+\ This part must be within main memory on the BBC Master, so that disc errors
+\ can be processed properly
+
 \ ******************************************************************************
 \
 \       Name: SaveLoadFile

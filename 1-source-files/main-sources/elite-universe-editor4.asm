@@ -29,6 +29,139 @@
 
 \ ******************************************************************************
 \
+\       Name: ResetShip
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Reset the position of the current ship
+\
+\ ******************************************************************************
+
+.ResetShip
+
+ JSR MV5                \ Draw the current ship on the scanner to remove it
+
+ LDA #26                \ Modify ZINF so it only resets the coordinates and
+ STA ZINF+1             \ orientation vectors (and keeps other ship settings)
+
+ JSR ZINF               \ Reset the coordinates and orientation vectors
+
+ LDA #NI%-1             \ Undo the modification
+ STA ZINF+1
+
+ JSR InitialiseShip     \ Initialise the ship coordinates
+
+ JSR STORE              \ Call STORE to copy the ship data block at INWK back to
+                        \ the K% workspace at INF
+
+ JMP DrawShip           \ Draw the ship and return from the subroutine using a
+                        \ tail call
+
+\ ******************************************************************************
+\
+\       Name: ApplyMods
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Apply mods for the universe editor
+\
+\ ******************************************************************************
+
+.ApplyMods
+
+IF _6502SP_VERSION
+
+ LDA #250               \ Switch to the Universe Editor dashboard
+ JSR SwitchDashboard
+
+ LDA #&24               \ Disable the TRB XX1+31 instruction in part 9 of LL9
+ STA LL74+20            \ that disables the laser once it has fired, so that
+                        \ lasers remain on-screen while in the editor
+
+ELIF _MASTER_VERSION
+
+ JSR EditorDashboard    \ Switch to the Universe Editor dashboard
+
+ LDA #&24               \ Disable the STA XX1+31 instruction in part 9 of LL9
+ STA LL74+16            \ that disables the laser once it has fired, so that
+                        \ lasers remain on-screen while in the editor
+
+ENDIF
+
+ LDA #%11100111         \ Disable the clearing of bit 7 (lasers firing) in
+ STA WS1-3              \ WPSHPS
+
+ LDA #&60               \ Disable DOEXP so that by default it draws an explosion
+ STA DOEXP+9            \ cloud but doesn't recalculate it
+
+ LDX #8                 \ The size of the default universe filename
+
+.mods1
+
+ LDA defaultName,X      \ Copy the X-th character of the filename to NAME
+ STA NAME,X
+
+ DEX                    \ Decrement the loop counter
+
+ BPL mods1              \ Loop back for the next byte of the universe filename
+
+ STZ showingS           \ Zero the flags that keep track of the bulb indicators
+ STZ showingE
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: RevertMods
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Reverse mods for the universe editor
+\
+\ ******************************************************************************
+
+.RevertMods
+
+ LDA showingS           \ If we are showing the station buld, call SPBLB to
+ BEQ P%+5               \ remove it
+ JSR SPBLB
+
+ LDA showingE           \ If we are showing the E.C.M. bulb, call ECBLB to
+ BEQ P%+5               \ remove it
+ JSR ECBLB
+
+IF _6502SP_VERSION
+
+ LDA #&14               \ Re-enable the TRB XX1+31 instruction in part 9 of LL9
+ STA LL74+20
+
+ELIF _MASTER_VERSION
+
+ LDA #&85               \ Re-enable the STA XX1+31 instruction in part 9 of LL9
+ STA LL74+16
+
+ENDIF
+
+ LDA #%10100111         \ Re-enable the clearing of bit 7 (lasers firing) in
+ STA WS1-3              \ WPSHPS
+
+ LDA #&A5               \ Re-enable DOEXP
+ STA DOEXP+9
+
+ JSR DFAULT             \ Call DFAULT to reset the current commander data
+                        \ block to the last saved commander
+
+IF _6502SP_VERSION
+
+ LDA #251               \ Switch to the main game dashboard, returning from the
+ JMP SwitchDashboard    \ subroutine using a tail call
+
+ELIF _MASTER_VERSION
+
+ JMP GameDashboard      \ Switch to the main game dashboard, returning from the
+                        \ subroutine using a tail call
+
+ENDIF
+
+\ ******************************************************************************
+\
 \       Name: ChangeView
 \       Type: Subroutine
 \   Category: Universe editor
@@ -672,7 +805,7 @@ ENDIF
 
 .defaultName
 
- EQUS "MyScene"
+ EQUS "MYSCENE"
  EQUB 13
 
 \ ******************************************************************************
@@ -704,12 +837,12 @@ IF _MASTER_VERSION
 
 IF _SNG47
 
- EQUS "SAVE :1.U.MyScene  3FF +31E 0 0"
+ EQUS "SAVE :1.U.MYSCENE  3FF +31E 0 0"
  EQUB 13
 
 ELIF _COMPACT
 
- EQUS "SAVE MyScene  3FF +31E 0 0"
+ EQUS "SAVE MYSCENE  3FF +31E 0 0"
  EQUB 13
 
 ENDIF
@@ -729,7 +862,7 @@ ENDIF
 
 IF _MASTER_VERSION
 
- EQUS "DELETE :1.U.MyScene"
+ EQUS "DELETE :1.U.MYSCENE"
  EQUB 13
 
 ENDIF
@@ -749,12 +882,12 @@ IF _MASTER_VERSION
 
 IF _SNG47
 
- EQUS "LOAD :1.U.MyScene  3FF"
+ EQUS "LOAD :1.U.MYSCENE  3FF"
  EQUB 13
 
 ELIF _COMPACT
 
- EQUS "LOAD MyScene  3FF"
+ EQUS "LOAD MYSCENE  3FF"
  EQUB 13
 
 ENDIF
@@ -1099,16 +1232,75 @@ ENDIF
  LDA #&FF               \ Call SaveLoadFile with A = &FF to load the universe
  JSR SaveLoadFile       \ file to address K%-1
 
- BCS load1              \ If the C flag is set then an invalid drive number was
+ BCS load2              \ If the C flag is set then an invalid drive number was
                         \ entered during the call to SaveLoadFile and the file
-                        \ wasn't loaded, so jump to load1 to skip the following
+                        \ wasn't loaded, so jump to load2 to skip the following
                         \ and return from the subroutine
 
  JSR StoreName          \ Transfer the universe filename from INWK to NAME, to
                         \ set it as the current filename
 
-                        \ We now disssemble the file, by copying the data after
+                        \ We now disassemble the file, by copying the data after
                         \ the end of the K% block into FRIN, MANY and JUNK
+
+ LDA K%-1               \ Extract the file format number
+ STA K
+
+IF _6502SP_VERSION
+
+ CMP #1                 \ If this is a 6502SP format file, then jump to load1 as
+ BEQ load1              \ we don't need to make any changes
+
+                        \ We are loading a Master file into the 6502SP version,
+                        \ so we need to make the following changes:
+                        \
+                        \   * Change any Cougars from type 32 to 33
+                        \
+                        \   * Fix the ship heap addresses in INWK+33 and INWK+34
+                        \     by adding &D000-&0800 (as the ship line heap
+                        \     descends from &D000 in the 6502SP version and from
+                        \     &0800 in the Master version)
+
+ LDX #32                \ Set K = 32, to act as the search value
+ STX K
+
+ INX                    \ Set K+1 = 33, to act as the replacement value
+ STX K+1
+
+ STZ K+2                \ Set K+2 = 0, to indicate addition of the ship heap
+                        \ addresses
+
+ JSR ConvertFile        \ Convert the file to the correct format
+
+ELIF _MASTER_VERSION
+
+ CMP #2                 \ If this is a Master format file, then jump to load1 as
+ BEQ load1              \ we don't need to make any changes
+
+                        \ We are loading a 6502SP file into the Master version,
+                        \ so we need to make the following changes:
+                        \
+                        \   * Change any Cougars from type 33 to 32
+                        \
+                        \   * Fix the ship heap addresses in INWK+33 and INWK+34
+                        \     by subtracting &D000-&0800 (as the ship line heap
+                        \     descends from &D000 in the 6502SP version and from
+                        \     &0800 in the Master version)
+
+ LDX #33                \ Set K = 33, to act as the search value
+ STX K
+
+ DEX                    \ Set K+1 = 32, to act as the replacement value
+ STX K+1
+
+ LDX #1                 \ Set K+2 = 1, to indicate subtraction of the ship heap
+ STX K+2                \ addresses
+
+ JSR ConvertFile        \ Convert the file to the correct format
+
+ENDIF
+
+.load1
 
  LDA #HI(K%+&2E4)       \ Copy NOSH + 1 bytes from K%+&2E4 to FRIN
  STA P+1
@@ -1135,7 +1327,7 @@ ENDIF
  LDA K%+&2E4+NOSH+1+NTY+1 \ Copy 1 byte from K%+&2E4+NOSH+1+NTY+1 to JUNK
  STA JUNK
 
-.load1
+.load2
 
  SEC                    \ Set the C flag
 
@@ -1260,33 +1452,33 @@ IF _SNG47
 
  STA loadCommand+10,Y   \ Store the Y-th character of the filename in the Y-th
                         \ character of loadCommand+10, where loadCommand+10
-                        \ points to the MyScene part of the load command in
+                        \ points to the MYSCENE part of the load command in
                         \ loadCommand:
                         \
-                        \   "LOAD :1.U.MyScene  3FF"
+                        \   "LOAD :1.U.MYSCENE  3FF"
 
  STA saveCommand+10,Y   \ Store the Y-th character of the commander name in the
                         \ Y-th character of saveCommand+10, where saveCommand+10
-                        \ points to the MyScene part of the save command in
+                        \ points to the MYSCENE part of the save command in
                         \ saveCommand:
                         \
-                        \   "SAVE :1.U.MyScene  3FF +31E 0 0"
+                        \   "SAVE :1.U.MYSCENE  3FF +31E 0 0"
 
 ELIF _COMPACT
 
  STA loadCommand+5,Y    \ Store the Y-th character of the filename in the Y-th
                         \ character of loadCommand+5, where loadCommand+5
-                        \ points to the MyScene part of the load command in
+                        \ points to the MYSCENE part of the load command in
                         \ loadCommand:
                         \
-                        \   "LOAD MyScene  3FF"
+                        \   "LOAD MYSCENE  3FF"
 
  STA saveCommand+5,Y    \ Store the Y-th character of the commander name in the
                         \ Y-th character of saveCommand+5, where saveCommand+5
-                        \ points to the MyScene part of the save command in
+                        \ points to the MYSCENE part of the save command in
                         \ saveCommand:
                         \
-                        \   "SAVE MyScene  3FF +31E 0 0"
+                        \   "SAVE MYSCENE  3FF +31E 0 0"
 ENDIF
 
  INY                    \ Increment the loop counter
@@ -1332,63 +1524,6 @@ ENDIF
  RTS                    \ Return from the subroutine
 
 ENDIF
-
-\ ******************************************************************************
-\
-\       Name: CopyBlock
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Copy a small block of memory
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   Y                   Number of bytes to copy - 1
-\
-\   P(1 0)              From address
-\
-\   Q(1 0)              To address
-\
-\ ******************************************************************************
-
-.CopyBlock
-
- LDA (P),Y              \ Copy byte X from P(1 0) to Q(1 0)
- STA (Q),Y
-
- DEY                    \ Decrement the counter
-
- BPL CopyBlock          \ Loop back until all X bytes are copied
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: StoreName
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Store the name of the current universe file
-\
-\ ******************************************************************************
-
-.StoreName
-
- LDX #7                 \ The universe's name can contain a maximum of 7
-                        \ characters, and is terminated by a carriage return,
-                        \ so set up a counter in X to copy 8 characters
-
-.name1
-
- LDA INWK+5,X           \ Copy the X-th byte of INWK+5 to the X-th byte of NA%
- STA NAME,X
-
- DEX                    \ Decrement the loop counter
-
- BPL name1              \ Loop back until we have copied all 8 bytes
-
- RTS                    \ Return from the subroutine
-
 
 \ ******************************************************************************
 \

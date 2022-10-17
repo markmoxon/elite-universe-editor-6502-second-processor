@@ -27,138 +27,148 @@
 \
 \ ******************************************************************************
 
-
 \ ******************************************************************************
 \
-\       Name: ResetShip
+\       Name: CopyBlock
 \       Type: Subroutine
 \   Category: Universe editor
-\    Summary: Reset the position of the current ship
+\    Summary: Copy a small block of memory
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   Y                   Number of bytes to copy - 1
+\
+\   P(1 0)              From address
+\
+\   Q(1 0)              To address
 \
 \ ******************************************************************************
 
-.ResetShip
+.CopyBlock
 
- JSR MV5                \ Draw the current ship on the scanner to remove it
+ LDA (P),Y              \ Copy byte X from P(1 0) to Q(1 0)
+ STA (Q),Y
 
- LDA #26                \ Modify ZINF so it only resets the coordinates and
- STA ZINF+1             \ orientation vectors (and keeps other ship settings)
+ DEY                    \ Decrement the counter
 
- JSR ZINF               \ Reset the coordinates and orientation vectors
-
- LDA #NI%-1             \ Undo the modification
- STA ZINF+1
-
- JSR InitialiseShip     \ Initialise the ship coordinates
-
- JSR STORE              \ Call STORE to copy the ship data block at INWK back to
-                        \ the K% workspace at INF
-
- JMP DrawShip           \ Draw the ship and return from the subroutine using a
-                        \ tail call
-
-\ ******************************************************************************
-\
-\       Name: ApplyMods
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Apply mods for the universe editor
-\
-\ ******************************************************************************
-
-.ApplyMods
-
-IF _6502SP_VERSION
-
- LDA #250               \ Switch to the Universe Editor dashboard
- JSR SwitchDashboard
-
- LDA #&24               \ Disable the TRB XX1+31 instruction in part 9 of LL9
- STA LL74+20            \ that disables the laser once it has fired, so that
-                        \ lasers remain on-screen while in the editor
-
-ELIF _MASTER_VERSION
-
- JSR EditorDashboard    \ Switch to the Universe Editor dashboard
-
- LDA #&24               \ Disable the STA XX1+31 instruction in part 9 of LL9
- STA LL74+16            \ that disables the laser once it has fired, so that
-                        \ lasers remain on-screen while in the editor
-
-ENDIF
-
- LDA #%11100111         \ Disable the clearing of bit 7 (lasers firing) in
- STA WS1-3              \ WPSHPS
-
- LDA #&60               \ Disable DOEXP so that by default it draws an explosion
- STA DOEXP+9            \ cloud but doesn't recalculate it
-
- LDX #8                 \ The size of the default universe filename
-
-.mods1
-
- LDA defaultName,X      \ Copy the X-th character of the filename to NAME
- STA NAME,X
-
- DEX                    \ Decrement the loop counter
-
- BPL mods1              \ Loop back for the next byte of the universe filename
-
- STZ showingS           \ Zero the flags that keep track of the bulb indicators
- STZ showingE
+ BPL CopyBlock          \ Loop back until all X bytes are copied
 
  RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
-\       Name: RevertMods
+\       Name: ConvertFile
 \       Type: Subroutine
 \   Category: Universe editor
-\    Summary: Reverse mods for the universe editor
+\    Summary: Convert the file format between platforms
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   Y                   Number of bytes to copy - 1
+\
+\   P(1 0)              From address
+\
+\   K                   Value to search for
+\
+\   K+1                 Replacement value
+\
+\   K+2                 How to process the ship heap addresses
+\
+\                         * 0 = Add &D000-&0800 to each address
+\
+\                         * 1 = Subtract &D000-&0800 from each address
 \
 \ ******************************************************************************
 
-.RevertMods
+.ConvertFile
 
- LDA showingS           \ If we are showing the station buld, call SPBLB to
- BEQ P%+5               \ remove it
- JSR SPBLB
+ LDA #HI(K%+&2E4)       \ Set P(1 0) = K%+&2E4, which is the location of the
+ STA P+1                \ ship slots we just loaded
+ LDA #LO(K%+&2E4)
+ STA P
 
- LDA showingE           \ If we are showing the E.C.M. bulb, call ECBLB to
- BEQ P%+5               \ remove it
- JSR ECBLB
+ LDY #NOSH+1            \ Set a counter in Y to loop through all the slots
 
-IF _6502SP_VERSION
+.fixb1
 
- LDA #&14               \ Re-enable the TRB XX1+31 instruction in part 9 of LL9
- STA LL74+20
+ LDA (P),Y              \ If the slot is empty, move on to the next slot
+ BEQ fixb4
 
-ELIF _MASTER_VERSION
+ CMP K                  \ If the slot entry is not equal to the search value in
+ BNE fixb4              \ K, jump to fixb4
 
- LDA #&85               \ Re-enable the STA XX1+31 instruction in part 9 of LL9
- STA LL74+16
+ LDA K+1                \ We have a match, so replace the slot entry with the
+ STA (P),Y              \ replace value in K+1
 
-ENDIF
+ PHY                    \ Store the loop counter on the stack
 
- LDA #%10100111         \ Re-enable the clearing of bit 7 (lasers firing) in
- STA WS1-3              \ WPSHPS
+ TYA                    \ Set X = Y * 2
+ ASL A                  \
+ TAX                    \ so we can use X as an index into UNIV for this slot
 
- LDA #&A5               \ Re-enable DOEXP
- STA DOEXP+9
+ LDA UNIV,X             \ Copy the address of the target ship's data block from
+ STA V                  \ UNIV(X+1 X) to V(1 0)
+ LDA UNIV+1,X
+ STA V+1
 
- JSR DFAULT             \ Call DFAULT to reset the current commander data
-                        \ block to the last saved commander
+ LDY #34                \ Set A = INWK+34, the high byte of the ship heap
+ LDA (V),Y              \ address
 
-IF _6502SP_VERSION
+ LDX K+2                \ If K+2 is zero, then jump to fixb2 to add to the heap
+ BEQ fixb2              \ address
 
- LDA #251               \ Switch to the main game dashboard, returning from the
- JMP SwitchDashboard    \ subroutine using a tail call
+ SEC                    \ Subtract &D0-&08 from the high byte of the ship heap
+ SBC #&D0-&08           \ address
 
-ELIF _MASTER_VERSION
+ JMP fixb3              \ Jump to fixb3 to skip the following
 
- JMP GameDashboard      \ Switch to the main game dashboard, returning from the
-                        \ subroutine using a tail call
+.fixb2
 
-ENDIF
+ CLC                    \ Add &D0-&08 to the high byte of the ship heap address
+ ADC #&D0-&08
+
+.fixb3
+
+ STA (V),Y              \ Update the high byte of the ship heap address
+
+ PLY                    \ Retrieve the loop counter from the stack
+
+.fixb4
+
+ DEY                    \ Decrement the counter
+
+ BPL fixb1              \ Loop back until all X bytes are searched
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: StoreName
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Store the name of the current universe file
+\
+\ ******************************************************************************
+
+.StoreName
+
+ LDX #7                 \ The universe's name can contain a maximum of 7
+                        \ characters, and is terminated by a carriage return,
+                        \ so set up a counter in X to copy 8 characters
+
+.name1
+
+ LDA INWK+5,X           \ Copy the X-th byte of INWK+5 to the X-th byte of NA%
+ STA NAME,X
+
+ DEX                    \ Decrement the loop counter
+
+ BPL name1              \ Loop back until we have copied all 8 bytes
+
+ RTS                    \ Return from the subroutine
 
 .endUniverseEditor1
