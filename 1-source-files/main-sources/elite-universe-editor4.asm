@@ -1232,16 +1232,41 @@ ENDIF
  LDA #&FF               \ Call SaveLoadFile with A = &FF to load the universe
  JSR SaveLoadFile       \ file to address K%-1
 
- BCS load2              \ If the C flag is set then an invalid drive number was
+ BCS load1              \ If the C flag is set then an invalid drive number was
                         \ entered during the call to SaveLoadFile and the file
-                        \ wasn't loaded, so jump to load2 to skip the following
+                        \ wasn't loaded, so jump to load1 to skip the following
                         \ and return from the subroutine
 
  JSR StoreName          \ Transfer the universe filename from INWK to NAME, to
                         \ set it as the current filename
 
-                        \ We now disassemble the file, by copying the data after
+                        \ We now split up the file, by copying the data after
                         \ the end of the K% block into FRIN, MANY and JUNK
+
+ LDA #HI(K%+&2E4)       \ Copy NOSH + 1 bytes from K%+&2E4 to FRIN
+ STA P+1
+ LDA #LO(K%+&2E4)
+ STA P
+ LDA #HI(FRIN)
+ STA Q+1
+ LDA #LO(FRIN)
+ STA Q
+ LDY #NOSH+1
+ JSR CopyBlock
+
+ LDA #HI(K%+&2E4+NOSH+1)  \ Copy NTY + 1 bytes from K%+&2E4+NOSH+1 to MANY
+ STA P+1
+ LDA #LO(K%+&2E4+NOSH+1)
+ STA P
+ LDA #HI(MANY)
+ STA Q+1
+ LDA #LO(MANY)
+ STA Q
+ LDY #NTY+1
+ JSR CopyBlock
+
+ LDA K%+&2E4+NOSH+1+NTY+1 \ Copy 1 byte from K%+&2E4+NOSH+1+NTY+1 to JUNK
+ STA JUNK
 
  LDA K%-1               \ Extract the file format number
  STA K
@@ -1270,6 +1295,8 @@ IF _6502SP_VERSION
  STZ K+2                \ Set K+2 = 0, to indicate addition of the ship heap
                         \ addresses
 
+ STZ K+3                \ Set K+3 = 0, so we don't delete any ships
+
  JSR ConvertFile        \ Convert the file to the correct format
 
 ELIF _MASTER_VERSION
@@ -1293,6 +1320,9 @@ ELIF _MASTER_VERSION
  DEX                    \ Set K+1 = 32, to act as the replacement value
  STX K+1
 
+ STX K+3                \ Set K+3 = 32, so we delete the Elite logo from the
+                        \ 6502SP file (before doing the above search)
+
  LDX #1                 \ Set K+2 = 1, to indicate subtraction of the ship heap
  STX K+2                \ addresses
 
@@ -1301,33 +1331,6 @@ ELIF _MASTER_VERSION
 ENDIF
 
 .load1
-
- LDA #HI(K%+&2E4)       \ Copy NOSH + 1 bytes from K%+&2E4 to FRIN
- STA P+1
- LDA #LO(K%+&2E4)
- STA P
- LDA #HI(FRIN)
- STA Q+1
- LDA #LO(FRIN)
- STA Q
- LDY #NOSH+1
- JSR CopyBlock
-
- LDA #HI(K%+&2E4+NOSH+1)  \ Copy NTY + 1 bytes from K%+&2E4+NOSH+1 to MANY
- STA P+1
- LDA #LO(K%+&2E4+NOSH+1)
- STA P
- LDA #HI(MANY)
- STA Q+1
- LDA #LO(MANY)
- STA Q
- LDY #NTY+1
- JSR CopyBlock
-
- LDA K%+&2E4+NOSH+1+NTY+1 \ Copy 1 byte from K%+&2E4+NOSH+1+NTY+1 to JUNK
- STA JUNK
-
-.load2
 
  SEC                    \ Set the C flag
 

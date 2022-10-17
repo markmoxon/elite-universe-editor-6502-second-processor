@@ -68,13 +68,9 @@
 \
 \ Arguments:
 \
-\   Y                   Number of bytes to copy - 1
+\   K                   Ship number to search for
 \
-\   P(1 0)              From address
-\
-\   K                   Value to search for
-\
-\   K+1                 Replacement value
+\   K+1                 Ship number to replace with
 \
 \   K+2                 How to process the ship heap addresses
 \
@@ -82,27 +78,39 @@
 \
 \                         * 1 = Subtract &D000-&0800 from each address
 \
+\   K+3                 If non-zero, the ship number to delete
+\
 \ ******************************************************************************
 
 .ConvertFile
-
- LDA #HI(K%+&2E4)       \ Set P(1 0) = K%+&2E4, which is the location of the
- STA P+1                \ ship slots we just loaded
- LDA #LO(K%+&2E4)
- STA P
 
  LDY #NOSH+1            \ Set a counter in Y to loop through all the slots
 
 .fixb1
 
- LDA (P),Y              \ If the slot is empty, move on to the next slot
- BEQ fixb4
+ LDA FRIN,Y             \ If the slot is empty, move on to the next slot
+ BEQ fixb5
+
+ CMP K+3                \ If the slot entry is not equal to the ship to delete
+ BNE fixb2              \ in K+3, jump to fixb2
+
+                        \ This ship type is not supported in this version, so we
+                        \ need to clear the slot, though this will only work if
+                        \ the unsupported ship is in the last slot
+
+ LDA #0                 \ Zero the slot to delete the unsupported ship
+ STA FRIN,Y
+
+ BEQ fixb5              \ Jump to fixb5 to move on to the next slot (this BEQ is
+                        \ effectively a JMP as A is always zero)
+
+.fixb2
 
  CMP K                  \ If the slot entry is not equal to the search value in
- BNE fixb4              \ K, jump to fixb4
+ BNE fixb5              \ K, jump to fixb5
 
  LDA K+1                \ We have a match, so replace the slot entry with the
- STA (P),Y              \ replace value in K+1
+ STA FRIN,Y             \ replace value in K+1
 
  PHY                    \ Store the loop counter on the stack
 
@@ -118,26 +126,26 @@
  LDY #34                \ Set A = INWK+34, the high byte of the ship heap
  LDA (V),Y              \ address
 
- LDX K+2                \ If K+2 is zero, then jump to fixb2 to add to the heap
- BEQ fixb2              \ address
+ LDX K+2                \ If K+2 is zero, then jump to fixb3 to add to the heap
+ BEQ fixb3              \ address
 
  SEC                    \ Subtract &D0-&08 from the high byte of the ship heap
  SBC #&D0-&08           \ address
 
- JMP fixb3              \ Jump to fixb3 to skip the following
+ JMP fixb4              \ Jump to fixb4 to skip the following
 
-.fixb2
+.fixb3
 
  CLC                    \ Add &D0-&08 to the high byte of the ship heap address
  ADC #&D0-&08
 
-.fixb3
+.fixb4
 
  STA (V),Y              \ Update the high byte of the ship heap address
 
  PLY                    \ Retrieve the loop counter from the stack
 
-.fixb4
+.fixb5
 
  DEY                    \ Decrement the counter
 
