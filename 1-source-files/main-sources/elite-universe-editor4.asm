@@ -1220,8 +1220,6 @@ ELIF _MASTER_VERSION
 
 ENDIF
 
-\ JSR RedrawScanner      \ Remove all the current ships from the scanner
-
  LDA #&FF               \ Call SaveLoadFile with A = &FF to load the universe
  JSR SaveLoadFile       \ file to address K%-1
 
@@ -1330,48 +1328,9 @@ ENDIF
 
  JSR HideBulbs          \ Hide both dashboard bulbs
 
-\ JSR RedrawScanner      \ Draw all the new ships on the scanner
-
  SEC                    \ Set the C flag
 
  RTS                    \ Return from the subroutine with the C flag set
-
-\ ******************************************************************************
-\
-\       Name: RedrawScanner
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Draw all the ships on the scanner
-\
-\ ******************************************************************************
-
-.RedrawScanner
-
- LDX #1                 \ Start at slot 1 (station)
-
-.resc1
-
- LDA FRIN,X             \ If slot is empty, we have done all the ships, so jump
- BEQ resc3              \ to resc3 to return from the subroutine
-
- BMI resc2              \ If this is the sun, move onto the next slot
-
-                        \ Otherwise we draw the ship on the scanner
-
- JSR GetShipData        \ Get the ship's data
-
- JSR SCAN               \ Show the ship on the scanner
-
-.resc2
-
- INX                    \ Increment X to point to the next slot
-
- CPX #NOSH              \ If we haven't reached the last slot yet, loop back
- BCC resc1
-
-.resc3
-
- RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
