@@ -1291,6 +1291,9 @@ ENDIF
  CPX #2                 \ If this is the station or planet, jump to 
  BCC MakeErrorBeep      \ MakeErrorBeep as you can't explode them
 
+ JSR PrintShipType      \ Erase the current ship type, so we can replace it
+                        \ below
+
  JSR RevertExplosion    \ Revert the explosion code so it implements the normal
                         \ explosion cloud
 
@@ -1317,6 +1320,8 @@ ENDIF
 
  JSR ModifyExplosion    \ Modify the explosion code so it doesn't update the
                         \ explosion
+
+ JSR PrintShipType      \ Print the new ship type, which will be "Cloud" 
 
  RTS                    \ Return from the subroutine
 

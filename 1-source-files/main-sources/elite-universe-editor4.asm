@@ -761,8 +761,8 @@ ENDIF
                         \ If we get here then this is a ship or the station
 
  LDA INWK+31            \ If bit 5 of byte #31 is set, then the ship is
- AND #%00100000         \ exploding, so return from the subroutine
- BNE HighlightShip-1
+ AND #%00100000         \ exploding, so jump to high5 to highlight the cloud
+ BNE high5
 
  LDA shpcol,X           \ Set A to the ship colour for this type, from the X-th
                         \ entry in the shpcol table
@@ -857,6 +857,24 @@ ENDIF
 
  JMP LL9                \ Redraw the planet or sun and return from the
                         \ subroutine using a tail call
+
+.high5
+
+ JSR high6              \ Repeat the following subroutine twice
+
+ LDY #5                 \ Wait for 5/50 of a second (0.1 seconds)
+ JSR DELAY
+
+.high6
+
+ JSR DrawExplosion      \ Call DrawExplosion to draw the existing cloud to
+                        \ remove it
+
+ LDY #5                 \ Wait for 5/50 of a second (0.1 seconds)
+ JSR DELAY
+
+ JMP DrawExplosion      \ Call DrawExplosion to draw the existing cloud to
+                        \ remove it
 
 \ ******************************************************************************
 \
@@ -1985,6 +2003,15 @@ ENDIF
  LDA #24
  JSR DOXC
 
+ LDA INWK+31            \ If bit 5 of byte #31 is clear, then the ship is not
+ AND #%00100000         \ exploding, so jump to eras1
+ BEQ ptypn
+
+ LDA #9                 \ Print extended token 9 ("CLOUD"), returning from the
+ JMP PrintToken         \ subroutine using a tail call
+
+.ptypn
+
  LDA TYPE               \ If this is not a missile, jump to ptyp0
  CMP #MSL
  BNE ptyp0
@@ -2794,6 +2821,12 @@ ENDIF
  ECHR 'P'
  ECHR 'E'
  ECHR '?'
+ EQUB VE
+
+ ECHR 'C'               \ Token 9:    "CLOUD"
+ ETWO 'L', 'O'
+ ECHR 'U'
+ ECHR 'D'
  EQUB VE
 
 \ ******************************************************************************
