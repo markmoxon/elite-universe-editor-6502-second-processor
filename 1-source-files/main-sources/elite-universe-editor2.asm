@@ -508,8 +508,8 @@ ENDIF
 
 .keys24
 
- CMP #keyC              \ 4 (toggle the ship's Cop status in bit 6 of INWK+36,
- BNE keys25             \ NEWB)
+ CMP #keyC              \ C (toggle the ship's docking status in bit 6 of
+ BNE keys25             \ INWK+36, NEWB)
  LDX #36
  LDA #%00010000
  JMP ToggleValue
@@ -1566,25 +1566,6 @@ ENDIF
 
  JMP TAS2               \ Call TAS2 to build XX15 from K3, returning from the
                         \ subroutine using a tail call
-
-\ ******************************************************************************
-\
-\       Name: dashboardBuff
-\       Type: Variable
-\   Category: Universe editor
-\    Summary: Buffer for changing the dashboard
-\
-\ ******************************************************************************
-
-IF _6502SP_VERSION
-
-.dashboardBuff
-
- EQUB 2                 \ The number of bytes to transmit with this command
-
- EQUB 2                 \ The number of bytes to receive with this command
-
-ENDIF
 
 \ ******************************************************************************
 \

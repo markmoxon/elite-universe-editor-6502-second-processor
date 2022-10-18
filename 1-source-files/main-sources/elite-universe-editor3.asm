@@ -421,16 +421,42 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: dirCommand
+\       Name: showingBulb
 \       Type: Variable
 \   Category: Universe editor
-\    Summary: The OS command string for changing the disc directory to E
+\    Summary: A status byte showing which bulbs are being shown on the dashboard
+\
+\ ------------------------------------------------------------------------------
+\
+\ The status byte is as follows:
+\
+\   * Bit 6 is set if the S bulb is showing
+\
+\   * Bit 7 is set if the E bulb is showing
 \
 \ ******************************************************************************
 
-.dirCommand
+.showingBulb
 
- EQUS "DIR E"
- EQUB 13
+ EQUB 0
+
+\ ******************************************************************************
+\
+\       Name: dashboardBuff
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: Buffer for changing the dashboard
+\
+\ ******************************************************************************
+
+IF _6502SP_VERSION
+
+.dashboardBuff
+
+ EQUB 2                 \ The number of bytes to transmit with this command
+
+ EQUB 2                 \ The number of bytes to receive with this command
+
+ENDIF
 
 .endUniverseEditor3

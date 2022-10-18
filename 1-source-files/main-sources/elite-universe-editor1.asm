@@ -207,27 +207,6 @@
 
 \ ******************************************************************************
 \
-\       Name: showingBulb
-\       Type: Variable
-\   Category: Universe editor
-\    Summary: A status byte showing which bulbs are being shown on the dashboard
-\
-\ ------------------------------------------------------------------------------
-\
-\ The status byute is as follows:
-\
-\   * Bit 6 is set if the S bulb is showing
-\
-\   * Bit 7 is set if the E bulb is showing
-\
-\ ******************************************************************************
-
-.showingBulb
-
- EQUB 0
-
-\ ******************************************************************************
-\
 \       Name: HideBulbs
 \       Type: Subroutine
 \   Category: Universe editor
@@ -286,5 +265,19 @@
 .bulb2
 
  RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: dirCommand
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: The OS command string for changing the disc directory to E
+\
+\ ******************************************************************************
+
+.dirCommand
+
+ EQUS "DIR E"
+ EQUB 13
 
 .endUniverseEditor1
