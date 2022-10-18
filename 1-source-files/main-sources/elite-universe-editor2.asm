@@ -1291,15 +1291,16 @@ ENDIF
  CPX #2                 \ If this is the station or planet, jump to 
  BCC MakeErrorBeep      \ MakeErrorBeep as you can't explode them
 
- JSR PrintShipType      \ Erase the current ship type, so we can replace it
-                        \ below
-
  JSR RevertExplosion    \ Revert the explosion code so it implements the normal
                         \ explosion cloud
 
  LDA INWK+31            \ If bit 5 of byte #31 is set, then the ship is already
  AND #%00100000         \ exploding, so jump to expl1 to move the explosion on
  BNE expl1              \ by one step
+
+ JSR PrintShipType      \ Erase the current ship type, so we can replace it
+                        \ below
+
 
  JSR MV5                \ Draw the current ship on the scanner to remove it
 
@@ -1314,14 +1315,14 @@ ENDIF
                         \ going (as only calling this once at the start of a new
                         \ explosion doesn't show a lot)
 
+ JSR PrintShipType      \ Print the new ship type, which will be "Cloud" 
+
 .expl1
 
  JSR DrawShip+6         \ Draw the explosion (but not on the scanner)
 
  JSR ModifyExplosion    \ Modify the explosion code so it doesn't update the
                         \ explosion
-
- JSR PrintShipType      \ Print the new ship type, which will be "Cloud" 
 
  RTS                    \ Return from the subroutine
 
