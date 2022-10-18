@@ -639,7 +639,7 @@ ENDIF
 \ LDA #&A5               \ Re-enable DOEXP
 \ STA DOEXP+9
 
- JSR DrawShip+3         \ Draw the ship (but not on the scanner)
+ JSR DrawShip+6         \ Draw the ship (but not on the scanner)
 
 \ LDA #&60               \ Disable DOEXP again
 \ STA DOEXP+9
@@ -674,7 +674,7 @@ ENDIF
 \
 \ Other entry points:
 \
-\   DrawShip+3          Do not draw the ship on the scanner
+\   DrawShip+6          Do not draw the ship on the scanner
 \
 \ ******************************************************************************
 
@@ -1272,7 +1272,7 @@ ENDIF
  EOR #%01000000         \ firing its laser at us (or to switch it off)
  STA INWK+31
 
- JMP DrawShip+3         \ Draw the ship (but not on the scanner), returning from
+ JMP DrawShip+6         \ Draw the ship (but not on the scanner), returning from
                         \ the subroutine using a tail call
 
 \ ******************************************************************************
@@ -1311,13 +1311,13 @@ ENDIF
 
  JSR STORE              \ Store the updated scanner byte
 
- JSR DrawShip+3         \ Draw the explosion (but not on the scanner) to get it
+ JSR DrawShip+6         \ Draw the explosion (but not on the scanner) to get it
                         \ going (as only calling this once at the start of a new
                         \ explosion doesn't show a lot)
 
 .expl1
 
- JSR DrawShip+3         \ Draw the explosion (but not on the scanner)
+ JSR DrawShip+6         \ Draw the explosion (but not on the scanner)
 
  LDA #&60               \ Disable DOEXP again
  STA DOEXP+9
