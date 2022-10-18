@@ -134,7 +134,7 @@
  LDX currentSlot        \ Get the ship data for the current ship, so we know the
  JSR GetShipData        \ current ship data is always in INWK for the main loop
 
- JSR UpdateDashboard    \ Update the dashboard
+ JSR UpdateDashboard    \ Update the dashboard to show the new ship's values
 
  LDA repeatingKey       \ Fetch the type of key press (0 = non-repeatable,
                         \ 1 = repeatable)
@@ -601,7 +601,7 @@ ENDIF
  BNE P%+5
  JMP FireLaser
 
- CMP #keyD              \ E (explode ship)
+ CMP #keyD              \ D (explode ship)
  BNE P%+5
  JMP ExplodeShip
 
@@ -778,8 +778,7 @@ ENDIF
  JSR SPBLB              \ Call SPBLB to redraw the space station bulb, which
                         \ will erase it from the dashboard
 
- JSR SetSBulb           \ Show or hide the space station bulb according to the
-                        \ setting of bit 4 of INWK+36 (NEWB)
+ JSR ShowBulbs          \ Show the bulbs on the dashboard
 
  JSR ZINF               \ Reset the sun's data block
 
@@ -827,14 +826,13 @@ ENDIF
                         \ universe, skipping the drawing of the space station
                         \ bulb
 
- JSR SetSBulb           \ Show or hide the space station bulb according to the
-                        \ setting of bit 4 of INWK+36 (NEWB)
-
  JSR InitialiseShip     \ Initialise the station so it's in front of us
 
  JSR STORE              \ Store the updated station
 
 .swap4
+
+ JSR ShowBulbs          \ Show the bulbs on the dashboard
 
  JMP DrawShip           \ Draw the ship and return from the subroutine using a
                         \ tail call

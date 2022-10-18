@@ -103,8 +103,7 @@ ENDIF
 
  BPL mods1              \ Loop back for the next byte of the universe filename
 
- STZ showingS           \ Zero the flags that keep track of the bulb indicators
- STZ showingE
+ STZ showingBulb        \ Zero the flags that keep track of the bulb indicators
 
  RTS                    \ Return from the subroutine
 
@@ -119,13 +118,7 @@ ENDIF
 
 .RevertMods
 
- LDA showingS           \ If we are showing the station buld, call SPBLB to
- BEQ P%+5               \ remove it
- JSR SPBLB
-
- LDA showingE           \ If we are showing the E.C.M. bulb, call ECBLB to
- BEQ P%+5               \ remove it
- JSR ECBLB
+ JSR HideBulbs          \ Hide both dashboard bulbs
 
 IF _6502SP_VERSION
 
@@ -1332,6 +1325,11 @@ ENDIF
 
 .load1
 
+ LDX #0                 \ Switch to slot 0
+ STX currentSlot
+
+ JSR HideBulbs          \ Hide both dashboard bulbs
+
  SEC                    \ Set the C flag
 
  RTS                    \ Return from the subroutine
@@ -1840,73 +1838,11 @@ ENDIF
  LDA #GREEN2            \ Reverse the modification to the msblob routine so it
  STA SAL8+1             \ shows missiles in green once again
 
- JSR SetEBulb           \ Show or hide the E.C.M. bulb according to the setting
-                        \ of bit 0 of INWK+32
-
- JSR SetSBulb           \ Show or hide the space station bulb according to the
-                        \ setting of bit 4 of INWK+36 (NEWB)
+ JSR ShowBulbs          \ Show the bulbs on the dashboard
 
 .upda2
 
  JSR UpdateCompass      \ Update the compass
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: SetSBulb
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Show or hide the S bulb
-\
-\ ******************************************************************************
-
-.SetSBulb
-
- LDA INWK+36            \ If the space station bulb setting in bit 4 of INWK+36
- AND #%00010000         \ (NEWB) matches the display bit in showingS, then the
- EOR showingS           \ bulb is already correct, so jump to sets1 to return
- BEQ sets1              \ from the subroutine
-
- JSR SPBLB              \ Flip the space station bulb on-screen
-
- LDA #%00010000         \ Flip bit 4 of the showingS flag
- EOR showingS
- STA showingS
-
-.sets1
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: SetEBulb
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Show or hide the E bulb
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   sete1               Contains an RTS
-\
-\ ******************************************************************************
-
-.SetEBulb
-
- LDA INWK+32            \ If the E.C.M. bulb setting in bit 0 of INWK+32 matches
- AND #%00000001         \ the display bit in showingE, then the bulb is already
- EOR showingE           \ correct, so jump to sete1 to return from the
- BEQ sete1              \ subroutine
-
- JSR ECBLB              \ Flip the E.C.M. bulb on-screen
-
- LDA #%00000001         \ Flip bit 0 of the showingE flag
- EOR showingE
- STA showingE
-
-.sete1
 
  RTS                    \ Return from the subroutine
 
@@ -2036,9 +1972,12 @@ ENDIF
  LSR A                  \ Set the C flag to bit 3 of NEWB (pirate)
  LSR A
 
- BCC sete1              \ If bit 3 is clear, jump to sete1 to return from the
-                        \ subroutine without printing anything (as sete1
-                        \ contains an RTS)
+ BCS ptyp3              \ If bit 3 is set, jump to ptyp3 to skip the following
+
+ RTS                    \ Bit 3 is clear, so return from the subroutine without
+                        \ printing anything
+
+.ptyp3
 
  LDA #4                 \ Print extended token 4 ("PIRATE"), returning from the
  JMP PrintToken         \ subroutine using a tail call

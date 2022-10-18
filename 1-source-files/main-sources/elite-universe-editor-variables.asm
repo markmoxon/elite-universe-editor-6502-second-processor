@@ -30,9 +30,6 @@
 shiftCtrl = ECMA        \ ECMA is only used when the E.C.M. is active, so we can
                         \ reuse it
 
-showingS = QQ22         \ QQ22 is only used when hyperspacing, so we can
-showingE = QQ22+1       \ reuse both bytes
-
 IF _6502SP_VERSION
 
 currentSlot = XSAV2     \ XSAV2 and YSAV2 are unused in the original game, so we

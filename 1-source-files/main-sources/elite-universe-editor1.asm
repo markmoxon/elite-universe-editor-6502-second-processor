@@ -261,4 +261,86 @@
  JMP DrawShip+3         \ Draw the ship (but not on the scanner) and return from
                         \ the subroutine using a tail call
 
+\ ******************************************************************************
+\
+\       Name: showingBulb
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: A status byte showing which bulbs are being shown on the dashboard
+\
+\ ------------------------------------------------------------------------------
+\
+\ The status byute is as follows:
+\
+\   * Bit 6 is set if the S bulb is showing
+\
+\   * Bit 7 is set if the E bulb is showing
+\
+\ ******************************************************************************
+
+.showingBulb
+
+ EQUB 0
+
+\ ******************************************************************************
+\
+\       Name: HideBulbs
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Hide both dashboard bulbs
+\
+\ ******************************************************************************
+
+.HideBulbs
+
+ BIT showingBulb        \ If bit 6 of showingBulb is set, then we are showing
+ BVC P%+5               \ the station bulb, so call SPBLB to remove it
+ JSR SPBLB
+
+ BIT showingBulb        \ If bit 7 of showingBulb is set, then we are showing
+ BPL P%+5               \ the E.C.M. bulb, so call ECBLB to remove it
+ JSR ECBLB
+
+ STZ showingBulb        \ Zero the bulb status byte
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: ShowBulbs
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Show both dashboard bulbs according to the ship's INWK settings
+\
+\ ******************************************************************************
+
+.ShowBulbs
+
+ JSR HideBulbs          \ Hide both bulbs
+
+ LDA INWK+36            \ Fetch the "docking" setting from bit 4 of INWK+36
+ AND #%00010000         \ (NEWB)
+ BEQ bulb1
+
+ LDA #%01000000         \ Set bit 6 of showingBulb
+ STA showingBulb
+
+ JSR SPBLB              \ Show the S bulb
+
+.bulb1
+
+ LDA INWK+32            \ Fetch the E.C.M setting from bit 1 of INWK+32
+ AND #%00000001
+ BEQ bulb2
+
+ LDA showingBulb        \ Set bit 7 of showingBulb
+ ORA #%10000000
+ STA showingBulb
+
+ JSR ECBLB              \ Show the E bulb
+
+.bulb2
+
+ RTS                    \ Return from the subroutine
+
 .endUniverseEditor1
