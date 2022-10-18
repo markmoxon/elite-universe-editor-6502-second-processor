@@ -258,8 +258,7 @@
  JSR STORE              \ Call STORE to copy the ship data block at INWK back to
                         \ the K% workspace at INF
 
- JMP DrawShip+3         \ Draw the ship (not on the scanner) and return from the
-                        \ subroutine using a tail call
-
+ JMP DrawShip+3         \ Draw the ship (but not on the scanner) and return from
+                        \ the subroutine using a tail call
 
 .endUniverseEditor1

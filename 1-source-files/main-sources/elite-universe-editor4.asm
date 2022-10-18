@@ -73,7 +73,7 @@ IF _6502SP_VERSION
  JSR SwitchDashboard
 
  LDA #&24               \ Disable the TRB XX1+31 instruction in part 9 of LL9
- STA LL74+20            \ that disables the laser once it has fired, so that
+ STA LL74+12            \ that disables the laser once it has fired, so that
                         \ lasers remain on-screen while in the editor
 
 ELIF _MASTER_VERSION
@@ -130,7 +130,7 @@ ENDIF
 IF _6502SP_VERSION
 
  LDA #&14               \ Re-enable the TRB XX1+31 instruction in part 9 of LL9
- STA LL74+20
+ STA LL74+12
 
 ELIF _MASTER_VERSION
 
