@@ -988,6 +988,10 @@ ENDIF
 
 .init4
 
+ LDA INWK+32            \ This is a station, so disable AI by clearing bit 7 of
+ AND #%01111111         \ INWK+32
+ STA INWK+32
+
  LDA #5                 \ Set A = 5 to store as the high-byte distance for the
                         \ new station, so it's a little way in front of us
 
