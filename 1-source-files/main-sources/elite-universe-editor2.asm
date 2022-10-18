@@ -624,33 +624,15 @@ ENDIF
 .draw1
 
  LDA FRIN,X             \ If the slot is empty, return from the subroutine as
- BEQ draw4              \ we are done
+ BEQ draw3              \ we are done
 
  PHX                    \ Store the counter on the stack
 
  JSR GetShipData        \ Fetch the details for the ship in slot X
 
- LDA INWK+31            \ If bit 5 of byte #31 is clear, then the ship is not
- AND #%00100000         \ exploding, so jump to draw2 to skip the following
- BEQ draw2
-
-                        \ The ship is exploding
-
-\ LDA #&A5               \ Re-enable DOEXP
-\ STA DOEXP+9
-
- JSR DrawShip+6         \ Draw the ship (but not on the scanner)
-
-\ LDA #&60               \ Disable DOEXP again
-\ STA DOEXP+9
-
- JMP draw3              \ Jump to draw3 to move on to the next ship
-
-.draw2
-
  JSR DrawShip           \ Draw the ship
 
-.draw3
+.draw2
 
  PLX                    \ Retrieve the counter from the stack
 
@@ -659,7 +641,27 @@ ENDIF
  CPX #NOSH              \ Loop back until we have drawn all the ships
  BCC draw1
 
-.draw4
+.draw3
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: DrawExplosion
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Draw an explosion
+\
+\ ------------------------------------------------------------------------------
+
+.DrawExplosion
+
+ LDA INWK+31            \ If bit 3 of the ship's byte #31 is clear, then nothing
+ AND #%00001000         \ is being drawn on-screen for this ship anyway, so
+ BEQ P%+5               \ skip the following
+
+ JSR PTCLS              \ Call PTCLS to redraw the cloud, returning from the
+                        \ subroutine using a tail call
 
  RTS                    \ Return from the subroutine
 
@@ -709,20 +711,14 @@ ENDIF
 .EraseShip
 
  LDA INWK+31            \ If bit 5 of byte #31 is clear, then the ship is not
- AND #%00100000         \ exploding, so jump to eras2
- BEQ eras2
+ AND #%00100000         \ exploding, so jump to eras1
+ BEQ eras1
 
- LDA INWK+31            \ If bit 3 of byte #31 is clear, then the explosion is
- AND #%00001000         \ not already being shown on-screen, so jump to eras2
- BEQ eras1              \ to return from the subroutine
-
- JSR LL14               \ Call LL14 to draw the existing cloud to remove it
+ JMP DrawExplosion      \ Call DrawExplosion to draw the existing cloud to
+                        \ remove it, returning from the subroutine using a tail
+                        \ call
 
 .eras1
-
- RTS                    \ Return from the subroutine
-
-.eras2
 
  JSR MV5                \ Draw the current ship on the scanner to remove it
 
@@ -1295,8 +1291,8 @@ ENDIF
  CPX #2                 \ If this is the station or planet, jump to 
  BCC MakeErrorBeep      \ MakeErrorBeep as you can't explode them
 
- LDA #&A5               \ Re-enable DOEXP
- STA DOEXP+9
+ JSR RevertExplosion    \ Revert the explosion code so it implements the normal
+                        \ explosion cloud
 
  LDA INWK+31            \ If bit 5 of byte #31 is set, then the ship is already
  AND #%00100000         \ exploding, so jump to expl1 to move the explosion on
@@ -1319,8 +1315,8 @@ ENDIF
 
  JSR DrawShip+6         \ Draw the explosion (but not on the scanner)
 
- LDA #&60               \ Disable DOEXP again
- STA DOEXP+9
+ JSR ModifyExplosion    \ Modify the explosion code so it doesn't update the
+                        \ explosion
 
  RTS                    \ Return from the subroutine
 

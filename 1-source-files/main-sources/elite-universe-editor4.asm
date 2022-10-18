@@ -89,8 +89,7 @@ ENDIF
  LDA #%11100111         \ Disable the clearing of bit 7 (lasers firing) in
  STA WS1-3              \ WPSHPS
 
- LDA #&60               \ Disable DOEXP so that by default it draws an explosion
- STA DOEXP+9            \ cloud but doesn't recalculate it
+ JSR ModifyExplosion    \ Modify the explosion code
 
  LDX #8                 \ The size of the default universe filename
 
@@ -104,6 +103,59 @@ ENDIF
  BPL mods1              \ Loop back for the next byte of the universe filename
 
  STZ showingBulb        \ Zero the flags that keep track of the bulb indicators
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: ModifyExplosion
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Apply mods for explosions
+\
+\ ******************************************************************************
+
+.ModifyExplosion
+
+ LDA #&4C               \ Modify DOEXP so that it jumps to DrawExplosion instead
+ STA DOEXP              \ to draw the cloud but without progressing it
+ LDA #LO(DrawExplosion)
+ STA DOEXP+1
+ LDA #Hi(DrawExplosion)
+ STA DOEXP+2
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: RevertMods
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Reverse mods for explosions
+\
+\ ******************************************************************************
+
+.RevertExplosion
+
+IF _6502SP_VERSION
+
+ LDA #&A5               \ Revert DOEXP to its default behaviour of drawing the
+ STA DOEXP              \ cloud
+ LDA #&64
+ STA DOEXP+1
+ LDA #&29
+ STA DOEXP+2
+
+ELIF _MASTER_VERSION
+
+ LDA #&A5               \ Revert DOEXP to its default behaviour of drawing the
+ STA DOEXP              \ cloud
+ LDA #&BB
+ STA DOEXP+1
+ LDA #&29
+ STA DOEXP+2
+
+ENDIF
 
  RTS                    \ Return from the subroutine
 
@@ -135,8 +187,7 @@ ENDIF
  LDA #%10100111         \ Re-enable the clearing of bit 7 (lasers firing) in
  STA WS1-3              \ WPSHPS
 
- LDA #&A5               \ Re-enable DOEXP
- STA DOEXP+9
+ JSR RevertExplosion    \ Revert the explosion code
 
  JSR DFAULT             \ Call DFAULT to reset the current commander data
                         \ block to the last saved commander
