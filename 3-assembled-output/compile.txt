@@ -16807,11 +16807,11 @@ Saving file '3-assembled-output/ELTH.bin'
 .ExplodeShip
      7299   E0 02      CPX #&02
      729B   90 3C      BCC &72D9
-     729D   20 37 F6   JSR &F637
-     72A0   20 33 F1   JSR &F133
-     72A3   A5 64      LDA &64
-     72A5   29 20      AND #&20
-     72A7   D0 11      BNE &72BA
+     729D   20 33 F1   JSR &F133
+     72A0   A5 64      LDA &64
+     72A2   29 20      AND #&20
+     72A4   D0 17      BNE &72BD
+     72A6   20 37 F6   JSR &F637
      72A9   20 1E 6A   JSR &6A1E
      72AC   A5 64      LDA &64
      72AE   09 80      ORA #&80
@@ -16819,10 +16819,10 @@ Saving file '3-assembled-output/ELTH.bin'
      72B2   85 64      STA &64
      72B4   20 4A 6E   JSR &6E4A
      72B7   20 DA 70   JSR &70DA
+     72BA   20 37 F6   JSR &F637
 .expl1
-     72BA   20 DA 70   JSR &70DA
-     72BD   20 23 F1   JSR &F123
-     72C0   20 37 F6   JSR &F637
+     72BD   20 DA 70   JSR &70DA
+     72C0   20 23 F1   JSR &F123
      72C3   60         RTS
 .CreateShip
      72C4   A5 8B      LDA &8B
