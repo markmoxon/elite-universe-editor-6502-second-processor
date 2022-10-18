@@ -644,7 +644,7 @@ ENDIF
 \ LDA #&60               \ Disable DOEXP again
 \ STA DOEXP+9
 
- BNE draw3
+ JMP draw3              \ Jump to draw3 to move on to the next ship
 
 .draw2
 
@@ -681,6 +681,8 @@ ENDIF
 .DrawShip
 
  JSR MV5                \ Draw the ship on the scanner
+
+ JSR STORE              \ Store the updated scanner byte
 
  JSR PLUT               \ Call PLUT to update the geometric axes in INWK to
                         \ match the view (front, rear, left, right)
@@ -1302,6 +1304,8 @@ ENDIF
  ORA #%10000000         \ the ship is exploding
  AND #%11101111
  STA INWK+31
+
+ JSR STORE              \ Store the updated scanner byte
 
  JSR DrawShip+3         \ Draw the explosion (but not on the scanner) to get it
                         \ going (as only calling this once at the start of a new
