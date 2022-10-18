@@ -1247,9 +1247,9 @@ ENDIF
  LDY #NOSH+1
  JSR CopyBlock
 
- LDA #HI(K%+&2E4+NOSH+1)  \ Copy NTY + 1 bytes from K%+&2E4+NOSH+1 to MANY
+ LDA #HI(K%+&2E4+21)    \ Copy NTY + 1 bytes from K%+&2E4+21 to MANY
  STA P+1
- LDA #LO(K%+&2E4+NOSH+1)
+ LDA #LO(K%+&2E4+21)    
  STA P
  LDA #HI(MANY)
  STA Q+1
@@ -1258,7 +1258,7 @@ ENDIF
  LDY #NTY+1
  JSR CopyBlock
 
- LDA K%+&2E4+NOSH+1+NTY+1 \ Copy 1 byte from K%+&2E4+NOSH+1+NTY+1 to JUNK
+ LDA K%+&2E4+21+35      \ Copy 1 byte from K%+&2E4+21+35 to JUNK
  STA JUNK
 
  LDA K%-1               \ Extract the file format number
