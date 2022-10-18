@@ -363,4 +363,74 @@ ENDIF
 
  RTS                    \ Return from the subroutine
 
+\ ******************************************************************************
+\
+\       Name: StoreName
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Store the name of the current universe file
+\
+\ ******************************************************************************
+
+.StoreName
+
+ LDX #7                 \ The universe's name can contain a maximum of 7
+                        \ characters, and is terminated by a carriage return,
+                        \ so set up a counter in X to copy 8 characters
+
+.name1
+
+ LDA INWK+5,X           \ Copy the X-th byte of INWK+5 to the X-th byte of NA%
+ STA NAME,X
+
+ DEX                    \ Decrement the loop counter
+
+ BPL name1              \ Loop back until we have copied all 8 bytes
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: CopyBlock
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Copy a small block of memory
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   Y                   Number of bytes to copy - 1
+\
+\   P(1 0)              From address
+\
+\   Q(1 0)              To address
+\
+\ ******************************************************************************
+
+.CopyBlock
+
+ LDA (P),Y              \ Copy byte X from P(1 0) to Q(1 0)
+ STA (Q),Y
+
+ DEY                    \ Decrement the counter
+
+ BPL CopyBlock          \ Loop back until all X bytes are copied
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: dirCommand
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: The OS command string for changing the disc directory to E
+\
+\ ******************************************************************************
+
+.dirCommand
+
+ EQUS "DIR E"
+ EQUB 13
+
 .endUniverseEditor3

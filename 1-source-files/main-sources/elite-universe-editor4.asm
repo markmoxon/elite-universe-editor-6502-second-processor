@@ -813,20 +813,6 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: dirCommand
-\       Type: Variable
-\   Category: Universe editor
-\    Summary: The OS command string for changing the disc directory to E
-\
-\ ******************************************************************************
-
-.dirCommand
-
- EQUS "DIR E"
- EQUB 13
-
-\ ******************************************************************************
-\
 \       Name: saveCommand
 \       Type: Variable
 \   Category: Universe editor
