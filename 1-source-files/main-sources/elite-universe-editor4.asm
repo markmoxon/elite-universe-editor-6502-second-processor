@@ -217,6 +217,9 @@ ENDIF
 
 .ConfirmChoice
 
+ LDA #10                \ Modify the PrintPrompt routine to print at column 10
+ STA promptColumn+1
+
  LDA #5                 \ Print extended token 5 ("ARE YOU SURE?") as a prompt
  JSR PrintPrompt
 
@@ -226,6 +229,9 @@ ENDIF
 
  LDA #5                 \ Print extended token 5 ("ARE YOU SURE?") as a prompt
  JSR PrintPrompt        \ to remove it
+
+ LDA #13                \ Restore the PrintPrompt routine to print at column 13
+ STA promptColumn+1
 
  PLP                    \ Restore the response from the stack
 
@@ -358,7 +364,9 @@ ENDIF
  LDA #%10000000         \ Set bit 7 of QQ17 to switch to Sentence Case
  STX QQ17
 
- LDA #10                \ Move the text cursor to column 10
+.promptColumn
+
+ LDA #13                \ Move the text cursor to column 13
  JSR DOXC
 
  LDA #22                \ Move the text cursor to row 22
