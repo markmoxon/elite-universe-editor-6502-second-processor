@@ -280,4 +280,33 @@
  EQUS "DIR E"
  EQUB 13
 
+\ ******************************************************************************
+\
+\       Name: ResetShip
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Reset the position of the current ship
+\
+\ ******************************************************************************
+
+.ResetShip
+
+ JSR MV5                \ Draw the current ship on the scanner to remove it
+
+ LDA #26                \ Modify ZINF so it only resets the coordinates and
+ STA ZINF+1             \ orientation vectors (and keeps other ship settings)
+
+ JSR ZINF               \ Reset the coordinates and orientation vectors
+
+ LDA #NI%-1             \ Undo the modification
+ STA ZINF+1
+
+ JSR InitialiseShip     \ Initialise the ship coordinates
+
+ JSR STORE              \ Call STORE to copy the ship data block at INWK back to
+                        \ the K% workspace at INF
+
+ JMP DrawShip           \ Draw the ship and return from the subroutine using a
+                        \ tail call
+
 .endUniverseEditor1
