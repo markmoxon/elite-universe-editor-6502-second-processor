@@ -630,9 +630,19 @@ ENDIF
  BPL P%+5               \ return from the subroutine using a tail call, as they
  JMP MakeErrorBeep      \ don't appear on the scanner
 
- LDX #10                \ Move the ship on the scanner up by up to 10 steps
+ LDA INWK+31            \ If bit 5 of byte #31 is clear, then the ship is not
+ AND #%00100000         \ exploding, so jump to draw2 to skip the following
+ BEQ hsca1
+
+ LDA INWK+31            \ Set bit 4 of INWK+31 so the explosion is shown on the
+ ORA #%00010000         \ scanner
+ STA INWK+31
 
 .hsca1
+
+ LDX #10                \ Move the ship on the scanner up by up to 10 steps
+
+.hsca2
 
  PHX                    \ Store the loop counter in X on the stack
 
@@ -653,11 +663,11 @@ ENDIF
  PLX                    \ Retrieve the loop counter in X and decrement it
  DEX
 
- BPL hsca1              \ Loop back until we have moved the ship X times
+ BPL hsca2              \ Loop back until we have moved the ship X times
 
  LDX #10                \ Move the ship on the scanner up by up to 10 steps
 
-.hsca2
+.hsca3
 
  PHX                    \ Store the loop counter in X on the stack
 
@@ -678,7 +688,7 @@ ENDIF
  PLX                    \ Retrieve the loop counter in X and decrement it
  DEX
 
- BPL hsca2              \ Loop back until we have moved the ship X times
+ BPL hsca3              \ Loop back until we have moved the ship X times
 
  RTS                    \ Return from the subroutine
 
