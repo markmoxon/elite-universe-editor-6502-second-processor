@@ -612,22 +612,58 @@ ENDIF
 
 .keys29
 
+                        \ Fall through into the routine for showing the charts
+
+\ ******************************************************************************
+\
+\       Name: DrawCharts
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Check for the chart keys and draw the charts where necessary
+\
+\ ******************************************************************************
+
+.DrawCharts
+
+ LDA QQ14               \ Store the current fuel level on the stack
+ PHA
+
+ LDA #70                \ Set the fuel level to 7 light years, for the chart
+ STA QQ14               \ display
+
  JSR TT17               \ Scan the keyboard for the cursor keys or joystick,
                         \ returning the cursor's delta values in X and Y and
                         \ the key pressed in A
+
+.ForceChart
 
  JSR TT102+7            \ Call the modified TT102 to process the key pressed
                         \ in A (skipping the check at the start for the status
                         \ key)
 
+IF _6502SP_VERSION
+
+ LDA KL                 \ If "H" was not pressed, jump to keys31 to skip the
+ CMP #keyH              \ following
+ BNE keys31
+
+ELIF _MASTER_VERSION
+
  LDA KL                 \ If "H" was not pressed, jump to keys31 to skip the
  CMP #'H'               \ following
  BNE keys31
+
+ENDIF
 
  JSR TT111              \ Set the seeds in QQ15 to the nearest system to the
                         \ cross-hairs
 
  JSR jmp                \ Set the current system to the selected system
+
+ LDA QQ0                \ Copy the selected system to the last saved commander
+ STA NA%+10             \ file
+ LDA QQ1
+ STA NA%+11
 
  LDX #5                 \ We now want to copy the seeds for the selected system
                         \ in QQ15 into QQ2, where we store the seeds for the
@@ -647,6 +683,27 @@ ENDIF
  JSR TT114              \ Redisplay the chart
 
 .keys31
+
+ PLA                    \ Restore the current fuel level from the stack
+ STA QQ14
+
+IF _6502SP_VERSION
+
+ LDA KL                 \ If "G" was not pressed, jump to keys32 to skip the
+ CMP #keyG              \ following
+ BNE keys32
+
+ELIF _MASTER_VERSION
+
+ LDA KL                 \ If "G" was not pressed, jump to keys32 to skip the
+ CMP #'G'               \ following
+ BNE keys32
+
+ENDIF
+
+ JMP ChangeSeeds        \ "G" was pressed, so jump to the seeds screen
+
+.keys32
 
  RTS                    \ Return from the subroutine
 
@@ -1549,73 +1606,5 @@ ENDIF
 
  JMP TAS2               \ Call TAS2 to build XX15 from K3, returning from the
                         \ subroutine using a tail call
-
-\ ******************************************************************************
-\
-\       Name: SwitchDashboard
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Change the dashboard
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   A                   The dashboard to display:
-\
-\                         * 250 = the Universe Editor dashboard
-\
-\                         * 251 = the main game dashboard
-\
-\ ******************************************************************************
-
-IF _6502SP_VERSION
-
-.SwitchDashboard
-
- LDX #LO(dashboardBuff) \ Set (Y X) to point to the dashboardBuff parameter
- LDY #HI(dashboardBuff) \ block
-
- JMP OSWORD             \ Send an OSWORD command to the I/O processor to
-                        \ draw the dashboard, returning from the subroutine
-                        \ using a tail call
-
-ENDIF
-
-\ ******************************************************************************
-\
-\       Name: GETYN
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Wait until either "Y" or "N" is pressed
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   C flag              Set if "Y" was pressed, clear if "N" was pressed
-\
-\ ******************************************************************************
-
-IF _6502SP_VERSION
-
-.GETYN
-
- JSR t                  \ Scan the keyboard until a key is pressed, returning
-                        \ the ASCII code in A and X
-
- CMP #'y'               \ If "Y" was pressed, return from the subroutine with
- BEQ gety1              \ the C flag set (as the CMP sets the C flag)
-
- CMP #'n'               \ If "N" was not pressed, loop back to keep scanning
- BNE GETYN              \ for key presses
-
- CLC                    \ Clear the C flag
-
-.gety1
-
- RTS                    \ Return from the subroutine
-
-ENDIF
 
 .endUniverseEditor2

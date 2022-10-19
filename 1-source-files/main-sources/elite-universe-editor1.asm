@@ -469,8 +469,10 @@ ENDIF
  BEQ seed2              \ If no number was entered, skip the following to leave
                         \ this seed alone
 
- LDY V
- STA QQ21,Y             \ Store the new seed
+ LDY V                  \ Store the new seed in the current galaxy seeds
+ STA QQ21,Y
+
+ STA NA%+12,Y          \ Store the new seed in the last saved commander file
 
 .seed2
 
@@ -480,21 +482,46 @@ ENDIF
  CPY #6
  BNE seed1
 
- LDA #&C                \ Disable the JSR TT110 in zZ, 
+IF _6502SP_VERSION
+
+ LDA #&2C               \ Disable the JSR TT110 in zZ
+ STA zZ+8
+
+ELIF _MASTER_VERSION
+
+ LDA #&2C               \ Disable the JSR TT110 in zZ
  STA zZ+6
+
+ENDIF
 
  STA jmp-3              \ Disable the JSR MESS in zZ
 
  JSR zZ                 \ Call the modified zZ to change galaxy
 
+IF _6502SP_VERSION
+
+ LDA #&20               \ Re-enable the JSR TT110 in zZ
+ STA zZ+8
+
+ELIF _MASTER_VERSION
+
  LDA #&20               \ Re-enable the JSR TT110 in zZ
  STA zZ+6
 
+ENDIF
+
  STA jmp-3              \ Re-enable the JSR MESS in zZ
 
- LDX #0                 \ Draw the front view, returning from the subroutine
- STX VIEW               \ using a tail call
- JMP SetSpaceView
+ LDA QQ14               \ Store the current fuel level on the stack
+ PHA
+
+ LDA #70                \ Set the fuel level to 7 light years, for the chart
+ STA QQ14               \ display
+
+ STZ KL                 \ Flush the key logger
+
+ LDA #f4                \ Jump to ForceChart, setting the key that's "pressed"
+ JMP ForceChart         \ to red key f4 (so we show the Long-range Chart)
 
 \ ******************************************************************************
 \
@@ -561,5 +588,73 @@ ENDIF
 
  JMP LL9                \ Draw the existing ship to erase it and mark it as gone
                         \ and return from the subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: SwitchDashboard
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Change the dashboard
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The dashboard to display:
+\
+\                         * 250 = the Universe Editor dashboard
+\
+\                         * 251 = the main game dashboard
+\
+\ ******************************************************************************
+
+IF _6502SP_VERSION
+
+.SwitchDashboard
+
+ LDX #LO(dashboardBuff) \ Set (Y X) to point to the dashboardBuff parameter
+ LDY #HI(dashboardBuff) \ block
+
+ JMP OSWORD             \ Send an OSWORD command to the I/O processor to
+                        \ draw the dashboard, returning from the subroutine
+                        \ using a tail call
+
+ENDIF
+
+\ ******************************************************************************
+\
+\       Name: GETYN
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Wait until either "Y" or "N" is pressed
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   C flag              Set if "Y" was pressed, clear if "N" was pressed
+\
+\ ******************************************************************************
+
+IF _6502SP_VERSION
+
+.GETYN
+
+ JSR t                  \ Scan the keyboard until a key is pressed, returning
+                        \ the ASCII code in A and X
+
+ CMP #'y'               \ If "Y" was pressed, return from the subroutine with
+ BEQ gety1              \ the C flag set (as the CMP sets the C flag)
+
+ CMP #'n'               \ If "N" was not pressed, loop back to keep scanning
+ BNE GETYN              \ for key presses
+
+ CLC                    \ Clear the C flag
+
+.gety1
+
+ RTS                    \ Return from the subroutine
+
+ENDIF
 
 .endUniverseEditor1
