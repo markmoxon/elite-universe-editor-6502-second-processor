@@ -436,4 +436,130 @@ ENDIF
 
  RTS                    \ Return from the subroutine
 
+\ ******************************************************************************
+\
+\       Name: ChangeSeeds
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Edit galaxy seeds
+\
+\ ******************************************************************************
+
+.ChangeSeeds
+
+ LDA #4                 \ Clear the top part of the screen, draw a white border,
+ JSR TRADEMODE          \ and set up a printable trading screen with a view type
+                        \ in QQ11 of 4 (Sell Cargo screen)
+
+ LDY #&FF               \ Set maximum number for gnum to 255
+ STY QQ25
+
+ STZ V                  \ Set seed counter in V to 0
+
+.seed1
+
+ LDY V
+ LDX QQ21,Y             \ Get seed Y
+
+ CLC                    \ Print the 8-bit number in X to 3 digits, without a
+ JSR pr2                \ decimal point
+
+ JSR gnum               \ Call gnum to get a number from the keyboard
+
+ BEQ seed2              \ If no number was entered, skip the following to leave
+                        \ this seed alone
+
+ LDY V
+ STA QQ21,Y             \ Store the new seed
+
+.seed2
+
+ INC V                  \ Next seed
+
+ LDY V                  \ Loop back until all seeds are edited
+ CPY #6
+ BNE seed1
+
+ LDA #&C                \ Disable the JSR TT110 in zZ, 
+ STA zZ+6
+
+ STA jmp-3              \ Disable the JSR MESS in zZ
+
+ JSR zZ                 \ Call the modified zZ to change galaxy
+
+ LDA #&20               \ Re-enable the JSR TT110 in zZ
+ STA zZ+6
+
+ STA jmp-3              \ Re-enable the JSR MESS in zZ
+
+ LDX #0                 \ Draw the front view, returning from the subroutine
+ STX VIEW               \ using a tail call
+ JMP SetSpaceView
+
+\ ******************************************************************************
+\
+\       Name: DrawExplosion
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Draw an explosion
+\
+\ ******************************************************************************
+
+.DrawExplosion
+
+ LDA INWK+31            \ If bit 3 of the ship's byte #31 is clear, then nothing
+ AND #%00001000         \ is being drawn on-screen for this ship anyway, so
+ BEQ P%+5               \ skip the following
+
+ JSR PTCLS              \ Call PTCLS to redraw the cloud, returning from the
+                        \ subroutine using a tail call
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: EraseShip
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Erase the current ship from the screen
+\
+\ ******************************************************************************
+
+.EraseShip
+
+ LDA INWK+31            \ If bit 5 of byte #31 is clear, then the ship is not
+ AND #%00100000         \ exploding, so jump to eras1
+ BEQ eras1
+
+ JMP DrawExplosion      \ Call DrawExplosion to draw the existing cloud to
+                        \ remove it, returning from the subroutine using a tail
+                        \ call
+
+.eras1
+
+ JSR MV5                \ Draw the current ship on the scanner to remove it
+
+ LDX TYPE               \ Get the current ship type
+
+ LDA shpcol,X           \ Set A to the ship colour for this type, from the X-th
+                        \ entry in the shpcol table
+
+IF _6502SP_VERSION
+
+ JSR DOCOL              \ Send a #SETCOL command to the I/O processor to switch
+                        \ to this colour
+
+ELIF _MASTER_VERSION
+
+ STA COL                \ Switch to this colour
+
+ENDIF
+
+ LDA NEWB               \ Set bit 7 of the ship to indicate it has docked (so
+ ORA #%10000000         \ the call to LL9 removes it from the screen)
+ STA NEWB
+
+ JMP LL9                \ Draw the existing ship to erase it and mark it as gone
+                        \ and return from the subroutine using a tail call
+
 .endUniverseEditor1

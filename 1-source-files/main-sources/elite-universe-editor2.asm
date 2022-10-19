@@ -47,6 +47,9 @@
  JSR DFAULT             \ Call DFAULT to reset the current commander data
                         \ block to the last saved commander
 
+ JSR ping               \ Set the target system coordinates (QQ9, QQ10) to the
+                        \ current system coordinates (QQ0, QQ1) we just loaded
+
  JSR ApplyMods          \ Apply the mods required for the Universe Editor
 
  LDA #0                 \ Remove the escape pod so we always show the standard
@@ -302,6 +305,10 @@ ENDIF
 
  PLA                    \ Retrieve the key press from the stack
 
+ LDX QQ11               \ If this is not a space view, jump to keys27
+ BEQ P%+5
+ JMP keys27
+
  LDX #0                 \ Set X = 0 for the x-axis
 
  CMP keyTable,Y         \ Right arrow (move ship right along the x-axis)
@@ -526,24 +533,6 @@ ENDIF
 
 .keys26
 
- CMP #f0                \ f0 (front view)
- BEQ keys27
-
- CMP #f1                \ f1 (rear view)
- BEQ keys27
-
- CMP #f2                \ f2 (left view)
- BEQ keys27
-
- CMP #f3                \ f3 (right view)
- BNE keys28
-
-.keys27
-
- JMP ChangeView         \ Process a change of view
-
-.keys28
-
  CMP #keyReturn         \ RETURN (add ship)
  BNE P%+5
  JMP AddShip
@@ -599,6 +588,66 @@ ENDIF
  BNE P%+5
  JMP ExplodeShip
 
+ CMP #keyG              \ G (galaxy seeds)
+ BNE P%+5
+ JMP ChangeSeeds
+
+.keys27
+
+ CMP #f0                \ f0 (front view)
+ BEQ keys28
+
+ CMP #f1                \ f1 (rear view)
+ BEQ keys28
+
+ CMP #f2                \ f2 (left view)
+ BEQ keys28
+
+ CMP #f3                \ f3 (right view)
+ BNE keys29
+
+.keys28
+
+ JMP ChangeView         \ Process a change of view
+
+.keys29
+
+ JSR TT17               \ Scan the keyboard for the cursor keys or joystick,
+                        \ returning the cursor's delta values in X and Y and
+                        \ the key pressed in A
+
+ JSR TT102+7            \ Call the modified TT102 to process the key pressed
+                        \ in A (skipping the check at the start for the status
+                        \ key)
+
+ LDA KL                 \ If "H" was not pressed, jump to keys31 to skip the
+ CMP #'H'               \ following
+ BNE keys31
+
+ JSR TT111              \ Set the seeds in QQ15 to the nearest system to the
+                        \ cross-hairs
+
+ JSR jmp                \ Set the current system to the selected system
+
+ LDX #5                 \ We now want to copy the seeds for the selected system
+                        \ in QQ15 into QQ2, where we store the seeds for the
+                        \ current system, so set up a counter in X for copying
+                        \ 6 bytes (for three 16-bit seeds)
+
+.keys30
+
+ LDA QQ15,X             \ Copy the X-th byte in QQ15 to the X-th byte in QQ2
+ STA QQ2,X
+
+ DEX                    \ Decrement the counter
+
+ BPL keys30             \ Loop back to keys30 if we still have more bytes to
+                        \ copy
+
+ JSR TT114              \ Redisplay the chart
+
+.keys31
+
  RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
@@ -641,26 +690,6 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: DrawExplosion
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Draw an explosion
-\
-\ ------------------------------------------------------------------------------
-
-.DrawExplosion
-
- LDA INWK+31            \ If bit 3 of the ship's byte #31 is clear, then nothing
- AND #%00001000         \ is being drawn on-screen for this ship anyway, so
- BEQ P%+5               \ skip the following
-
- JSR PTCLS              \ Call PTCLS to redraw the cloud, returning from the
-                        \ subroutine using a tail call
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
 \       Name: DrawShip
 \       Type: Subroutine
 \   Category: Universe editor
@@ -692,52 +721,6 @@ ENDIF
  LDX currentSlot        \ Get the ship data for the current slot, as otherwise
  JMP GetShipData        \ we will leave the wrong axes in INWK, and return from
                         \ the subroutine using a tail call
-
-\ ******************************************************************************
-\
-\       Name: EraseShip
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Erase the current ship from the screen
-\
-\ ******************************************************************************
-
-.EraseShip
-
- LDA INWK+31            \ If bit 5 of byte #31 is clear, then the ship is not
- AND #%00100000         \ exploding, so jump to eras1
- BEQ eras1
-
- JMP DrawExplosion      \ Call DrawExplosion to draw the existing cloud to
-                        \ remove it, returning from the subroutine using a tail
-                        \ call
-
-.eras1
-
- JSR MV5                \ Draw the current ship on the scanner to remove it
-
- LDX TYPE               \ Get the current ship type
-
- LDA shpcol,X           \ Set A to the ship colour for this type, from the X-th
-                        \ entry in the shpcol table
-
-IF _6502SP_VERSION
-
- JSR DOCOL              \ Send a #SETCOL command to the I/O processor to switch
-                        \ to this colour
-
-ELIF _MASTER_VERSION
-
- STA COL                \ Switch to this colour
-
-ENDIF
-
- LDA NEWB               \ Set bit 7 of the ship to indicate it has docked (so
- ORA #%10000000         \ the call to LL9 removes it from the screen)
- STA NEWB
-
- JMP LL9                \ Draw the existing ship to erase it and mark it as gone
-                        \ and return from the subroutine using a tail call
 
 \ ******************************************************************************
 \

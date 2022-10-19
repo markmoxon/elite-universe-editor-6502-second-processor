@@ -62,6 +62,9 @@ ENDIF
 
  JSR ModifyExplosion    \ Modify the explosion code
 
+ LDA #NWDAV5-TT92+6     \ Modify BNE TT92 in TT102 to BNE NWDAV5
+ STA TT92-7
+
  LDX #8                 \ The size of the default universe filename
 
 .mods1
@@ -107,6 +110,9 @@ ENDIF
 
  JSR RevertExplosion    \ Revert the explosion code
 
+ LDA #6                 \ Revert BNE NWDAV5 in TT102 to BNE TT92
+ STA TT92-7
+
  JSR DFAULT             \ Call DFAULT to reset the current commander data
                         \ block to the last saved commander
 
@@ -135,11 +141,6 @@ ENDIF
 \
 \   A                   Internal key number for f0, f1, f2 or f3
 \
-\ Other entry points:
-\
-\   ChangeView+8        Change to view X, even if we are already on that view
-\                       (so this redraws the view)
-\
 \ ******************************************************************************
 
 .ChangeView
@@ -147,13 +148,37 @@ ENDIF
  AND #3                 \ If we get here then we have pressed f0-f3, so extract
  TAX                    \ bits 0-1 to set X = 0, 1, 2, 3 for f0, f1, f2, f3
 
- CPX VIEW               \ If we are already on this view, jump to view1 to
- BEQ view1              \ ignore the key press and return from the subroutine
+ CPX VIEW               \ If we are not already on this view, jump to
+ BNE SetSpaceView       \ SetSpaceView to change view to the new one
 
-                        \ Otherwise this is a new view, so set it up
+ LDA QQ11               \ If this is not already a space view, jump to
+ BNE SetSpaceView       \ SetSpaceView to change view to the new one
 
- JSR LOOK1              \ Otherwise this is a new view, so call LOOK1 to switch
-                        \ to view X and draw the stardust
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: SetSpaceView
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Change view to front, rear, left or right space view
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   Space view number:
+\
+\                         * 0 = front
+\                         * 1 = rear
+\                         * 2 = left
+\                         * 3 = right
+\
+\ ******************************************************************************
+
+.SetSpaceView
+
+ JSR LOOK1              \ Call LOOK1 to switch to view X
 
  JSR NWSTARS            \ Set up a new stardust field (not sure why LOOK1
                         \ doesn't draw the stardust - it should)
@@ -165,11 +190,8 @@ ENDIF
 
  JSR PrintShipType      \ Print the current ship type on the screen
 
- JSR DrawShips          \ Draw all ships
-
-.view1
-
- RTS                    \ Return from the subroutine
+ JMP DrawShips          \ Draw all ships, returning from the subroutine using a
+                        \ tail call
 
 \ ******************************************************************************
 \
@@ -1113,7 +1135,7 @@ ENDIF
 
  LDX #0                 \ Draw the front view, returning from the subroutine
  STX VIEW               \ using a tail call
- JMP ChangeView+8
+ JMP SetSpaceView
 
 \ ******************************************************************************
 \
