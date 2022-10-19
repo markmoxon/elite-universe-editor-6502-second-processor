@@ -79,59 +79,6 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: ModifyExplosion
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Apply mods for explosions
-\
-\ ******************************************************************************
-
-.ModifyExplosion
-
- LDA #&4C               \ Modify DOEXP so that it jumps to DrawExplosion instead
- STA DOEXP              \ to draw the cloud but without progressing it
- LDA #LO(DrawExplosion)
- STA DOEXP+1
- LDA #Hi(DrawExplosion)
- STA DOEXP+2
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: RevertMods
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Reverse mods for explosions
-\
-\ ******************************************************************************
-
-.RevertExplosion
-
-IF _6502SP_VERSION
-
- LDA #&A5               \ Revert DOEXP to its default behaviour of drawing the
- STA DOEXP              \ cloud
- LDA #&64
- STA DOEXP+1
- LDA #&29
- STA DOEXP+2
-
-ELIF _MASTER_VERSION
-
- LDA #&A5               \ Revert DOEXP to its default behaviour of drawing the
- STA DOEXP              \ cloud
- LDA #&BB
- STA DOEXP+1
- LDA #&29
- STA DOEXP+2
-
-ENDIF
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
 \       Name: RevertMods
 \       Type: Subroutine
 \   Category: Universe editor
