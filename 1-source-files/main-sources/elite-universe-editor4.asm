@@ -211,6 +211,9 @@ ENDIF
  JSR NWSTARS            \ Set up a new stardust field (not sure why LOOK1
                         \ doesn't draw the stardust - it should)
 
+ LDX currentSlot        \ Fetch the current ship data (as LOOK1 overwrites INWK
+ JSR GetShipData        \ and TYPE)
+
  JSR PrintSlotNumber    \ Print the current slot number at text location (0, 1)
 
  JSR PrintShipType      \ Print the current ship type on the screen
@@ -1975,7 +1978,7 @@ ENDIF
  JSR DOXC
 
  LDA INWK+31            \ If bit 5 of byte #31 is clear, then the ship is not
- AND #%00100000         \ exploding, so jump to eras1
+ AND #%00100000         \ exploding, so jump to ptyp1
  BEQ ptyp1
 
  LDA #9                 \ Print extended token 9 ("CLOUD"), returning from the
@@ -1986,7 +1989,7 @@ ENDIF
  LDA TYPE               \ If this is not the planet or sun, jump to ptyp3
  BPL ptyp3
 
- CMP #129
+ CMP #129               \ If this is the sun, jump to ptyp2
  BEQ ptyp2
 
  JSR MT19               \ Call MT19 to capitalise the next letter (i.e. set
