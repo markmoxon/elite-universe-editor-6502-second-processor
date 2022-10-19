@@ -212,76 +212,6 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: CheckShiftCtrl
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Check for SHIFT and CTRL
-\
-\ ******************************************************************************
-
-.CheckShiftCtrl
-
- STZ shiftCtrl          \ We now test for SHIFT and CTRL and set bit 7 and 6 of
-                        \ shiftCtrl accordingly, so zero the byte first
-
-IF _6502SP_VERSION
-
- JSR CTRL               \ Scan the keyboard to see if CTRL is currently pressed,
-                        \ returning a negative value in A if it is
-
-ELIF _MASTER_VERSION
-
-IF _SNG47
-
- JSR CTRL               \ Scan the keyboard to see if CTRL is currently pressed,
-                        \ returning a negative value in A if it is
-
-ELIF _COMPACT
-
- JSR CTRLmc             \ Scan the keyboard to see if CTRL is currently pressed,
-                        \ returning a negative value in A if it is
-
-ENDIF
-
-ENDIF
-
- BPL P%+5               \ If CTRL is being pressed, set bit 7 of shiftCtrl
- SEC                    \ (which we will shift into bit 6 below)
- ROR shiftCtrl
-
-IF _6502SP_VERSION
-
- LDX #0                 \ Call DKS4 with X = 0 to check whether the SHIFT key is
- JSR DKS4               \ being pressed
-
-ELIF _MASTER_VERSION
-
-IF _SNG47
-
- LDA #0                 \ Call DKS4 to check whether the SHIFT key is being
- JSR DKS4               \ pressed
-
-ELIF _COMPACT
-
- LDA #0                 \ Call DKS4mc to check whether the SHIFT key is being
- JSR DKS4mc             \ pressed
-
-ENDIF
-
-ENDIF
-
- CLC                    \ If SHIFT is being pressed, set the C flag, otherwise
- BPL P%+3               \ clear it
- SEC
-
- ROR shiftCtrl          \ Shift the C flag into bit 7 of shiftCtrl, moving the
-                        \ CTRL bit into bit 6, so we now have SHIFT and CTRL
-                        \ captured in bits 7 and 6 of shiftCtrl
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
 \       Name: ProcessKey
 \       Type: Subroutine
 \   Category: Universe editor
@@ -621,6 +551,13 @@ ENDIF
 \   Category: Universe editor
 \    Summary: Check for the chart keys and draw the charts where necessary
 \
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   ForceChart          Jump here with A set to one of the chart keys to show
+\                       the relevant chart
+\
 \ ******************************************************************************
 
 .DrawCharts
@@ -643,15 +580,15 @@ ENDIF
 
 IF _6502SP_VERSION
 
- LDA KL                 \ If "H" was not pressed, jump to keys31 to skip the
+ LDA KL                 \ If "H" was not pressed, jump to char3 to skip the
  CMP #keyH              \ following
- BNE keys31
+ BNE char3
 
 ELIF _MASTER_VERSION
 
- LDA KL                 \ If "H" was not pressed, jump to keys31 to skip the
+ LDA KL                 \ If "H" was not pressed, jump to char3 to skip the
  CMP #'H'               \ following
- BNE keys31
+ BNE char3
 
 ENDIF
 
@@ -670,40 +607,39 @@ ENDIF
                         \ current system, so set up a counter in X for copying
                         \ 6 bytes (for three 16-bit seeds)
 
-.keys30
+.char2
 
  LDA QQ15,X             \ Copy the X-th byte in QQ15 to the X-th byte in QQ2
  STA QQ2,X
 
  DEX                    \ Decrement the counter
 
- BPL keys30             \ Loop back to keys30 if we still have more bytes to
-                        \ copy
+ BPL char2              \ Loop back to char2 if we still have more bytes to copy
 
  JSR TT114              \ Redisplay the chart
 
-.keys31
+.char3
 
  PLA                    \ Restore the current fuel level from the stack
  STA QQ14
 
 IF _6502SP_VERSION
 
- LDA KL                 \ If "G" was not pressed, jump to keys32 to skip the
+ LDA KL                 \ If "G" was not pressed, jump to char4 to skip the
  CMP #keyG              \ following
- BNE keys32
+ BNE char4
 
 ELIF _MASTER_VERSION
 
- LDA KL                 \ If "G" was not pressed, jump to keys32 to skip the
+ LDA KL                 \ If "G" was not pressed, jump to char4 to skip the
  CMP #'G'               \ following
- BNE keys32
+ BNE char4
 
 ENDIF
 
  JMP ChangeSeeds        \ "G" was pressed, so jump to the seeds screen
 
-.keys32
+.char4
 
  RTS                    \ Return from the subroutine
 

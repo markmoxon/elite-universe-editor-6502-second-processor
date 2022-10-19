@@ -29,6 +29,76 @@
 
 \ ******************************************************************************
 \
+\       Name: CheckShiftCtrl
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Check for SHIFT and CTRL
+\
+\ ******************************************************************************
+
+.CheckShiftCtrl
+
+ STZ shiftCtrl          \ We now test for SHIFT and CTRL and set bit 7 and 6 of
+                        \ shiftCtrl accordingly, so zero the byte first
+
+IF _6502SP_VERSION
+
+ JSR CTRL               \ Scan the keyboard to see if CTRL is currently pressed,
+                        \ returning a negative value in A if it is
+
+ELIF _MASTER_VERSION
+
+IF _SNG47
+
+ JSR CTRL               \ Scan the keyboard to see if CTRL is currently pressed,
+                        \ returning a negative value in A if it is
+
+ELIF _COMPACT
+
+ JSR CTRLmc             \ Scan the keyboard to see if CTRL is currently pressed,
+                        \ returning a negative value in A if it is
+
+ENDIF
+
+ENDIF
+
+ BPL P%+5               \ If CTRL is being pressed, set bit 7 of shiftCtrl
+ SEC                    \ (which we will shift into bit 6 below)
+ ROR shiftCtrl
+
+IF _6502SP_VERSION
+
+ LDX #0                 \ Call DKS4 with X = 0 to check whether the SHIFT key is
+ JSR DKS4               \ being pressed
+
+ELIF _MASTER_VERSION
+
+IF _SNG47
+
+ LDA #0                 \ Call DKS4 to check whether the SHIFT key is being
+ JSR DKS4               \ pressed
+
+ELIF _COMPACT
+
+ LDA #0                 \ Call DKS4mc to check whether the SHIFT key is being
+ JSR DKS4mc             \ pressed
+
+ENDIF
+
+ENDIF
+
+ CLC                    \ If SHIFT is being pressed, set the C flag, otherwise
+ BPL P%+3               \ clear it
+ SEC
+
+ ROR shiftCtrl          \ Shift the C flag into bit 7 of shiftCtrl, moving the
+                        \ CTRL bit into bit 6, so we now have SHIFT and CTRL
+                        \ captured in bits 7 and 6 of shiftCtrl
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
 \       Name: ConvertFile
 \       Type: Subroutine
 \   Category: Universe editor
@@ -443,6 +513,12 @@ ENDIF
 \   Category: Universe editor
 \    Summary: Edit galaxy seeds
 \
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   ForceLongRange      Show the Long-range chart after changing the seeds
+\
 \ ******************************************************************************
 
 .ChangeSeeds
@@ -511,6 +587,8 @@ ELIF _MASTER_VERSION
 ENDIF
 
  STA jmp-3              \ Re-enable the JSR MESS in zZ
+
+.ForceLongRange
 
  LDA QQ14               \ Store the current fuel level on the stack
  PHA
