@@ -504,9 +504,9 @@ ENDIF
 
 .keys23
 
- CMP #keyT              \ T (toggle the trader/bounty hunter/pirate flag in
- BNE keys24             \ bits 0, 1, 3 of INWK+36, NEWB)
- JMP ToggleShipType
+ CMP #keyP              \ P (toggle ship type, i.e. planet type, sun/station
+ BNE keys24             \ type, or trader/bounty hunter/pirate flag in bits
+ JMP ToggleShipType     \ 0, 1, 3 of INWK+36, NEWB)
 
 .keys24
 
@@ -544,14 +544,6 @@ ENDIF
 
 .keys28
 
- CMP #keyO              \ O (toggle station/sun)
- BNE P%+5
- JMP SwapStationSun
-
- CMP #keyP              \ P (toggle planet type)
- BNE P%+5
- JMP TogglePlanetType
-
  CMP #keyReturn         \ RETURN (add ship)
  BNE P%+5
  JMP AddShip
@@ -572,7 +564,7 @@ ENDIF
  BNE P%+5
  JMP HighlightScanner
 
- CMP #keyN              \ N (target missile)
+ CMP #keyT              \ T (target missile)
  BNE P%+5
  JMP TargetMissile
 

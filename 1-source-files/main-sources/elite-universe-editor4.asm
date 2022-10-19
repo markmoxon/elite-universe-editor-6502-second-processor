@@ -1976,18 +1976,18 @@ ENDIF
 
  LDA INWK+31            \ If bit 5 of byte #31 is clear, then the ship is not
  AND #%00100000         \ exploding, so jump to eras1
- BEQ ptypn
+ BEQ ptyp1
 
  LDA #9                 \ Print extended token 9 ("CLOUD"), returning from the
  JMP PrintToken         \ subroutine using a tail call
  
-.ptypn
+.ptyp1
 
- LDA TYPE               \ If this is not the planet or sun, jump to ptypq
- BPL ptypq
+ LDA TYPE               \ If this is not the planet or sun, jump to ptyp3
+ BPL ptyp3
 
  CMP #129
- BEQ ptyps
+ BEQ ptyp2
 
  JSR MT19               \ Call MT19 to capitalise the next letter (i.e. set
                         \ Sentence Case for this word only)
@@ -1995,15 +1995,15 @@ ENDIF
  LDA #145               \ Print extended token 145 ("PLANET"), returning from the
  JMP DETOK              \ subroutine using a tail call
 
-.ptyps
+.ptyp2
 
  LDA #11                \ Print extended token 11 ("SUN"), returning from the
  JMP PrintToken         \ subroutine using a tail call
 
-.ptypq
+.ptyp3
 
- CMP #MSL               \ If this is not a missile, jump to ptyp0
- BNE ptyp0
+ CMP #MSL               \ If this is not a missile, jump to ptyp4
+ BNE ptyp4
 
  LDA INWK+32            \ Extract the target number from bits 1-5 into X
  LSR A
@@ -2015,15 +2015,15 @@ ENDIF
  JMP pr6                \ Print the number in (Y X) and return from the
                         \ subroutine using a tail call
 
-.ptyp0
+.ptyp4
 
- CMP #SST               \ If this is not the station, jump to ptypm
- BNE ptypm
+ CMP #SST               \ If this is not the station, jump to ptyp5
+ BNE ptyp5
 
  LDA #10                \ Print extended token 10 ("STATION"), returning from
  JMP PrintToken         \ the subroutine using a tail call
 
-.ptypm
+.ptyp5
 
  LDA #%10000000         \ Set bit 7 of QQ17 to switch to Sentence Case
  STA QQ17
@@ -2032,35 +2032,35 @@ ENDIF
 
  LSR A                  \ Set the C flag to bit 0 of NEWB (trader)
 
- BCC ptyp1              \ If bit 0 is clear, jump to ptyp1
+ BCC ptyp6              \ If bit 0 is clear, jump to ptyp6
 
                         \ Bit 0 is set, so the ship is a trader
 
  LDA #2                 \ Print extended token 2 ("TRADER"), returning from the
  JMP PrintToken         \ subroutine using a tail call
 
-.ptyp1
+.ptyp6
 
  LSR A                  \ Set the C flag to bit 1 of NEWB (bounty hunter)
 
- BCC ptyp2              \ If bit 1 is clear, jump to ptyp2
+ BCC ptyp7              \ If bit 1 is clear, jump to ptyp7
 
                         \ Bit 1 is set, so the ship is a bounty hunter
 
  LDA #3                 \ Print extended token 3 ("BOUNTY"), returning from the
  JMP PrintToken         \ subroutine using a tail call
 
-.ptyp2
+.ptyp7
 
  LSR A                  \ Set the C flag to bit 3 of NEWB (pirate)
  LSR A
 
- BCS ptyp3              \ If bit 3 is set, jump to ptyp3 to skip the following
+ BCS ptyp8              \ If bit 3 is set, jump to ptyp8 to skip the following
 
  RTS                    \ Bit 3 is clear, so return from the subroutine without
                         \ printing anything
 
-.ptyp3
+.ptyp8
 
  LDA #4                 \ Print extended token 4 ("PIRATE"), returning from the
  JMP PrintToken         \ subroutine using a tail call
@@ -2076,6 +2076,22 @@ ENDIF
 
 .ToggleShipType
 
+ LDX currentSlot        \ If this is not the planet (slot 0), jump to styp1
+ BNE styp1
+
+ JMP TogglePlanetType   \ Jump to TogglePlanetType to toggle the planet type,
+                        \ returning from the subroutine using a tail call
+
+.styp1
+
+ CPX #1                 \ If this is not the sun/station, jump to styp2
+ BNE styp2
+
+ JMP SwapStationSun     \ Jump to SwapStationSun to toggle the sun/station type,
+                        \ returning from the subroutine using a tail call
+
+.styp2
+
  JSR PrintShipType      \ Remove the current ship type from the screen
 
  LDA INWK+36            \ Set X and A to the NEWB flag
@@ -2083,44 +2099,44 @@ ENDIF
 
  LSR A                  \ Set the C flag to bit 0 of NEWB (trader)
 
- BCC styp1              \ If bit 0 is clear, jump to styp1
+ BCC styp3              \ If bit 0 is clear, jump to styp3
 
                         \ Bit 0 is set, so we are already a trader, and we move
                         \ on to bounty hunter
 
- LDA #%00000010         \ Set bit 1 of A (bounty hunter) and jump to styp4
- BNE styp4
+ LDA #%00000010         \ Set bit 1 of A (bounty hunter) and jump to styp6
+ BNE styp6
 
-.styp1
+.styp3
 
  LSR A                  \ Set the C flag to bit 1 of NEWB (bounty hunter)
 
- BCC styp2              \ If bit 1 is clear, jump to styp2
+ BCC styp4              \ If bit 1 is clear, jump to styp4
 
                         \ Bit 1 is set, so we are already a bounty hunter, and
                         \ we move on to pirate
 
- LDA #%00001000         \ Set bit 3 of A (pirate) and jump to styp4
- BNE styp4
+ LDA #%00001000         \ Set bit 3 of A (pirate) and jump to styp6
+ BNE styp6
 
-.styp2
+.styp4
 
  LSR A                  \ Set the C flag to bit 3 of NEWB (pirate)
  LSR A
 
- BCC styp3              \ If bit 3 is clear, jump to styp3
+ BCC styp5              \ If bit 3 is clear, jump to styp5
 
                         \ Bit 3 is set, so we are already a pirate, and we move
                         \ on to no status
 
- LDA #%00000000         \ Clear all bits of T (no status) and jump to styp4
- BEQ styp4
+ LDA #%00000000         \ Clear all bits of T (no status) and jump to styp6
+ BEQ styp6
 
-.styp3
+.styp5
 
  LDA #%00000001         \ Set bit 0 of A (trader)
 
-.styp4
+.styp6
 
  STA T                  \ Store the bits we want to set in T
 
