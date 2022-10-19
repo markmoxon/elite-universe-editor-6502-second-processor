@@ -1980,11 +1980,29 @@ ENDIF
 
  LDA #9                 \ Print extended token 9 ("CLOUD"), returning from the
  JMP PrintToken         \ subroutine using a tail call
-
+ 
 .ptypn
 
- LDA TYPE               \ If this is not a missile, jump to ptyp0
- CMP #MSL
+ LDA TYPE               \ If this is not the planet or sun, jump to ptypq
+ BPL ptypq
+
+ CMP #129
+ BEQ ptyps
+
+ JSR MT19               \ Call MT19 to capitalise the next letter (i.e. set
+                        \ Sentence Case for this word only)
+
+ LDA #145               \ Print extended token 145 ("PLANET"), returning from the
+ JMP DETOK              \ subroutine using a tail call
+
+.ptyps
+
+ LDA #11                \ Print extended token 11 ("SUN"), returning from the
+ JMP PrintToken         \ subroutine using a tail call
+
+.ptypq
+
+ CMP #MSL               \ If this is not a missile, jump to ptyp0
  BNE ptyp0
 
  LDA INWK+32            \ Extract the target number from bits 1-5 into X
@@ -1998,6 +2016,14 @@ ENDIF
                         \ subroutine using a tail call
 
 .ptyp0
+
+ CMP #SST               \ If this is not the station, jump to ptypm
+ BNE ptypm
+
+ LDA #10                \ Print extended token 10 ("STATION"), returning from
+ JMP PrintToken         \ the subroutine using a tail call
+
+.ptypm
 
  LDA #%10000000         \ Set bit 7 of QQ17 to switch to Sentence Case
  STA QQ17
@@ -2298,79 +2324,6 @@ ENDIF
 
  BMI chav1              \ Jump up to chav1 to store the new value (this BMI is
                         \ effectively a JMP as we just passed through a BPL)
-
-\ ******************************************************************************
-\
-\       Name: ChangeValue
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Update one of the ship's details
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   Offset of INWK byte within INWK block
-\
-\   A                   The minimum allowed value + 1
-\
-\   Y                   The maximum allowed value + 1
-\
-\ ******************************************************************************
-
-.ChangeValue
-
- STA P                  \ Store the minimum value in P
-
- STY K                  \ Store the maximum value in K
-
- BIT shiftCtrl          \ If SHIFT is being held, jump to chan1 to reduce the
- BMI chan1              \ value
-
- INC INWK,X             \ Increment the value at the correct offset
-
- LDA INWK,X             \ If we didn't go past the maximum value, jump to
- CMP K                  \ StoreValue to store the value
- BNE StoreValue
-
- DEC INWK,X             \ Otherwise decrement the value again so we don't
-                        \ overflow
-
- JMP chan2              \ Jump to chan2 to beep and return from the subroutine
-
-.chan1
-
- DEC INWK,X             \ Decrement the value at the correct offset
-
- LDA INWK,X             \ If we didn't go past the miniumum value, jump to
- CMP P                  \ StoreValue to store the value
- BNE StoreValue
-
- INC INWK,X             \ Otherwise increment the value again so we don't
-                        \ underflow
-
-.chan2
-
- JMP BEEP               \ Beep to indicate we have reached the maximum and
-                        \ return from the subroutine using a tail call
-
-\ ******************************************************************************
-\
-\       Name: StoreValue
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Store an updated ship's details and update the dashboard
-\
-\ ******************************************************************************
-
-.StoreValue
-
- JSR STORE              \ Call STORE to copy the ship data block at INWK back to
-                        \ the K% workspace at INF
-
- JSR UpdateDashboard    \ Update the dashboard
-
- RTS                    \ Return from the subroutine
 
 IF _MASTER_VERSION
 
@@ -2798,6 +2751,17 @@ ENDIF
  ETWO 'L', 'O'
  ECHR 'U'
  ECHR 'D'
+ EQUB VE
+
+ ETWO 'S', 'T'          \ Token 10:   "STATION"
+ ETWO 'A', 'T'
+ ECHR 'I'
+ ETWO 'O', 'N'
+ EQUB VE
+
+ ECHR 'S'               \ Token 11:   "SUN"
+ ECHR 'U'
+ ECHR 'N'
  EQUB VE
 
 \ ******************************************************************************

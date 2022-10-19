@@ -106,6 +106,8 @@
 
  JSR PrintSlotNumber    \ Print the current slot number at text location (0, 1)
 
+ JSR PrintShipType      \ Print the current ship type
+
  JSR UpdateDashboard    \ Update the dashboard to show the planet's values
 
 .edit1
@@ -759,6 +761,8 @@ ENDIF
  LDX #1                 \ Switch to slot 1, which is the station or sun, and
  JSR SwitchToSlot       \ highlight the existing contents
 
+ JSR PrintShipType      \ Print the ship type to remove it from the screen
+
  LDA TYPE               \ If we are showing the sun, jump to swap1 to switch it
  BMI swap1              \ to a Coriolis space station
 
@@ -829,6 +833,8 @@ ENDIF
  JSR STORE              \ Store the updated station
 
 .swap4
+
+ JSR PrintShipType      \ Print the new ship type
 
  JSR ShowBulbs          \ Show the bulbs on the dashboard
 

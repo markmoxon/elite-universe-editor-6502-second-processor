@@ -309,4 +309,77 @@
  JMP DrawShip           \ Draw the ship and return from the subroutine using a
                         \ tail call
 
+\ ******************************************************************************
+\
+\       Name: ChangeValue
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Update one of the ship's details
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   Offset of INWK byte within INWK block
+\
+\   A                   The minimum allowed value + 1
+\
+\   Y                   The maximum allowed value + 1
+\
+\ ******************************************************************************
+
+.ChangeValue
+
+ STA P                  \ Store the minimum value in P
+
+ STY K                  \ Store the maximum value in K
+
+ BIT shiftCtrl          \ If SHIFT is being held, jump to chan1 to reduce the
+ BMI chan1              \ value
+
+ INC INWK,X             \ Increment the value at the correct offset
+
+ LDA INWK,X             \ If we didn't go past the maximum value, jump to
+ CMP K                  \ StoreValue to store the value
+ BNE StoreValue
+
+ DEC INWK,X             \ Otherwise decrement the value again so we don't
+                        \ overflow
+
+ JMP chan2              \ Jump to chan2 to beep and return from the subroutine
+
+.chan1
+
+ DEC INWK,X             \ Decrement the value at the correct offset
+
+ LDA INWK,X             \ If we didn't go past the miniumum value, jump to
+ CMP P                  \ StoreValue to store the value
+ BNE StoreValue
+
+ INC INWK,X             \ Otherwise increment the value again so we don't
+                        \ underflow
+
+.chan2
+
+ JMP BEEP               \ Beep to indicate we have reached the maximum and
+                        \ return from the subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: StoreValue
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Store an updated ship's details and update the dashboard
+\
+\ ******************************************************************************
+
+.StoreValue
+
+ JSR STORE              \ Call STORE to copy the ship data block at INWK back to
+                        \ the K% workspace at INF
+
+ JSR UpdateDashboard    \ Update the dashboard
+
+ RTS                    \ Return from the subroutine
+
 .endUniverseEditor1
