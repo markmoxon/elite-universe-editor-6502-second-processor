@@ -29,6 +29,20 @@
 
 \ ******************************************************************************
 \
+\       Name: dirCommand
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: The OS command string for changing the disc directory to E
+\
+\ ******************************************************************************
+
+.dirCommand
+
+ EQUS "DIR E"
+ EQUB 13
+
+\ ******************************************************************************
+\
 \       Name: UpdateChecksum
 \       Type: Subroutine
 \   Category: Universe editor
@@ -1731,24 +1745,6 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: UpdateCompass
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Update the compass with the current ship's position
-\
-\ ******************************************************************************
-
-.UpdateCompass
-
- JSR DOT                \ Call DOT to redraw (i.e. remove) the current compass
-                        \ dot
-
- JSR GetShipVector      \ Get the vector to the selected ship into XX15
-
- JMP SP2                \ Draw the dot on the compass
-
-\ ******************************************************************************
-\
 \       Name: UpdateDashboard
 \       Type: Subroutine
 \   Category: Universe editor
@@ -1858,9 +1854,8 @@ ENDIF
 
 .upda2
 
- JSR UpdateCompass      \ Update the compass
-
- RTS                    \ Return from the subroutine
+ JMP UpdateCompass      \ Update the compass, returning from the subroutine
+                        \ using a tail call
 
 \ ******************************************************************************
 \
@@ -2336,12 +2331,12 @@ ENDIF
  ECHR 'S'               \                1. LOAD UNIVERSE{crlf}
  ECHR 'K'               \                2. SAVE UNIVERSE {commander name}{crlf}
  ECHR ' '               \                3. CATALOGUE{crlf}
- ECHR 'A'               \                4. DELETE A FILE{crlf}
- ECHR 'C'               \                5. PLAY UNIVERSE{crlf}
- ETWO 'C', 'E'          \                6. EXIT{crlf}
- ECHR 'S'               \               "
- ECHR 'S'
- ECHR ' '
+\ ECHR 'A'               \                4. DELETE A FILE{crlf}
+\ ECHR 'C'               \                5. PLAY UNIVERSE{crlf}
+\ ETWO 'C', 'E'          \                6. EXIT{crlf}
+\ ECHR 'S'               \               "
+\ ECHR 'S'
+\ ECHR ' '
  ECHR 'M'
  ECHR 'E'
  ETWO 'N', 'U'
@@ -2496,6 +2491,17 @@ ENDIF
  ECHR 'S'               \ Token 11:   "SUN"
  ECHR 'U'
  ECHR 'N'
+ EQUB VE
+
+ EJMP 6                 \ Token 12: "GALACTIC SEEDS{cr}{cr}"
+ TOKN 122
+ EJMP 5
+ ECHR ' '
+ ETWO 'S', 'E'
+ ETWO 'E', 'D'
+ ECHR 'S'
+ EJMP 12
+ EJMP 12
  EQUB VE
 
 .endUniverseEditor4

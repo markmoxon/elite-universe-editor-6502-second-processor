@@ -338,20 +338,6 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: dirCommand
-\       Type: Variable
-\   Category: Universe editor
-\    Summary: The OS command string for changing the disc directory to E
-\
-\ ******************************************************************************
-
-.dirCommand
-
- EQUS "DIR E"
- EQUB 13
-
-\ ******************************************************************************
-\
 \       Name: ResetShip
 \       Type: Subroutine
 \   Category: Universe editor
@@ -523,9 +509,18 @@ ENDIF
 
 .ChangeSeeds
 
- LDA #4                 \ Clear the top part of the screen, draw a white border,
+ LDA #8                 \ Clear the top part of the screen, draw a white border,
  JSR TRADEMODE          \ and set up a printable trading screen with a view type
-                        \ in QQ11 of 4 (Sell Cargo screen)
+                        \ in QQ11 of 8 (Status Mode screen)
+
+ LDA #10                \ Move the text cursor to column 10
+ JSR DOXC
+
+ LDA #12                \ Print extended token 12 ("GALACTIC SEEDS{cr}{cr}")
+ JSR PrintToken
+
+ JSR NLIN4              \ Draw a horizontal line at pixel row 19 to box in the
+                        \ title, and move the text cursor down one line
 
  LDY #&FF               \ Set maximum number for gnum to 255
  STY QQ25
@@ -534,11 +529,15 @@ ENDIF
 
 .seed1
 
+ JSR TT67               \ Print a newline
+
  LDY V
  LDX QQ21,Y             \ Get seed Y
 
  CLC                    \ Print the 8-bit number in X to 3 digits, without a
  JSR pr2                \ decimal point
+
+ JSR TT162              \ Print a space
 
  JSR gnum               \ Call gnum to get a number from the keyboard
 

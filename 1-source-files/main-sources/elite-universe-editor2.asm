@@ -749,6 +749,24 @@ ENDIF
 
 \ ******************************************************************************
 \
+\       Name: UpdateCompass
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Update the compass with the current ship's position
+\
+\ ******************************************************************************
+
+.UpdateCompass
+
+ JSR DOT                \ Call DOT to redraw (i.e. remove) the current compass
+                        \ dot
+
+ JSR GetShipVector      \ Get the vector to the selected ship into XX15
+
+ JMP SP2                \ Draw the dot on the compass
+
+\ ******************************************************************************
+\
 \       Name: SwapStationSun
 \       Type: Subroutine
 \   Category: Universe editor
