@@ -2323,22 +2323,16 @@ IF _6502SP_VERSION
  EJMP 30                \                {white}
 ENDIF
  EJMP 1                 \                {all caps}
- EJMP 8                 \                {tab 6} DISK ACCESS MENU{crlf}
+ EJMP 8                 \                {tab 6} DISK MENU{crlf}
  ECHR ' '               \                {lf}
  ETWO 'D', 'I'          \                {sentence case}
  ECHR 'S'               \                1. LOAD UNIVERSE{crlf}
  ECHR 'K'               \                2. SAVE UNIVERSE {commander name}{crlf}
  ECHR ' '               \                3. CATALOGUE{crlf}
-\ ECHR 'A'               \                4. DELETE A FILE{crlf}
-\ ECHR 'C'               \                5. PLAY UNIVERSE{crlf}
-\ ETWO 'C', 'E'          \                6. EXIT{crlf}
-\ ECHR 'S'               \               "
-\ ECHR 'S'
-\ ECHR ' '
- ECHR 'M'
- ECHR 'E'
- ETWO 'N', 'U'
- ETWO '-', '-'
+ ECHR 'M'               \                4. DELETE A FILE{crlf}
+ ECHR 'E'               \                5. PLAY UNIVERSE{crlf}
+ ETWO 'N', 'U'          \                6. EXIT{crlf}
+ ETWO '-', '-'          \               "
  EJMP 10
  EJMP 2
  ECHR '1'
@@ -2491,7 +2485,8 @@ ENDIF
  ECHR 'N'
  EQUB VE
 
- EJMP 6                 \ Token 12: "GALACTIC SEEDS{cr}{cr}"
+ EJMP 1                 \ Token 12: "{all caps}GALACTIC SEEDS{cr}{cr}"
+ EJMP 6
  TOKN 122
  EJMP 5
  ECHR ' '

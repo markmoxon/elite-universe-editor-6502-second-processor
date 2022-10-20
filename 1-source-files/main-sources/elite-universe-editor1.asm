@@ -493,12 +493,6 @@ ENDIF
 \   Category: Universe editor
 \    Summary: Edit galaxy seeds
 \
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   ForceLongRange      Show the Long-range chart after changing the seeds
-\
 \ ******************************************************************************
 
 .ChangeSeeds
@@ -510,8 +504,14 @@ ENDIF
  LDA #10                \ Move the text cursor to column 10
  JSR DOXC
 
+ STZ MT6+1              \ Modify MT6 so when we print the standard token for
+                        \ "GALACTIC" in the following, it is done in capitals
+
  LDA #12                \ Print extended token 12 ("GALACTIC SEEDS{cr}{cr}")
  JSR PrintToken
+
+ LDA #%10000000         \ Revert the modification to MT6
+ STA MT6+1
 
  JSR NLIN4              \ Draw a horizontal line at pixel row 19 to box in the
                         \ title, and move the text cursor down one line
@@ -533,6 +533,8 @@ ENDIF
 
  CLC                    \ Print the 8-bit number in X to 3 digits, without a
  JSR pr2                \ decimal point
+
+ JSR prq+3              \ Print a question mark
 
  JSR TT162              \ Print a space
 
@@ -590,8 +592,6 @@ ENDIF
  JSR UpdateChecksum     \ Update the commander checksum to cater for the new
                         \ values
 
-.ForceLongRange
-
  LDA QQ14               \ Store the current fuel level on the stack
  PHA
 
@@ -602,57 +602,6 @@ ENDIF
 
  LDA #f4                \ Jump to ForceChart, setting the key that's "pressed"
  JMP ForceChart         \ to red key f4 (so we show the Long-range Chart)
-
-\ ******************************************************************************
-\
-\       Name: DrawExplosion
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Draw an explosion
-\
-\ ******************************************************************************
-
-.DrawExplosion
-
- LDA INWK+31            \ If bit 3 of the ship's byte #31 is clear, then nothing
- AND #%00001000         \ is being drawn on-screen for this ship anyway, so
- BEQ P%+5               \ skip the following
-
- JSR PTCLS              \ Call PTCLS to redraw the cloud, returning from the
-                        \ subroutine using a tail call
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: FlipShip
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Flip ship around in space
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   The orientation vector to flip:
-\
-\                         * 10 = negate nosev
-\
-\ ******************************************************************************
-
-.FlipShip
-
- PHA
-
- JSR NwS1               \ Call NwS1 to flip the sign of nosev_x_hi (byte #10)
-
- JSR NwS1               \ And again to flip the sign of nosev_y_hi (byte #12)
-
- JSR NwS1               \ And again to flip the sign of nosev_z_hi (byte #14)
-
- PLA
-
- RTS
 
 \ ******************************************************************************
 \

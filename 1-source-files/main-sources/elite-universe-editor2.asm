@@ -518,10 +518,6 @@ ENDIF
  BNE P%+5
  JMP ExplodeShip
 
- CMP #keyG              \ G (galaxy seeds)
- BNE P%+5
- JMP ChangeSeeds
-
 .keys27
 
  CMP #f0                \ f0 (front view)
@@ -595,34 +591,14 @@ ENDIF
  BIT shiftCtrl          \ If CTRL was not held down, jump to char1
  BVC char1
 
-IF _6502SP_VERSION
-
- LDA #&60               \ Return from the JSR TT110 in zZ
- STA zZ+8
-
-ELIF _MASTER_VERSION
-
- LDA #&60               \ Return from the JSR TT110 in zZ
- STA zZ+6
-
-ENDIF
+ LDA #&60               \ Modify Ghy to return from the LDA #96 in zZ
+ STA zZ
 
  JSR G1-13              \ Call G1-13, which is the LDX #5 in Ghy, to jump to
                         \ the next galaxy
 
-IF _6502SP_VERSION
-
- LDA #&20               \ Re-enable the JSR TT110 in zZ
- STA zZ+8
-
-ELIF _MASTER_VERSION
-
- LDA #&20               \ Re-enable the JSR TT110 in zZ
- STA zZ+6
-
-ENDIF
-
- JMP ForceLongRange     \ Show the new galaxy in the Long-Range Chart
+ LDA #&A9               \ Re-enable the LDA #96 in zZ
+ STA zZ
 
 .char1
 
@@ -648,7 +624,8 @@ ENDIF
 
  BPL char2              \ Loop back to char2 if we still have more bytes to copy
 
- JSR TT114              \ Redisplay the chart
+ LDA QQ11               \ Redisplay the chart
+ JSR TT114
 
 .char3
 
@@ -712,6 +689,57 @@ ENDIF
 .draw3
 
  RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: DrawExplosion
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Draw an explosion
+\
+\ ******************************************************************************
+
+.DrawExplosion
+
+ LDA INWK+31            \ If bit 3 of the ship's byte #31 is clear, then nothing
+ AND #%00001000         \ is being drawn on-screen for this ship anyway, so
+ BEQ P%+5               \ skip the following
+
+ JSR PTCLS              \ Call PTCLS to redraw the cloud, returning from the
+                        \ subroutine using a tail call
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: FlipShip
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Flip ship around in space
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The orientation vector to flip:
+\
+\                         * 10 = negate nosev
+\
+\ ******************************************************************************
+
+.FlipShip
+
+ PHA
+
+ JSR NwS1               \ Call NwS1 to flip the sign of nosev_x_hi (byte #10)
+
+ JSR NwS1               \ And again to flip the sign of nosev_y_hi (byte #12)
+
+ JSR NwS1               \ And again to flip the sign of nosev_z_hi (byte #14)
+
+ PLA
+
+ RTS
 
 \ ******************************************************************************
 \
