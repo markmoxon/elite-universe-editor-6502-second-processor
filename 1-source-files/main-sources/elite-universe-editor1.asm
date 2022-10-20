@@ -538,7 +538,7 @@ ENDIF
  LDY V                  \ Store the new seed in the current galaxy seeds
  STA QQ21,Y
 
- STA NA%+11,Y          \ Store the new seed in the last saved commander file
+ STA NA%+11,Y           \ Store the new seed in the last saved commander file
 
 .seed2
 

@@ -1281,7 +1281,7 @@ ENDIF
 
 IF _MASTER_VERSION
 
- JSR ConvertToMaster   \ Convert the loaded file so it works on the Master
+ JSR ConvertToMaster    \ Convert the loaded file so it works on the Master
 
 ENDIF
 
@@ -1487,7 +1487,7 @@ IF _MASTER_VERSION
  LDA INWK+5,Y           \ Fetch the Y-th character of the filename
 
  CMP #13                \ If the character is a carriage return then we have
- BEQ setf2             \ reached the end of the filename, so jump to setf2 as
+ BEQ setf2              \ reached the end of the filename, so jump to setf2 as
                         \ we have now copied the whole filename
 
 IF _SNG47
@@ -1964,8 +1964,8 @@ ENDIF
  JSR MT19               \ Call MT19 to capitalise the next letter (i.e. set
                         \ Sentence Case for this word only)
 
- LDA #145               \ Print extended token 145 ("PLANET"), returning from the
- JMP DETOK              \ subroutine using a tail call
+ LDA #145               \ Print extended token 145 ("PLANET"), returning from
+ JMP DETOK              \ the subroutine using a tail call
 
 .ptyp2
 

@@ -1265,7 +1265,7 @@ IF _6502SP_VERSION
 
 .add3
 
- CMP #33               \ If key is 'W' then this is the Elite logo
+ CMP #33                \ If key is 'W' then this is the Elite logo
  BNE add4
 
  LDA #LGO               \ Set the type for the Logo
