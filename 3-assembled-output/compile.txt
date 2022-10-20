@@ -3212,45 +3212,43 @@ WP workspace from  &D00  to &E3C
      0F54   A9 2C      LDA #&2C
      0F56   8D 85 3B   STA &3B85
      0F59   8D 9E 3B   STA &3B9E
-     0F5C   20 7D 3B   JSR &3B7D
-     0F5F   A9 20      LDA #&20
-     0F61   8D 85 3B   STA &3B85
-     0F64   8D 9E 3B   STA &3B9E
-     0F67   20 08 F1   JSR &F108
-     0F6A   AD B1 08   LDA &08B1
-     0F6D   48         PHA
-     0F6E   A9 46      LDA #&46
-     0F70   8D B1 08   STA &08B1
-     0F73   9C 41 08   STZ &0841
-     0F76   A9 14      LDA #&14
-     0F78   4C 96 70   JMP &7096
+     0F5C   20 88 3B   JSR &3B88
+     0F5F   8D 9E 3B   STA &3B9E
+     0F62   20 08 F1   JSR &F108
+     0F65   AD B1 08   LDA &08B1
+     0F68   48         PHA
+     0F69   A9 46      LDA #&46
+     0F6B   8D B1 08   STA &08B1
+     0F6E   9C 41 08   STZ &0841
+     0F71   A9 14      LDA #&14
+     0F73   4C 96 70   JMP &7096
 .EraseShip
-     0F7B   A5 64      LDA &64
-     0F7D   29 20      AND #&20
-     0F7F   F0 03      BEQ &0F84
-     0F81   4C ED 70   JMP &70ED
+     0F76   A5 64      LDA &64
+     0F78   29 20      AND #&20
+     0F7A   F0 03      BEQ &0F7F
+     0F7C   4C ED 70   JMP &70ED
 .eras1
-     0F84   20 0B 6A   JSR &6A0B
-     0F87   A6 8B      LDX &8B
-     0F89   BD 2E 18   LDA &182E,X
-     0F8C   20 CE 33   JSR &33CE
-     0F8F   A5 69      LDA &69
-     0F91   09 80      ORA #&80
-     0F93   85 69      STA &69
-     0F95   4C 4E 60   JMP &604E
+     0F7F   20 0B 6A   JSR &6A0B
+     0F82   A6 8B      LDX &8B
+     0F84   BD 2E 18   LDA &182E,X
+     0F87   20 CE 33   JSR &33CE
+     0F8A   A5 69      LDA &69
+     0F8C   09 80      ORA #&80
+     0F8E   85 69      STA &69
+     0F90   4C 4E 60   JMP &604E
 .SwitchDashboard
-     0F98   A2 FB      LDX #&FB
-     0F9A   A0 81      LDY #&81
-     0F9C   4C F1 FF   JMP &FFF1
+     0F93   A2 FB      LDX #&FB
+     0F95   A0 81      LDY #&81
+     0F97   4C F1 FF   JMP &FFF1
 .GETYN
-     0F9F   20 A5 57   JSR &57A5
-     0FA2   C9 79      CMP #&79
-     0FA4   F0 05      BEQ &0FAB
-     0FA6   C9 6E      CMP #&6E
-     0FA8   D0 F5      BNE &0F9F
-     0FAA   18         CLC
+     0F9A   20 A5 57   JSR &57A5
+     0F9D   C9 79      CMP #&79
+     0F9F   F0 05      BEQ &0FA6
+     0FA1   C9 6E      CMP #&6E
+     0FA3   D0 F5      BNE &0F9A
+     0FA5   18         CLC
 .gety1
-     0FAB   60         RTS
+     0FA6   60         RTS
 .endUniverseEditor1
 Saving file '3-assembled-output/EDITOR1.bin'
 .MOS
@@ -16692,7 +16690,7 @@ Saving file '3-assembled-output/ELTH.bin'
      7130   AD FB 08   LDA &08FB
      7133   C9 0A      CMP #&0A
      7135   90 2C      BCC &7163
-     7137   20 7B 0F   JSR &0F7B
+     7137   20 76 0F   JSR &0F76
      713A   20 19 4B   JSR &4B19
      713D   20 82 45   JSR &4582
      7140   20 89 0E   JSR &0E89
@@ -16711,7 +16709,7 @@ Saving file '3-assembled-output/ELTH.bin'
      715E   8D FB 08   STA &08FB
      7161   D0 08      BNE &716B
 .swap2
-     7163   20 7B 0F   JSR &0F7B
+     7163   20 76 0F   JSR &0F76
      7166   A9 0A      LDA #&0A
      7168   8D FB 08   STA &08FB
 .swap3
@@ -16942,7 +16940,7 @@ Saving file '3-assembled-output/ELTH.bin'
 .DeleteShip
      7308   E0 02      CPX #&02
      730A   90 E2      BCC &72EE
-     730C   20 7B 0F   JSR &0F7B
+     730C   20 76 0F   JSR &0F76
      730F   AE 9A 08   LDX &089A
      7312   20 68 4B   JSR &4B68
      7315   AE 9A 08   LDX &089A
@@ -38729,7 +38727,7 @@ End macro FACE
      F11F   60         RTS
 .ApplyMods
      F120   A9 FA      LDA #&FA
-     F122   20 98 0F   JSR &0F98
+     F122   20 93 0F   JSR &0F93
      F125   A9 24      LDA #&24
      F127   8D 17 65   STA &6517
      F12A   A9 E7      LDA #&E7
@@ -38756,7 +38754,7 @@ End macro FACE
      F158   8D FA 4E   STA &4EFA
      F15B   20 14 51   JSR &5114
      F15E   A9 FB      LDA #&FB
-     F160   4C 98 0F   JMP &0F98
+     F160   4C 93 0F   JMP &0F93
 .ChangeView
      F163   29 03      AND #&03
      F165   AA         TAX
@@ -38778,7 +38776,7 @@ End macro FACE
      F187   8D CB F1   STA &F1CB
      F18A   A9 05      LDA #&05
      F18C   20 BB F1   JSR &F1BB
-     F18F   20 9F 0F   JSR &0F9F
+     F18F   20 9A 0F   JSR &0F9A
      F192   08         PHP
      F193   A9 05      LDA #&05
      F195   20 BB F1   JSR &F1BB

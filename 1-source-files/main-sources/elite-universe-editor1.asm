@@ -565,17 +565,15 @@ ENDIF
 
  STA jmp-3              \ Disable the JSR MESS in zZ
 
- JSR zZ                 \ Call the modified zZ to change galaxy
-
 IF _6502SP_VERSION
 
- LDA #&20               \ Re-enable the JSR TT110 in zZ
- STA zZ+8
+ JSR zZ+11              \ Call the modified zZ at the JSR TT111 to change
+                        \ galaxy without moving the selected system
 
 ELIF _MASTER_VERSION
 
- LDA #&20               \ Re-enable the JSR TT110 in zZ
- STA zZ+6
+ JSR zZ+9               \ Call the modified zZ to change galaxy to change
+                        \ galaxy without moving the selected system
 
 ENDIF
 
