@@ -269,10 +269,7 @@ ENDIF
                         \ shape due to the imprecise nature of trigonometry
                         \ in assembly language
 
- JSR STORE              \ Call STORE to copy the ship data block at INWK back to
-                        \ the K% workspace at INF
-
- JMP DrawShip+6         \ Draw the ship (but not on the scanner) and return from
+ JMP DrawShip+3         \ Draw the ship (but not on the scanner) and return from
                         \ the subroutine using a tail call
 
 \ ******************************************************************************
@@ -358,9 +355,6 @@ ENDIF
  STA ZINF+1
 
  JSR InitialiseShip     \ Initialise the ship coordinates
-
- JSR STORE              \ Call STORE to copy the ship data block at INWK back to
-                        \ the K% workspace at INF
 
  JMP DrawShip           \ Draw the ship and return from the subroutine using a
                         \ tail call

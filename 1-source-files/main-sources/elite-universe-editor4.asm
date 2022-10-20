@@ -1876,8 +1876,6 @@ ENDIF
  STA TYPE
  STA FRIN
 
- JSR STORE              \ Store the new planet details
-
  JMP DrawShip           \ Draw the ship and return from the subroutine using a
                         \ tail call
 

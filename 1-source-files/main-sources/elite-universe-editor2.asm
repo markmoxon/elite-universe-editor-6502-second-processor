@@ -724,7 +724,10 @@ ENDIF
 \
 \ Other entry points:
 \
-\   DrawShip+6          Do not draw the ship on the scanner
+\   DrawShip+3          Do not draw the ship on the scanner
+\
+\   DrawShip+6          Do not store the ship's details or draw the ship on the
+\                       scanner
 \
 \ ******************************************************************************
 
@@ -848,8 +851,6 @@ ENDIF
 
  JSR InitialiseShip     \ Initialise the station so it's in front of us
 
- JSR STORE              \ Store the updated station
-
 .swap4
 
  JSR PrintShipType      \ Print the new ship type
@@ -930,9 +931,6 @@ ENDIF
  STA INWK+1,X
  LDA K+3
  STA INWK+2,X
-
- JSR STORE              \ Call STORE to copy the ship data block at INWK back to
-                        \ the K% workspace at INF
 
  JMP DrawShip           \ Draw the ship and return from the subroutine using a
                         \ tail call
@@ -1333,9 +1331,7 @@ ENDIF
  AND #%11101111
  STA INWK+31
 
- JSR STORE              \ Store the updated scanner byte
-
- JSR DrawShip+6         \ Draw the explosion (but not on the scanner) to get it
+ JSR DrawShip+3         \ Draw the explosion (but not on the scanner) to get it
                         \ going (as only calling this once at the start of a new
                         \ explosion doesn't show a lot)
 
@@ -1376,9 +1372,6 @@ ENDIF
                         \ using a tail call
 
  JSR UpdateSlotNumber   \ Store and print the new slot number in X
-
- JSR STORE              \ Call STORE to copy the ship data block at INWK back to
-                        \ the K% workspace at INF
 
  JMP DrawShip           \ Draw the ship, returning from the subroutine using a
                         \ tail call
