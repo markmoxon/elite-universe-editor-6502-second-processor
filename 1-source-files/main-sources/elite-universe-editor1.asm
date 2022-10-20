@@ -310,7 +310,8 @@ ENDIF
 
  LDA INWK+36            \ Fetch the "docking" setting from bit 4 of INWK+36
  AND #%00010000         \ (NEWB)
- BEQ bulb1
+
+ BEQ bulb1              \ If it is zero, jump to bulb1
 
  LDA #%01000000         \ Set bit 6 of showingBulb
  STA showingBulb
@@ -321,17 +322,16 @@ ENDIF
 
  LDA INWK+32            \ Fetch the E.C.M setting from bit 1 of INWK+32
  AND #%00000001
- BEQ bulb2
+
+ BEQ ShowBulbs-1        \ If it is zero, return from the subroutine (as
+                        \ ShowBulbs-1 contains an RTS)
 
  LDA showingBulb        \ Set bit 7 of showingBulb
  ORA #%10000000
  STA showingBulb
 
- JSR ECBLB              \ Show the E bulb
-
-.bulb2
-
- RTS                    \ Return from the subroutine
+ JMP ECBLB              \ Show the E bulb and return from the subroutine using a
+                        \ tail call
 
 \ ******************************************************************************
 \
@@ -521,6 +521,9 @@ ENDIF
 
  STZ V                  \ Set seed counter in V to 0
 
+ LDA #&60               \ Modify gnum so that errors return rather than jumping
+ STA BAY2               \ to the inventory screen
+
 .seed1
 
  JSR TT67               \ Print a newline
@@ -550,6 +553,9 @@ ENDIF
  LDY V                  \ Loop back until all seeds are edited
  CPY #6
  BNE seed1
+
+ LDA #&A9               \ Revert the modification to gnum
+ STA BAY2
 
 IF _6502SP_VERSION
 
