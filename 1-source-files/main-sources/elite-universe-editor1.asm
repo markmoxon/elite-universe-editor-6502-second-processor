@@ -112,24 +112,29 @@ ENDIF
 \
 \   K+1                 Ship number to replace with
 \
-\   K+2                 How to process the ship heap addresses
+\   K+2                 The delta to apply to the high byte of the ship heap
+\                       addresses:
 \
-\                         * 0 = Add &D000-&0800 to each address
+\                         * &C8 = Add &D000-&0800 to each address
+\                                 (6502SP to Master)
 \
-\                         * 1 = Subtract &D000-&0800 from each address
+\                         * &38 = Subtract &D000-&0800 from each address
+\                                 (Master to 6502SP)
 \
 \   K+3                 If non-zero, the ship number to delete
 \
 \ ******************************************************************************
 
+IF _MASTER_VERSION
+
 .ConvertFile
 
- LDY #NOSH+1            \ Set a counter in Y to loop through all the slots
+ LDY #NOSH              \ Set a counter in Y to loop through all the slots
 
 .fixb1
 
  LDA FRIN,Y             \ If the slot is empty, move on to the next slot
- BEQ fixb5
+ BEQ fixb3
 
  CMP K+3                \ If the slot entry is not equal to the ship to delete
  BNE fixb2              \ in K+3, jump to fixb2
@@ -138,19 +143,22 @@ ENDIF
                         \ need to clear the slot, though this will only work if
                         \ the unsupported ship is in the last slot
 
- LDA #0                 \ Zero the slot to delete the unsupported ship
- STA FRIN,Y
+ LDA #0                 \ Zero the slot in both the file in memory and in the
+ STA FRIN,Y             \ file we assembled for saving (where the slots are at
+ STA K%+&2E4,Y          \ K%+&2E4) to delete the unsupported ship
 
- BEQ fixb5              \ Jump to fixb5 to move on to the next slot (this BEQ is
+ BEQ fixb3              \ Jump to fixb3 to move on to the next slot (this BEQ is
                         \ effectively a JMP as A is always zero)
 
 .fixb2
 
  CMP K                  \ If the slot entry is not equal to the search value in
- BNE fixb5              \ K, jump to fixb5
+ BNE fixb3              \ K, jump to fixb3
 
  LDA K+1                \ We have a match, so replace the slot entry with the
- STA FRIN,Y             \ replace value in K+1
+ STA FRIN,Y             \ replace value in K+1 in both the file in memory and in
+ STA K%+&2E4,Y          \ the file we assembled for saving (where the slots are
+                        \ at K%+&2E4) to delete the unsupported ship
 
  PHY                    \ Store the loop counter on the stack
 
@@ -166,32 +174,22 @@ ENDIF
  LDY #34                \ Set A = INWK+34, the high byte of the ship heap
  LDA (V),Y              \ address
 
- LDX K+2                \ If K+2 is zero, then jump to fixb3 to add to the heap
- BEQ fixb3              \ address
-
- SEC                    \ Subtract &D0-&08 from the high byte of the ship heap
- SBC #&D0-&08           \ address
-
- JMP fixb4              \ Jump to fixb4 to skip the following
-
-.fixb3
-
- CLC                    \ Add &D0-&08 to the high byte of the ship heap address
- ADC #&D0-&08
-
-.fixb4
+ CLC                    \ Apply the delta to the high byte of the ship heap
+ ADC K+2                \ address
 
  STA (V),Y              \ Update the high byte of the ship heap address
 
  PLY                    \ Retrieve the loop counter from the stack
 
-.fixb5
+.fixb3
 
  DEY                    \ Decrement the counter
 
  BPL fixb1              \ Loop back until all X bytes are searched
 
  RTS                    \ Return from the subroutine
+
+ENDIF
 
 \ ******************************************************************************
 \

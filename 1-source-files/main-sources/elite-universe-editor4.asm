@@ -858,12 +858,12 @@ IF _MASTER_VERSION
 
 IF _SNG47
 
- EQUS "SAVE :1.U.MYSCENE  3FF +31E 0 0"
+ EQUS "SAVE :1.U.MYSCENE  400 +31D 0 0"
  EQUB 13
 
 ELIF _COMPACT
 
- EQUS "SAVE MYSCENE  3FF +31E 0 0"
+ EQUS "SAVE MYSCENE  400 +31D 0 0"
  EQUB 13
 
 ENDIF
@@ -903,12 +903,12 @@ IF _MASTER_VERSION
 
 IF _SNG47
 
- EQUS "LOAD :1.U.MYSCENE  3FF"
+ EQUS "LOAD :1.U.MYSCENE  400"
  EQUB 13
 
 ELIF _COMPACT
 
- EQUS "LOAD MYSCENE  3FF"
+ EQUS "LOAD MYSCENE  400"
  EQUB 13
 
 ENDIF
@@ -1223,27 +1223,13 @@ IF _6502SP_VERSION
 
  JSR ZEBC               \ Call ZEBC to zero-fill pages &B and &C
 
- LDY #HI(K%-1)          \ Set up an OSFILE block at &0C00, containing:
+ LDY #HI(K%)            \ Set up an OSFILE block at &0C00, containing:
  STY &0C03              \
- LDY #LO(K%-1)          \ Load address = K%-1 in &0C02 to &0C05
+ LDY #LO(K%)            \ Load address = K% in &0C02 to &0C05
  STY &0C02              \
-                        \ Length of file = 1+&2E4+JUNK-FRIN+1 in &0C0A to &0C0D
-                        \
-                        \ The file is made up of:
-                        \
-                        \   * The file format (1 byte)
-                        \
-                        \   * The ship slots at K% (&2E4 bytes)
-                        \     20 ships, 37 bytes each, 20 * 37 = 740 = &2E4
-                        \
-                        \   * FRIN          MANY/SSPR       JUNK (&39 bytes)
-                        \     NOSH + 1      NTY + 1         1
-                        \     21            35              1
-                        \     21 + 35 + 1 = 57 = &39 = JUNK - FRIN + 1
-
- LDY #HI(1+&2E4+JUNK-FRIN+1)
+ LDY #&03               \ Length of file = &031D in &0C0A to &0C0D
  STY &0C0B
- LDY #LO(1+&2E4+JUNK-FRIN+1)
+ LDY #&1D
  STY &0C0A
 
 ELIF _MASTER_VERSION
@@ -1253,7 +1239,7 @@ ELIF _MASTER_VERSION
 ENDIF
 
  LDA #&FF               \ Call SaveLoadFile with A = &FF to load the universe
- JSR SaveLoadFile       \ file to address K%-1
+ JSR SaveLoadFile       \ file to address K%
 
  BCS load1              \ If the C flag is set then an invalid drive number was
                         \ entered during the call to SaveLoadFile and the file
@@ -1266,7 +1252,7 @@ ENDIF
                         \ We now split up the file, by copying the data after
                         \ the end of the K% block into FRIN, MANY and JUNK
 
- LDA #HI(K%+&2E4)       \ Copy NOSH + 1 bytes from K%+&2E4 to FRIN
+ LDA #HI(K%+&2E4)       \ Copy NOSH+1 bytes from K%+&2E4 to FRIN
  STA P+1
  LDA #LO(K%+&2E4)
  STA P
@@ -1276,6 +1262,8 @@ ENDIF
  STA Q
  LDY #NOSH+1
  JSR CopyBlock
+
+ STZ FRIN+NOSH          \ Zero the slot terminator
 
  LDA #HI(K%+&2E4+21)    \ Copy NTY + 1 bytes from K%+&2E4+21 to MANY
  STA P+1
@@ -1291,65 +1279,9 @@ ENDIF
  LDA K%+&2E4+21+35      \ Copy 1 byte from K%+&2E4+21+35 to JUNK
  STA JUNK
 
- LDA K%-1               \ Extract the file format number
- STA K
+IF _MASTER_VERSION
 
-IF _6502SP_VERSION
-
- CMP #1                 \ If this is a 6502SP format file, then jump to load1 as
- BEQ load1              \ we don't need to make any changes
-
-                        \ We are loading a Master file into the 6502SP version,
-                        \ so we need to make the following changes:
-                        \
-                        \   * Change any Cougars from type 32 to 33
-                        \
-                        \   * Fix the ship heap addresses in INWK+33 and INWK+34
-                        \     by adding &D000-&0800 (as the ship line heap
-                        \     descends from &D000 in the 6502SP version and from
-                        \     &0800 in the Master version)
-
- LDX #32                \ Set K = 32, to act as the search value
- STX K
-
- INX                    \ Set K+1 = 33, to act as the replacement value
- STX K+1
-
- STZ K+2                \ Set K+2 = 0, to indicate addition of the ship heap
-                        \ addresses
-
- STZ K+3                \ Set K+3 = 0, so we don't delete any ships
-
- JSR ConvertFile        \ Convert the file to the correct format
-
-ELIF _MASTER_VERSION
-
- CMP #2                 \ If this is a Master format file, then jump to load1 as
- BEQ load1              \ we don't need to make any changes
-
-                        \ We are loading a 6502SP file into the Master version,
-                        \ so we need to make the following changes:
-                        \
-                        \   * Change any Cougars from type 33 to 32
-                        \
-                        \   * Fix the ship heap addresses in INWK+33 and INWK+34
-                        \     by subtracting &D000-&0800 (as the ship line heap
-                        \     descends from &D000 in the 6502SP version and from
-                        \     &0800 in the Master version)
-
- LDX #33                \ Set K = 33, to act as the search value
- STX K
-
- DEX                    \ Set K+1 = 32, to act as the replacement value
- STX K+1
-
- STX K+3                \ Set K+3 = 32, so we delete the Elite logo from the
-                        \ 6502SP file (before doing the above search)
-
- LDX #1                 \ Set K+2 = 1, to indicate subtraction of the ship heap
- STX K+2                \ addresses
-
- JSR ConvertFile        \ Convert the file to the correct format
+ JSR ConvertToMaster   \ Convert the loaded file so it works on the Master
 
 ENDIF
 
@@ -1387,16 +1319,13 @@ IF _6502SP_VERSION
 
  JSR ZEBC               \ Call ZEBC to zero-fill pages &B and &C
 
- LDY #HI(K%-1)          \ Set up an OSFILE block at &0C00, containing:
+ LDY #HI(K%)            \ Set up an OSFILE block at &0C00, containing:
  STY &0C0B              \
- LDY #LO(K%-1)          \ Start address for save = K%-1 in &0C0A to &0C0D
+ LDY #LO(K%)            \ Start address for save = K% in &0C0A to &0C0D
  STY &0C0A              \
-                        \ End address for save = K%+&2E4+JUNK-FRIN+1 in &0C0E
-                        \ to &0C11
-
- LDY #HI(K%+&2E4+JUNK-FRIN+1)
+ LDY #HI(K%+&031D)      \ End address for save = K%+&031D in &0C0E to &0C11
  STY &0C0F
- LDY #LO(K%+&2E4+JUNK-FRIN+1)
+ LDY #LO(K%+&031D)
  STY &0C0E
 
 ELIF _MASTER_VERSION
@@ -1433,17 +1362,11 @@ ENDIF
 
  LDA JUNK               \ Copy 1 byte from K%+&2E4+20+1+34+1 to JUNK (so we
  STA K%+&2E4+20+1+34+1  \ always save for NOSH = 20 and NTY = 34, even if they
-                        \ are less
+                        \ are less)
 
-IF _6502SP_VERSION
+IF _MASTER_VERSION
 
- LDA #1                 \ Set file format byte (1 = 6502sp)
- STA K%-1
-
-ELIF _MASTER_VERSION
-
- LDA #2                 \ Set file format byte (2 = Master)
- STA K%-1
+ JSR ConvertFromMaster  \ Convert the universe file so it can be saved
 
 ENDIF
 
@@ -1451,7 +1374,95 @@ ENDIF
  JSR SaveLoadFile       \ file with the filename we copied to INWK at the start
                         \ of this routine
 
+IF _MASTER_VERSION
+
+ JSR ConvertToMaster    \ Convert the loaded file back again so it works on the
+                        \ Master
+
+ENDIF
+
  RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: ConvertFromMaster
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Convert a BBC Master universe file to the save format
+\
+\ ******************************************************************************
+
+IF _MASTER_VERSION
+
+.ConvertFromMaster
+
+                        \ We are saving a file from the Master version, so we
+                        \ need to make the following changes:
+                        \
+                        \   * Change any Cougars from type 32 to 33
+                        \
+                        \   * Fix the ship heap addresses in INWK+33 and INWK+34
+                        \     by adding &D000-&0800 (as the ship line heap
+                        \     descends from &D000 in the 6502SP version and from
+                        \     &0800 in the Master version)
+
+ LDX #32                \ Set K = 32, to act as the search value
+ STX K
+
+ INX                    \ Set K+1 = 33, to act as the replacement value
+ STX K+1
+
+ STZ K+3                \ Set K+3 = 0, so we don't delete any ships from the
+                        \ file
+
+ LDX #&C8               \ Set K+2 = &D0-&08 = &C8, so we move the ship heap
+ STX K+2                \ addresses from &0800 to &D000
+
+ JMP ConvertFile        \ Convert the Master file into the correct format for
+                        \ saving
+
+ENDIF
+
+\ ******************************************************************************
+\
+\       Name: ConvertToMaster
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Convert a loaded universe file so it works on a Master
+\
+\ ******************************************************************************
+
+IF _MASTER_VERSION
+
+.ConvertToMaster
+
+                        \ We are loading a file into the Master version, so we
+                        \ need to make the following changes:
+                        \
+                        \   * Delete any Elite logos of type 32
+                        \
+                        \   * Change any Cougars from type 33 to 32
+                        \
+                        \   * Fix the ship heap addresses in INWK+33 and INWK+34
+                        \     by subtracting &D000-&0800 (as the ship line heap
+                        \     descends from &D000 in the 6502SP version and from
+                        \     &0800 in the Master version)
+
+ LDX #33                \ Set K = 33, to act as the search value
+ STX K
+
+ DEX                    \ Set K+1 = 32, to act as the replacement value
+ STX K+1
+
+ STX K+3                \ Set K+3 = 32, so we delete the Elite logo from the
+                        \ 6502SP file (before doing the above search)
+
+ LDX #&38               \ Set K+2 = -(&D0-&08) = &38, so we move the ship heap
+ STX K+2                \ addresses from &D000 to &0800
+
+ JMP ConvertFile        \ Convert the loaded file so it works on the Master
+
+ENDIF
 
 \ ******************************************************************************
 \
