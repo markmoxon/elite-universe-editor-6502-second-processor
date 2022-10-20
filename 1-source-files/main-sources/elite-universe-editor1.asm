@@ -504,14 +504,8 @@ ENDIF
  LDA #10                \ Move the text cursor to column 10
  JSR DOXC
 
- STZ MT6+1              \ Modify MT6 so when we print the standard token for
-                        \ "GALACTIC" in the following, it is done in capitals
-
- LDA #12                \ Print extended token 12 ("GALACTIC SEEDS{cr}{cr}")
+ LDA #12                \ Print extended token 12 ("GALAXY SEEDS{cr}{cr}")
  JSR PrintToken
-
- LDA #%10000000         \ Revert the modification to MT6
- STA MT6+1
 
  JSR NLIN4              \ Draw a horizontal line at pixel row 19 to box in the
                         \ title, and move the text cursor down one line

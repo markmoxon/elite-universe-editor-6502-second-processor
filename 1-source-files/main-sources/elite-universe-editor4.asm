@@ -2485,10 +2485,12 @@ ENDIF
  ECHR 'N'
  EQUB VE
 
- EJMP 1                 \ Token 12: "{all caps}GALACTIC SEEDS{cr}{cr}"
- EJMP 6
- TOKN 122
- EJMP 5
+ EJMP 1                 \ Token 12: "{all caps}GALAXY SEEDS{cr}{cr}"
+ ECHR 'G'
+ ECHR 'A'
+ ETWO 'L', 'A'
+ ECHR 'X'
+ ECHR 'Y'
  ECHR ' '
  ETWO 'S', 'E'
  ETWO 'E', 'D'
