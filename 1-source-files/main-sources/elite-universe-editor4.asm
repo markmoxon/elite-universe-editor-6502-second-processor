@@ -29,6 +29,33 @@
 
 \ ******************************************************************************
 \
+\       Name: UpdateChecksum
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Update the checksum in the last saved commander file
+\
+\ ******************************************************************************
+
+.UpdateChecksum
+
+ LDA QQ0                \ Copy the selected system to the last saved commander
+ STA NA%+9              \ file
+ LDA QQ1
+ STA NA%+10
+
+ JSR CHECK              \ Call CHECK to calculate the checksum for the last
+                        \ saved commander and return it in A
+
+ STA CHK                \ Store the checksum in CHK, which is at the end of the
+                        \ last saved commander block
+
+ EOR #&A9               \ Store the checksum EOR &A9 in CHK2, the penultimate
+ STA CHK2               \ byte of the last saved commander block
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
 \       Name: ApplyMods
 \       Type: Subroutine
 \   Category: Universe editor
@@ -257,37 +284,6 @@ ENDIF
                         \ started up
 
  JMP BR1                \ Quit the scene editor by returning to the start
-
-\ ******************************************************************************
-\
-\       Name: FlipShip
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Flip ship around in space
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   The orientation vector to flip:
-\
-\                         * 10 = negate nosev
-\
-\ ******************************************************************************
-
-.FlipShip
-
- PHA
-
- JSR NwS1               \ Call NwS1 to flip the sign of nosev_x_hi (byte #10)
-
- JSR NwS1               \ And again to flip the sign of nosev_y_hi (byte #12)
-
- JSR NwS1               \ And again to flip the sign of nosev_z_hi (byte #14)
-
- PLA
-
- RTS
 
 \ ******************************************************************************
 \
@@ -842,9 +838,9 @@ ENDIF
 \
 \ ******************************************************************************
 
-.saveCommand
-
 IF _MASTER_VERSION
+
+.saveCommand
 
 IF _SNG47
 
@@ -869,9 +865,9 @@ ENDIF
 \
 \ ******************************************************************************
 
-.deleteCommand
-
 IF _MASTER_VERSION
+
+.deleteCommand
 
  EQUS "DELETE :1.U.MYSCENE"
  EQUB 13
@@ -887,9 +883,9 @@ ENDIF
 \
 \ ******************************************************************************
 
-.loadCommand
-
 IF _MASTER_VERSION
+
+.loadCommand
 
 IF _SNG47
 
@@ -2313,256 +2309,6 @@ ENDIF
  BMI chav1              \ Jump up to chav1 to store the new value (this BMI is
                         \ effectively a JMP as we just passed through a BPL)
 
-IF _MASTER_VERSION
-
-\ ******************************************************************************
-\
-\       Name: EJMP
-\       Type: Macro
-\   Category: Text
-\    Summary: Macro definition for jump tokens in the extended token table
-\  Deep dive: Extended text tokens
-\
-\ ------------------------------------------------------------------------------
-\
-\ The following macro is used when building the extended token table:
-\
-\   EJMP n              Insert a jump to address n in the JMTB table
-\
-\ See the deep dive on "Printing extended text tokens" for details on how jump
-\ tokens are stored in the extended token table.
-\
-\ Arguments:
-\
-\   n                   The jump number to insert into the table
-\
-\ ******************************************************************************
-
-MACRO EJMP n
-
-  EQUB n EOR VE
-
-ENDMACRO
-
-\ ******************************************************************************
-\
-\       Name: ECHR
-\       Type: Macro
-\   Category: Text
-\    Summary: Macro definition for characters in the extended token table
-\  Deep dive: Extended text tokens
-\
-\ ------------------------------------------------------------------------------
-\
-\ The following macro is used when building the extended token table:
-\
-\   ECHR 'x'            Insert ASCII character "x"
-\
-\ To include an apostrophe, use a backtick character, as in ECHR '`'.
-\
-\ See the deep dive on "Printing extended text tokens" for details on how
-\ characters are stored in the extended token table.
-\
-\ Arguments:
-\
-\   'x'                 The character to insert into the table
-\
-\ ******************************************************************************
-
-MACRO ECHR x
-
-  IF x = '`'
-    EQUB 39 EOR VE
-  ELSE
-    EQUB x EOR VE
-  ENDIF
-
-ENDMACRO
-
-\ ******************************************************************************
-\
-\       Name: ETOK
-\       Type: Macro
-\   Category: Text
-\    Summary: Macro definition for recursive tokens in the extended token table
-\  Deep dive: Extended text tokens
-\
-\ ------------------------------------------------------------------------------
-\
-\ The following macro is used when building the extended token table:
-\
-\   ETOK n              Insert extended recursive token [n]
-\
-\ See the deep dive on "Printing extended text tokens" for details on how
-\ recursive tokens are stored in the extended token table.
-\
-\ Arguments:
-\
-\   n                   The number of the recursive token to insert into the
-\                       table, in the range 129 to 214
-\
-\ ******************************************************************************
-
-MACRO ETOK n
-
-  EQUB n EOR VE
-
-ENDMACRO
-
-\ ******************************************************************************
-\
-\       Name: ETWO
-\       Type: Macro
-\   Category: Text
-\    Summary: Macro definition for two-letter tokens in the extended token table
-\  Deep dive: Extended text tokens
-\
-\ ------------------------------------------------------------------------------
-\
-\ The following macro is used when building the extended token table:
-\
-\   ETWO 'x', 'y'       Insert two-letter token "xy"
-\
-\ The newline token can be entered using ETWO '-', '-'.
-\
-\ See the deep dive on "Printing extended text tokens" for details on how
-\ two-letter tokens are stored in the extended token table.
-\
-\ Arguments:
-\
-\   'x'                 The first letter of the two-letter token to insert into
-\                       the table
-\
-\   'y'                 The second letter of the two-letter token to insert into
-\                       the table
-\
-\ ******************************************************************************
-
-MACRO ETWO t, k
-
-  IF t = '-' AND k = '-' : EQUB 215 EOR VE : ENDIF
-  IF t = 'A' AND k = 'B' : EQUB 216 EOR VE : ENDIF
-  IF t = 'O' AND k = 'U' : EQUB 217 EOR VE : ENDIF
-  IF t = 'S' AND k = 'E' : EQUB 218 EOR VE : ENDIF
-  IF t = 'I' AND k = 'T' : EQUB 219 EOR VE : ENDIF
-  IF t = 'I' AND k = 'L' : EQUB 220 EOR VE : ENDIF
-  IF t = 'E' AND k = 'T' : EQUB 221 EOR VE : ENDIF
-  IF t = 'S' AND k = 'T' : EQUB 222 EOR VE : ENDIF
-  IF t = 'O' AND k = 'N' : EQUB 223 EOR VE : ENDIF
-  IF t = 'L' AND k = 'O' : EQUB 224 EOR VE : ENDIF
-  IF t = 'N' AND k = 'U' : EQUB 225 EOR VE : ENDIF
-  IF t = 'T' AND k = 'H' : EQUB 226 EOR VE : ENDIF
-  IF t = 'N' AND k = 'O' : EQUB 227 EOR VE : ENDIF
-
-  IF t = 'A' AND k = 'L' : EQUB 228 EOR VE : ENDIF
-  IF t = 'L' AND k = 'E' : EQUB 229 EOR VE : ENDIF
-  IF t = 'X' AND k = 'E' : EQUB 230 EOR VE : ENDIF
-  IF t = 'G' AND k = 'E' : EQUB 231 EOR VE : ENDIF
-  IF t = 'Z' AND k = 'A' : EQUB 232 EOR VE : ENDIF
-  IF t = 'C' AND k = 'E' : EQUB 233 EOR VE : ENDIF
-  IF t = 'B' AND k = 'I' : EQUB 234 EOR VE : ENDIF
-  IF t = 'S' AND k = 'O' : EQUB 235 EOR VE : ENDIF
-  IF t = 'U' AND k = 'S' : EQUB 236 EOR VE : ENDIF
-  IF t = 'E' AND k = 'S' : EQUB 237 EOR VE : ENDIF
-  IF t = 'A' AND k = 'R' : EQUB 238 EOR VE : ENDIF
-  IF t = 'M' AND k = 'A' : EQUB 239 EOR VE : ENDIF
-  IF t = 'I' AND k = 'N' : EQUB 240 EOR VE : ENDIF
-  IF t = 'D' AND k = 'I' : EQUB 241 EOR VE : ENDIF
-  IF t = 'R' AND k = 'E' : EQUB 242 EOR VE : ENDIF
-  IF t = 'A' AND k = '?' : EQUB 243 EOR VE : ENDIF
-  IF t = 'E' AND k = 'R' : EQUB 244 EOR VE : ENDIF
-  IF t = 'A' AND k = 'T' : EQUB 245 EOR VE : ENDIF
-  IF t = 'E' AND k = 'N' : EQUB 246 EOR VE : ENDIF
-  IF t = 'B' AND k = 'E' : EQUB 247 EOR VE : ENDIF
-  IF t = 'R' AND k = 'A' : EQUB 248 EOR VE : ENDIF
-  IF t = 'L' AND k = 'A' : EQUB 249 EOR VE : ENDIF
-  IF t = 'V' AND k = 'E' : EQUB 250 EOR VE : ENDIF
-  IF t = 'T' AND k = 'I' : EQUB 251 EOR VE : ENDIF
-  IF t = 'E' AND k = 'D' : EQUB 252 EOR VE : ENDIF
-  IF t = 'O' AND k = 'R' : EQUB 253 EOR VE : ENDIF
-  IF t = 'Q' AND k = 'U' : EQUB 254 EOR VE : ENDIF
-  IF t = 'A' AND k = 'N' : EQUB 255 EOR VE : ENDIF
-
-ENDMACRO
-
-\ ******************************************************************************
-\
-\       Name: ERND
-\       Type: Macro
-\   Category: Text
-\    Summary: Macro definition for random tokens in the extended token table
-\  Deep dive: Extended text tokens
-\
-\ ------------------------------------------------------------------------------
-\
-\ The following macro is used when building the extended token table:
-\
-\   ERND n              Insert recursive token [n]
-\
-\                         * Tokens 0-123 get stored as n + 91
-\
-\ See the deep dive on "Printing extended text tokens" for details on how
-\ random tokens are stored in the extended token table.
-\
-\ Arguments:
-\
-\   n                   The number of the random token to insert into the
-\                       table, in the range 0 to 37
-\
-\ ******************************************************************************
-
-MACRO ERND n
-
-  EQUB (n + 91) EOR VE
-
-ENDMACRO
-
-\ ******************************************************************************
-\
-\       Name: TOKN
-\       Type: Macro
-\   Category: Text
-\    Summary: Macro definition for standard tokens in the extended token table
-\  Deep dive: Printing text tokens
-\
-\ ------------------------------------------------------------------------------
-\
-\ The following macro is used when building the recursive token table:
-\
-\   TOKN n              Insert recursive token [n]
-\
-\                         * Tokens 0-95 get stored as n + 160
-\
-\                         * Tokens 128-145 get stored as n - 114
-\
-\                         * Tokens 96-127 get stored as n
-\
-\ See the deep dive on "Printing text tokens" for details on how recursive
-\ tokens are stored in the recursive token table.
-\
-\ Arguments:
-\
-\   n                   The number of the recursive token to insert into the
-\                       table, in the range 0 to 145
-\
-\ ******************************************************************************
-
-MACRO TOKN n
-
-  IF n >= 0 AND n <= 95
-    t = n + 160
-  ELIF n >= 128
-    t = n - 114
-  ELSE
-    t = n
-  ENDIF
-
-  EQUB t EOR VE
-
-ENDMACRO
-
-ENDIF
-
 \ ******************************************************************************
 \
 \       Name: UniverseTokens
@@ -2751,106 +2497,5 @@ ENDIF
  ECHR 'U'
  ECHR 'N'
  EQUB VE
-
-\ ******************************************************************************
-\
-\       Name: TWIST
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Pitch the current ship by a small angle in a positive direction
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   TWIST2              Pitch in the direction given in A
-\
-\ ******************************************************************************
-
-IF _MASTER_VERSION
-
-.TWIST2
-
- EQUB &2C               \ Skip the next instruction by turning it into
-                        \ &2C &A9 &00, or BIT &00A9, which does nothing apart
-                        \ from affect the flags
-
-.TWIST
-
- LDA #0                 \ Set A = 0
-
- STA RAT2               \ Set the pitch direction in RAT2 to A
-
- LDX #15                \ Rotate (roofv_x, nosev_x) by a small angle (pitch)
- LDY #9                 \ in the direction given in RAT2
- JSR MVS5
-
- LDX #17                \ Rotate (roofv_y, nosev_y) by a small angle (pitch)
- LDY #11                \ in the direction given in RAT2
- JSR MVS5
-
- LDX #19                \ Rotate (roofv_z, nosev_z) by a small angle (pitch)
- LDY #13                \ in the direction given in RAT2 and return from the
- JMP MVS5               \ subroutine using a tail call
-
-ENDIF
-
-\ ******************************************************************************
-\
-\       Name: STORE
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Copy the ship data block at INWK back to the K% workspace
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   INF                 The ship data block in the K% workspace to copy INWK to
-\
-\ ******************************************************************************
-
-IF _MASTER_VERSION
-
-.STORE
-
- LDY #(NI%-1)           \ Set a counter in Y so we can loop through the NI%
-                        \ bytes in the ship data block
-
-.DML2
-
- LDA INWK,Y             \ Load the Y-th byte of INWK and store it in the Y-th
- STA (INF),Y            \ byte of INF
-
- DEY                    \ Decrement the loop counter
-
- BPL DML2               \ Loop back for the next byte, until we have copied the
-                        \ last byte from INWK back to INF
-
- RTS                    \ Return from the subroutine
-
-ENDIF
-
-\ ******************************************************************************
-\
-\       Name: ZEBC
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Zero-fill pages &B and &C
-\
-\ ******************************************************************************
-
-IF _MASTER_VERSION
-
-.ZEBC
-
- LDX #&C                \ Call ZES1 with X = &C to zero-fill page &C
- JSR ZES1
-
- DEX                    \ Decrement X to &B
-
- JMP ZES1               \ Jump to ZES1 to zero-fill page &B
-
-ENDIF
 
 .endUniverseEditor4

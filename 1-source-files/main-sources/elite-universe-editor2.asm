@@ -592,15 +592,47 @@ ELIF _MASTER_VERSION
 
 ENDIF
 
+ BIT shiftCtrl          \ If CTRL was not held down, jump to char1
+ BVC char1
+
+IF _6502SP_VERSION
+
+ LDA #&60               \ Return from the JSR TT110 in zZ
+ STA zZ+8
+
+ELIF _MASTER_VERSION
+
+ LDA #&60               \ Return from the JSR TT110 in zZ
+ STA zZ+6
+
+ENDIF
+
+ JSR G1-13              \ Call G1-13, which is the LDX #5 in Ghy, to jump to
+                        \ the next galaxy
+
+IF _6502SP_VERSION
+
+ LDA #&20               \ Re-enable the JSR TT110 in zZ
+ STA zZ+8
+
+ELIF _MASTER_VERSION
+
+ LDA #&20               \ Re-enable the JSR TT110 in zZ
+ STA zZ+6
+
+ENDIF
+
+ JMP ForceLongRange     \ Show the new galaxy in the Long-Range Chart
+
+.char1
+
  JSR TT111              \ Set the seeds in QQ15 to the nearest system to the
                         \ cross-hairs
 
  JSR jmp                \ Set the current system to the selected system
 
- LDA QQ0                \ Copy the selected system to the last saved commander
- STA NA%+10             \ file
- LDA QQ1
- STA NA%+11
+ JSR UpdateChecksum     \ Update the commander checksum to cater for the new
+                        \ values
 
  LDX #5                 \ We now want to copy the seeds for the selected system
                         \ in QQ15 into QQ2, where we store the seeds for the

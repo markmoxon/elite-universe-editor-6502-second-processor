@@ -548,7 +548,7 @@ ENDIF
  LDY V                  \ Store the new seed in the current galaxy seeds
  STA QQ21,Y
 
- STA NA%+12,Y          \ Store the new seed in the last saved commander file
+ STA NA%+11,Y          \ Store the new seed in the last saved commander file
 
 .seed2
 
@@ -588,6 +588,9 @@ ENDIF
 
  STA jmp-3              \ Re-enable the JSR MESS in zZ
 
+ JSR UpdateChecksum     \ Update the commander checksum to cater for the new
+                        \ values
+
 .ForceLongRange
 
  LDA QQ14               \ Store the current fuel level on the stack
@@ -620,6 +623,37 @@ ENDIF
                         \ subroutine using a tail call
 
  RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: FlipShip
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Flip ship around in space
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The orientation vector to flip:
+\
+\                         * 10 = negate nosev
+\
+\ ******************************************************************************
+
+.FlipShip
+
+ PHA
+
+ JSR NwS1               \ Call NwS1 to flip the sign of nosev_x_hi (byte #10)
+
+ JSR NwS1               \ And again to flip the sign of nosev_y_hi (byte #12)
+
+ JSR NwS1               \ And again to flip the sign of nosev_z_hi (byte #14)
+
+ PLA
+
+ RTS
 
 \ ******************************************************************************
 \
