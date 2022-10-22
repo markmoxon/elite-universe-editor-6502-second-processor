@@ -1292,8 +1292,6 @@ ENDIF
 
  JSR HideBulbs          \ Hide both dashboard bulbs
 
- SEC                    \ Set the C flag
-
  RTS                    \ Return from the subroutine with the C flag set
 
 \ ******************************************************************************

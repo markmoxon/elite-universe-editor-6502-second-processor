@@ -108,20 +108,22 @@ ENDIF
 \
 \ Arguments:
 \
-\   K                   Ship number to search for
+\   K                   Ship number to search for (0 for no search and replace)
 \
 \   K+1                 Ship number to replace with
 \
 \   K+2                 The delta to apply to the high byte of the ship heap
 \                       addresses:
 \
+\                         * 0 = do not change addresses
+\
 \                         * &C8 = Add &D000-&0800 to each address
-\                                 (6502SP to Master)
+\                                 (Save file from Master)
 \
 \                         * &38 = Subtract &D000-&0800 from each address
-\                                 (Master to 6502SP)
+\                                 (Load file on Master)
 \
-\   K+3                 If non-zero, the ship number to delete
+\   K+3                 Ship number to delete (0 for no deletion)
 \
 \ ******************************************************************************
 
@@ -134,7 +136,7 @@ IF _MASTER_VERSION
 .fixb1
 
  LDA FRIN,Y             \ If the slot is empty, move on to the next slot
- BEQ fixb3
+ BEQ fixb4
 
  CMP K+3                \ If the slot entry is not equal to the ship to delete
  BNE fixb2              \ in K+3, jump to fixb2
@@ -147,7 +149,7 @@ IF _MASTER_VERSION
  STA FRIN,Y             \ file we assembled for saving (where the slots are at
  STA K%+&2E4,Y          \ K%+&2E4) to delete the unsupported ship
 
- BEQ fixb3              \ Jump to fixb3 to move on to the next slot (this BEQ is
+ BEQ fixb4              \ Jump to fixb4 to move on to the next slot (this BEQ is
                         \ effectively a JMP as A is always zero)
 
 .fixb2
@@ -159,6 +161,8 @@ IF _MASTER_VERSION
  STA FRIN,Y             \ replace value in K+1 in both the file in memory and in
  STA K%+&2E4,Y          \ the file we assembled for saving (where the slots are
                         \ at K%+&2E4) to delete the unsupported ship
+
+.fixb3
 
  PHY                    \ Store the loop counter on the stack
 
@@ -181,7 +185,7 @@ IF _MASTER_VERSION
 
  PLY                    \ Retrieve the loop counter from the stack
 
-.fixb3
+.fixb4
 
  DEY                    \ Decrement the counter
 
