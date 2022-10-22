@@ -858,12 +858,12 @@ IF _MASTER_VERSION
 
 IF _SNG47
 
- EQUS "SAVE :1.U.MYSCENE  400 +31D 0 0"
+ EQUS "SAVE :1.U.MYSCENE  400 +31F 0 0"
  EQUB 13
 
 ELIF _COMPACT
 
- EQUS "SAVE MYSCENE  400 +31D 0 0"
+ EQUS "SAVE MYSCENE  400 +31F 0 0"
  EQUB 13
 
 ENDIF
@@ -1279,6 +1279,11 @@ ENDIF
  LDA K%+&2E4+21+35      \ Copy 1 byte from K%+&2E4+21+35 to JUNK
  STA JUNK
 
+ LDA K%+&2E4+21+36      \ Copy 2 bytes from K%+&2E4+21+36 SLSP to 
+ STA SLSP
+ LDA K%+&2E4+21+37
+ STA SLSP+1
+
 IF _MASTER_VERSION
 
  JSR ConvertToMaster    \ Convert the loaded file so it works on the Master
@@ -1321,9 +1326,9 @@ IF _6502SP_VERSION
  STY &0C0B              \
  LDY #LO(K%)            \ Start address for save = K% in &0C0A to &0C0D
  STY &0C0A              \
- LDY #HI(K%+&031D)      \ End address for save = K%+&031D in &0C0E to &0C11
+ LDY #HI(K%+&031F)      \ End address for save = K%+&031F in &0C0E to &0C11
  STY &0C0F
- LDY #LO(K%+&031D)
+ LDY #LO(K%+&031F)
  STY &0C0E
 
 ELIF _MASTER_VERSION
@@ -1347,20 +1352,25 @@ ENDIF
  LDY #NOSH+1
  JSR CopyBlock
 
- LDA #HI(MANY)          \ Copy NTY + 1 bytes from MANY to K%+&2E4+20+1 (so we
+ LDA #HI(MANY)          \ Copy NTY + 1 bytes from MANY to K%+&2E4+21 (so we
  STA P+1                \ always save for NOSH = 20, even if NOSH is less)
  LDA #LO(MANY)
  STA P
- LDA #HI(K%+&2E4+20+1)
+ LDA #HI(K%+&2E4+21)
  STA Q+1
- LDA #LO(K%+&2E4+20+1)
+ LDA #LO(K%+&2E4+21)
  STA Q
  LDY #NTY+1
  JSR CopyBlock
 
- LDA JUNK               \ Copy 1 byte from K%+&2E4+20+1+34+1 to JUNK (so we
- STA K%+&2E4+20+1+34+1  \ always save for NOSH = 20 and NTY = 34, even if they
+ LDA JUNK               \ Copy 1 byte from JUNK to K%+&2E4+21+35 (so we
+ STA K%+&2E4+21+35      \ always save for NOSH = 20 and NTY = 34, even if they
                         \ are less)
+
+ LDA SLSP               \ Copy 2 bytes from SLSP to K%+&2E4+21+36
+ STA K%+&2E4+21+36
+ LDA SLSP+1
+ STA K%+&2E4+21+37
 
 IF _MASTER_VERSION
 

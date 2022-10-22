@@ -191,6 +191,12 @@ IF _MASTER_VERSION
 
  BPL fixb1              \ Loop back until all X bytes are searched
 
+ LDA K%+&2E4+21+36      \ Apply the delta to the high byte of SLSP
+ CLC              
+ ADC K+2
+ STA K%+&2E4+21+36
+ STA SLSP
+
  RTS                    \ Return from the subroutine
 
 ENDIF
