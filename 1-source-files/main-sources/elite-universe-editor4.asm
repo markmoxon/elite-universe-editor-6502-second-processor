@@ -29,20 +29,6 @@
 
 \ ******************************************************************************
 \
-\       Name: dirCommand
-\       Type: Variable
-\   Category: Universe editor
-\    Summary: The OS command string for changing the disc directory to E
-\
-\ ******************************************************************************
-
-.dirCommand
-
- EQUS "DIR E"
- EQUB 13
-
-\ ******************************************************************************
-\
 \       Name: UpdateChecksum
 \       Type: Subroutine
 \   Category: Universe editor
@@ -350,8 +336,8 @@ ENDIF
 
  PHA                    \ Store the token number on the stack
 
- LDA #0                 \ Set the delay in DLY to 0, so any new in-flight
- STA DLY                \ messages will be shown instantly
+ STZ DLY                \ Set the delay in DLY to 0, so any new in-flight
+                        \ messages will be shown instantly
 
 IF _6502SP_VERSION
 
@@ -376,10 +362,8 @@ ENDIF
  LDA #22                \ Move the text cursor to row 22
  JSR DOYC
 
- PLA                    \ Print the token
- JSR PrintToken
-
- RTS                    \ Return from the subroutine
+ PLA                    \ Print the token, returning from the subroutine using a
+ JMP PrintToken         \ tail call
 
 \ ******************************************************************************
 \
@@ -1225,10 +1209,9 @@ IF _6502SP_VERSION
 
  LDY #HI(K%)            \ Set up an OSFILE block at &0C00, containing:
  STY &0C03              \
- LDY #LO(K%)            \ Load address = K% in &0C02 to &0C05
- STY &0C02              \
- LDY #&03               \ Length of file = &031D in &0C0A to &0C0D
- STY &0C0B
+ STZ &0C02              \ Load address = K% in &0C02 to &0C05
+ LDY #&03               \
+ STY &0C0B              \ Length of file = &031D in &0C0A to &0C0D
  LDY #&1D
  STY &0C0A
 
@@ -1324,10 +1307,9 @@ IF _6502SP_VERSION
 
  LDY #HI(K%)            \ Set up an OSFILE block at &0C00, containing:
  STY &0C0B              \
- LDY #LO(K%)            \ Start address for save = K% in &0C0A to &0C0D
- STY &0C0A              \
- LDY #HI(K%+&031F)      \ End address for save = K%+&031F in &0C0E to &0C11
- STY &0C0F
+ STZ &0C0A              \ Start address for save = K% in &0C0A to &0C0D
+ LDY #HI(K%+&031F)      \
+ STY &0C0F              \ End address for save = K%+&031F in &0C0E to &0C11
  LDY #LO(K%+&031F)
  STY &0C0E
 
@@ -1378,18 +1360,24 @@ IF _MASTER_VERSION
 
 ENDIF
 
+IF _6502SP_VERSION
+
+ LDA #0                 \ Call SaveLoadFile with A = 0 to save the universe
+ JMP SaveLoadFile       \ file with the filename we copied to INWK at the start
+                        \ of this routine, returning from the subroutine using
+                        \ a tail call
+
+ELIF _MASTER_VERSION
+
  LDA #0                 \ Call SaveLoadFile with A = 0 to save the universe
  JSR SaveLoadFile       \ file with the filename we copied to INWK at the start
                         \ of this routine
 
-IF _MASTER_VERSION
-
- JSR ConvertToMaster    \ Convert the loaded file back again so it works on the
-                        \ Master
+ JMP ConvertToMaster    \ Convert the loaded file back again so it works on the
+                        \ Master, returning from the subroutine using a tail
+                        \ call
 
 ENDIF
-
- RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \

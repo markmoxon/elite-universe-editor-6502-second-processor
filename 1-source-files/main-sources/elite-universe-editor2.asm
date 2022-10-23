@@ -634,23 +634,20 @@ ENDIF
 
 IF _6502SP_VERSION
 
- LDA KL                 \ If "G" was not pressed, jump to char4 to skip the
- CMP #keyG              \ following
- BNE char4
+ LDA KL                 \ If "G" was not pressed, jump to draw3 to return from
+ CMP #keyG              \ the subroutine (as draw3 contains an RTS)
+ BNE draw3
 
 ELIF _MASTER_VERSION
 
- LDA KL                 \ If "G" was not pressed, jump to char4 to skip the
- CMP #'G'               \ following
- BNE char4
+ LDA KL                 \ If "G" was not pressed, jump to draw3 to return from
+ CMP #'G'               \ the subroutine (as draw3 contains an RTS)
+ BNE draw3
 
 ENDIF
 
- JMP ChangeSeeds        \ "G" was pressed, so jump to the seeds screen
-
-.char4
-
- RTS                    \ Return from the subroutine
+ JMP ChangeSeeds        \ "G" was pressed, so jump to the seeds screen,
+                        \ returning from the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -658,6 +655,12 @@ ENDIF
 \       Type: Subroutine
 \   Category: Universe editor
 \    Summary: Draw all ships, planets, stations etc.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   draw3               Contains an RTS
 \
 \ ******************************************************************************
 
@@ -705,10 +708,8 @@ ENDIF
  AND #%00001000         \ is being drawn on-screen for this ship anyway, so
  BEQ P%+5               \ skip the following
 
- JSR PTCLS              \ Call PTCLS to redraw the cloud, returning from the
+ JMP PTCLS              \ Call PTCLS to redraw the cloud, returning from the
                         \ subroutine using a tail call
-
- RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
@@ -1351,7 +1352,6 @@ ENDIF
  JSR PrintShipType      \ Erase the current ship type, so we can replace it
                         \ below
 
-
  JSR MV5                \ Draw the current ship on the scanner to remove it
 
  LDA INWK+31            \ Set bit 7 and clear bit 5 in byte #31 to denote that
@@ -1369,10 +1369,9 @@ ENDIF
 
  JSR DrawShip+6         \ Draw the explosion (but not on the scanner)
 
- JSR ModifyExplosion    \ Modify the explosion code so it doesn't update the
-                        \ explosion
-
- RTS                    \ Return from the subroutine
+ JMP ModifyExplosion    \ Modify the explosion code so it doesn't update the
+                        \ explosion, returning from the subroutine using a tail
+                        \ call
 
 \ ******************************************************************************
 \
@@ -1613,5 +1612,26 @@ ENDIF
 
  JMP TAS2               \ Call TAS2 to build XX15 from K3, returning from the
                         \ subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: showingBulb
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: A status byte showing which bulbs are being shown on the dashboard
+\
+\ ------------------------------------------------------------------------------
+\
+\ The status byte is as follows:
+\
+\   * Bit 6 is set if the S bulb is showing
+\
+\   * Bit 7 is set if the E bulb is showing
+\
+\ ******************************************************************************
+
+.showingBulb
+
+ EQUB 0
 
 .endUniverseEditor2

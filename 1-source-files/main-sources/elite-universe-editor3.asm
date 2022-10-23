@@ -56,6 +56,10 @@
 \
 \   C flag              Set if an invalid drive number was entered
 \
+\ Other entry points:
+\
+\   slod3               Contains an RTS
+\
 \ ******************************************************************************
 
 .SaveLoadFile
@@ -183,9 +187,9 @@ ENDIF
                         \ name on the Master Compact) and catalogue that disc
                         \ or directory
 
- BCS dele2              \ If the C flag is set then an invalid drive number was
+ BCS slod3              \ If the C flag is set then an invalid drive number was
                         \ entered as part of the catalogue process, so jump to
-                        \ dele2 to return from the subroutine
+                        \ slod3 to return from the subroutine
 
 IF _6502SP_VERSION
 
@@ -217,8 +221,8 @@ ENDIF
  JSR MT26               \ Call MT26 to fetch a line of text from the keyboard
                         \ to INWK+5, with the text length in Y
 
- TYA                    \ If no text was entered (Y = 0) then jump to dele2 to
- BEQ dele2              \ return from the subroutine
+ TYA                    \ If no text was entered (Y = 0) then jump to slod3 to
+ BEQ slod3              \ return from the subroutine
 
                         \ We now copy the entered filename from INWK to DELI, so
                         \ that it overwrites the filename part of the string,
@@ -307,9 +311,10 @@ IF _6502SP_VERSION
  LDY #HI(DELI)          \ contains the DFS command for deleting this file
 
 
- JSR SCLI2              \ Call SCLI2 to execute the OS command at (Y X), which
+ JMP SCLI2              \ Call SCLI2 to execute the OS command at (Y X), which
                         \ deletes the file, setting the SVN flag while it's
-                        \ running to indicate disc access is in progress
+                        \ running to indicate disc access is in progress, and
+                        \ return from the subroutine using a tail call
 
 ELIF _MASTER_VERSION
 
@@ -320,13 +325,10 @@ ELIF _MASTER_VERSION
  JSR OSCLI              \ Call OSCLI to execute the OS command at (Y X), which
                         \ catalogues the disc
 
- JSR SWAPZP             \ Call SWAPZP to restore the top part of zero page
+ JMP SWAPZP             \ Call SWAPZP to restore the top part of zero page,
+                        \ returning from the subroutine using a tail call
 
 ENDIF
-
-.dele2
-
- RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
@@ -356,16 +358,21 @@ ENDIF
  LDX #LO(dirCommand)    \ Set (Y X) to point to dirCommand ("DIR U")
  LDY #HI(dirCommand)
 
+IF _6502SP_VERSION
+
+ JMP OSCLI              \ Call OSCLI to run the OS command in dirCommand, which
+                        \ changes the disc directory to E, returning from the
+                        \ subroutine using a tail call
+
+ELIF _MASTER_VERSION
+
  JSR OSCLI              \ Call OSCLI to run the OS command in dirCommand, which
                         \ changes the disc directory to E
 
-IF _MASTER_VERSION
-
- JSR SWAPZP             \ Call SWAPZP to restore the top part of zero page
+ JMP SWAPZP             \ Call SWAPZP to restore the top part of zero page,
+                        \ returning from the subroutine using a tail call
 
 ENDIF
-
- RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
@@ -425,24 +432,17 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: showingBulb
+\       Name: dirCommand
 \       Type: Variable
 \   Category: Universe editor
-\    Summary: A status byte showing which bulbs are being shown on the dashboard
-\
-\ ------------------------------------------------------------------------------
-\
-\ The status byte is as follows:
-\
-\   * Bit 6 is set if the S bulb is showing
-\
-\   * Bit 7 is set if the E bulb is showing
+\    Summary: The OS command string for changing the disc directory to E
 \
 \ ******************************************************************************
 
-.showingBulb
+.dirCommand
 
- EQUB 0
+ EQUS "DIR E"
+ EQUB 13
 
 \ ******************************************************************************
 \

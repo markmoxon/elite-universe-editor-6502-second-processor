@@ -133,13 +133,13 @@ IF _MASTER_VERSION
 
  LDY #NOSH              \ Set a counter in Y to loop through all the slots
 
-.fixb1
+.conv1
 
  LDA FRIN,Y             \ If the slot is empty, move on to the next slot
- BEQ fixb4
+ BEQ conv4
 
  CMP K+3                \ If the slot entry is not equal to the ship to delete
- BNE fixb2              \ in K+3, jump to fixb2
+ BNE conv2              \ in K+3, jump to conv2
 
                         \ This ship type is not supported in this version, so we
                         \ need to clear the slot, though this will only work if
@@ -149,20 +149,20 @@ IF _MASTER_VERSION
  STA FRIN,Y             \ file we assembled for saving (where the slots are at
  STA K%+&2E4,Y          \ K%+&2E4) to delete the unsupported ship
 
- BEQ fixb4              \ Jump to fixb4 to move on to the next slot (this BEQ is
+ BEQ conv4              \ Jump to conv4 to move on to the next slot (this BEQ is
                         \ effectively a JMP as A is always zero)
 
-.fixb2
+.conv2
 
  CMP K                  \ If the slot entry is not equal to the search value in
- BNE fixb3              \ K, jump to fixb3
+ BNE conv3              \ K, jump to conv3
 
  LDA K+1                \ We have a match, so replace the slot entry with the
  STA FRIN,Y             \ replace value in K+1 in both the file in memory and in
  STA K%+&2E4,Y          \ the file we assembled for saving (where the slots are
                         \ at K%+&2E4) to delete the unsupported ship
 
-.fixb3
+.conv3
 
  PHY                    \ Store the loop counter on the stack
 
@@ -185,11 +185,11 @@ IF _MASTER_VERSION
 
  PLY                    \ Retrieve the loop counter from the stack
 
-.fixb4
+.conv4
 
  DEY                    \ Decrement the counter
 
- BPL fixb1              \ Loop back until all X bytes are searched
+ BPL conv1              \ Loop back until all X bytes are searched
 
  LDA K%+&2E4+21+36      \ Apply the delta to the high byte of SLSP
  CLC              
@@ -436,10 +436,8 @@ ENDIF
  JSR STORE              \ Call STORE to copy the ship data block at INWK back to
                         \ the K% workspace at INF
 
- JSR UpdateDashboard    \ Update the dashboard
-
- RTS                    \ Return from the subroutine
-
+ JMP UpdateDashboard    \ Update the dashboard, returning from the subroutine
+                        \ using a tail call
 
 \ ******************************************************************************
 \
