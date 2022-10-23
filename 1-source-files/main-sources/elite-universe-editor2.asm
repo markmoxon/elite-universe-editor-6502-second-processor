@@ -1384,17 +1384,35 @@ ENDIF
 
 .CreateShip
 
+ LDX #2                 \ First, we need the slot number of the first empty
+                        \ slot, so start at slot 2 (first ship slot)
+
+.slot1
+
+ LDA FRIN,X             \ If slot is empty, jump to slot2 as we have found our
+ BEQ slot2              \ slot
+
+ INX                    \ Otherwise increment X to point to the next slot
+
+ CPX #NOSH              \ If we haven't reached the last slot yet, loop back
+ BCC slot1 
+
+ BCS MakeErrorBeep      \ If there is no free slot, jump to MakeErrorBeep to
+                        \ make an error beep and return from the subroutine
+                        \ using a tail call
+
+.slot2
+
+ PHX                    \ Store the empty slot number
+
  LDA TYPE               \ Fetch the type of ship to create
 
  JSR NWSHP              \ Add the new ship and store it in K%
 
- BCC MakeErrorBeep      \ If ship was not added, jump to MakeErrorBeep to make
-                        \ an error beep and return from the subroutine using a
-                        \ tail call
+ PLX                    \ Restore the empty slot number (which is where the new
+                        \ ship will be if it was added)
 
- JSR GetCurrentSlot     \ Set X to the slot number of the new ship
-
- BCS MakeErrorBeep      \ If we didn't find the slot, jump to MakeErrorBeep to
+ BCC MakeErrorBeep      \ If we didn't add a new ship, jump to MakeErrorBeep to
                         \ make an error beep and return from the subroutine
                         \ using a tail call
 

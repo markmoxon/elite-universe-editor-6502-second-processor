@@ -381,57 +381,6 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: GetCurrentSlot
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Fetch the slot number for the ship in INF
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   X                   Slot number for ship in INF
-\
-\   C flag              Clear = success (ship slot found)
-\                       Set = failure (ship slot not found)
-\
-\ ******************************************************************************
-
-.GetCurrentSlot
-
- LDX #2                 \ Start at slot 2 (first ship slot)
-
-.slot1
-
- LDA FRIN,X             \ If slot is empty, move onto next slot
- BEQ slot2
-
- TXA                    \ Set Y = X * 2
- ASL A
- TAY
-
- LDA UNIV,Y             \ If INF(1 0) <> UNIV(1 0), jump to next slot
- CMP INF
- BNE slot2
- LDA UNIV+1,Y
- CMP INF+1
- BNE slot2
-
- CLC                    \ Return with C flag clear to indicate success
- RTS
-
-.slot2
-
- INX                    \ Otherwise increment X to point to the next slot
-
- CPX #NOSH              \ If we haven't reached the last slot yet, loop back
- BCC slot1
-
- RTS                    \ Return from the subroutine with C flag set to indicate
-                        \ failure
-
-\ ******************************************************************************
-\
 \       Name: NextSlot
 \       Type: Subroutine
 \   Category: Universe editor
@@ -1093,9 +1042,6 @@ ENDIF
 
  JSR LoadUniverse       \ Call LoadUniverse to load the commander file
 
- JSR StoreName          \ Transfer the universe filename from INWK to NAME, to
-                        \ set it as the current filename
-
  JMP disc5              \ Jump to disc5 to return from the subroutine
 
 .disc3
@@ -1275,8 +1221,7 @@ ENDIF
 
 .load1
 
- LDX #0                 \ Switch to slot 0
- STX currentSlot
+ STZ currentSlot        \ Switch to slot 0
 
  JSR HideBulbs          \ Hide both dashboard bulbs
 
