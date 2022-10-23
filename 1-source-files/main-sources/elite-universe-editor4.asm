@@ -1219,6 +1219,8 @@ IF _MASTER_VERSION
 
 ENDIF
 
+ JSR ResetExplosions    \ Reset any explosions so they restart on loading
+
 .load1
 
  STZ currentSlot        \ Switch to slot 0

@@ -715,4 +715,52 @@ IF _6502SP_VERSION
 
 ENDIF
 
+\ ******************************************************************************
+\
+\       Name: ResetExplosions
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Restart any exploding ships to the point just before they explode
+\
+\ ******************************************************************************
+
+.ResetExplosions
+
+ LDX #2                 \ Set a counter in X to loop through all the slots,
+                        \ starting with the first ship slot
+
+.rexp1
+
+ STX currentSlot        \ Store the counter in currentSlot
+
+ LDY FRIN,X             \ If the slot is empty, jump to rexp3 to return from the
+ BEQ rexp3              \ subroutine
+
+ JSR GetShipData        \ Fetch the ship data for this slot
+
+ LDA INWK+31            \ If bit 5 of INWK+31 is clear, then the ship is not
+ AND #%00100000         \ exploding, so jump to the next slot
+ BEQ rexp2
+
+ LDA INWK+31            \ Reset the explosion by clearing bits 3, 5 and 6 and
+ AND #%00010111         \ setting bit 7 of the ship's INWK+31 byte
+ ORA #%10000000
+ STA INWK+31
+
+ JSR DrawShip+3         \ Update the explosion for the ship in currentSlot
+ JSR DrawShip+6
+
+.rexp2
+
+ LDX currentSlot        \ Restore the counter from currentSlot
+
+ INX                    \ Decrement the counter
+
+ CPX #NOSH
+ BCC rexp1              \ Loop back until all slots are processed
+
+.rexp3
+
+ RTS                    \ Return from the subroutine
+
 .endUniverseEditor1
