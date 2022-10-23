@@ -16686,9 +16686,11 @@ Saving file '3-assembled-output/ELTH.bin'
      70FC   20 59 45   JSR &4559
      70FF   68         PLA
      7100   60         RTS
-.DrawShip
+.DrawShipScanner
      7101   20 0B 6A   JSR &6A0B
+.DrawShipStore
      7104   20 37 6E   JSR &6E37
+.DrawShip
      7107   20 FD 6B   JSR &6BFD
      710A   20 4E 60   JSR &604E
      710D   A0 1F      LDY #&1F

@@ -1830,7 +1830,7 @@ ENDIF
  STA TYPE
  STA FRIN
 
- JMP DrawShip           \ Draw the ship and return from the subroutine using a
+ JMP DrawShipScanner    \ Draw the ship and return from the subroutine using a
                         \ tail call
 
 \ ******************************************************************************

@@ -277,8 +277,9 @@ ENDIF
                         \ shape due to the imprecise nature of trigonometry
                         \ in assembly language
 
- JMP DrawShip+3         \ Draw the ship (but not on the scanner) and return from
-                        \ the subroutine using a tail call
+ JMP DrawShipStore      \ Store the ship data and draw the ship (but not on the
+                        \ scanner) and return from the subroutine using a tail
+                        \ call
 
 \ ******************************************************************************
 \
@@ -364,7 +365,7 @@ ENDIF
 
  JSR InitialiseShip     \ Initialise the ship coordinates
 
- JMP DrawShip           \ Draw the ship and return from the subroutine using a
+ JMP DrawShipScanner    \ Draw the ship and return from the subroutine using a
                         \ tail call
 
 \ ******************************************************************************
@@ -747,8 +748,11 @@ ENDIF
  ORA #%10000000
  STA INWK+31
 
- JSR DrawShip+3         \ Update the explosion for the ship in currentSlot
- JSR DrawShip+6
+ JSR DrawShipStore      \ Store the ship data and draw the ship (but not on the
+                        \ scanner)
+
+ JSR DrawShip           \ Draw the ship (but not on the scanner, and without
+                        \ storing)
 
 .rexp2
 

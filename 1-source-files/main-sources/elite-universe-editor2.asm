@@ -678,7 +678,7 @@ ENDIF
 
  JSR GetShipData        \ Fetch the details for the ship in slot X
 
- JSR DrawShip           \ Draw the ship
+ JSR DrawShipScanner    \ Draw the ship
 
 .draw2
 
@@ -744,27 +744,46 @@ ENDIF
 
 \ ******************************************************************************
 \
+\       Name: DrawShipScanner
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Store the ship's data and draw the ship on the screen and the
+\             scanner
+\
+\ ******************************************************************************
+
+.DrawShipScanner
+
+ JSR MV5                \ Draw the ship on the scanner
+
+                        \ Fall through into DrawShipStore to store the ship's
+                        \ data and draw the ship on-screen
+
+\ ******************************************************************************
+\
+\       Name: DrawShipStore
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Store the ship's data and draw the ship
+\
+\ ******************************************************************************
+
+.DrawShipStore
+
+ JSR STORE              \ Store the updated scanner byte
+
+                        \ Fall through into DrawShip to draw the ship on-screen
+
+\ ******************************************************************************
+\
 \       Name: DrawShip
 \       Type: Subroutine
 \   Category: Universe editor
-\    Summary: Draw a single ship
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   DrawShip+3          Do not draw the ship on the scanner
-\
-\   DrawShip+6          Do not store the ship's details or draw the ship on the
-\                       scanner
+\    Summary: Draw the ship
 \
 \ ******************************************************************************
 
 .DrawShip
-
- JSR MV5                \ Draw the ship on the scanner
-
- JSR STORE              \ Store the updated scanner byte
 
  JSR PLUT               \ Call PLUT to update the geometric axes in INWK to
                         \ match the view (front, rear, left, right)
@@ -886,7 +905,7 @@ ENDIF
 
  JSR ShowBulbs          \ Show the bulbs on the dashboard
 
- JMP DrawShip           \ Draw the ship and return from the subroutine using a
+ JMP DrawShipScanner    \ Draw the ship and return from the subroutine using a
                         \ tail call
 
 \ ******************************************************************************
@@ -961,7 +980,7 @@ ENDIF
  LDA K+3
  STA INWK+2,X
 
- JMP DrawShip           \ Draw the ship and return from the subroutine using a
+ JMP DrawShipScanner    \ Draw the ship and return from the subroutine using a
                         \ tail call
 
 \ ******************************************************************************
@@ -1319,8 +1338,9 @@ ENDIF
  EOR #%01000000         \ firing its laser at us (or to switch it off)
  STA INWK+31
 
- JMP DrawShip+6         \ Draw the ship (but not on the scanner), returning from
-                        \ the subroutine using a tail call
+ JMP DrawShip           \ Draw the ship (but not on the scanner, and without
+                        \ storing), returning from the subroutine using a tail
+                        \ call
 
 \ ******************************************************************************
 \
@@ -1359,15 +1379,15 @@ ENDIF
  AND #%11101111
  STA INWK+31
 
- JSR DrawShip+3         \ Draw the explosion (but not on the scanner) to get it
-                        \ going (as only calling this once at the start of a new
-                        \ explosion doesn't show a lot)
+ JSR DrawShipStore      \ Store the ship data and draw the ship (but not on the
+                        \ scanner) to get the explosion going
 
  JSR PrintShipType      \ Print the new ship type, which will be "Cloud" 
 
 .expl1
 
- JSR DrawShip+6         \ Draw the explosion (but not on the scanner)
+ JSR DrawShip           \ Draw the ship (but not on the scanner, and without
+                        \ storing)
 
  JMP ModifyExplosion    \ Modify the explosion code so it doesn't update the
                         \ explosion, returning from the subroutine using a tail
@@ -1418,7 +1438,7 @@ ENDIF
 
  JSR UpdateSlotNumber   \ Store and print the new slot number in X
 
- JMP DrawShip           \ Draw the ship, returning from the subroutine using a
+ JMP DrawShipScanner    \ Draw the ship and return from the subroutine using a
                         \ tail call
 
 \ ******************************************************************************
