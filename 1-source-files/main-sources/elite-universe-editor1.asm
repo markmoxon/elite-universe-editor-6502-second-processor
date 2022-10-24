@@ -191,11 +191,11 @@ IF _MASTER_VERSION
 
  BPL conv1              \ Loop back until all X bytes are searched
 
- LDA K%+&2E4+21+36      \ Apply the delta to the high byte of SLSP
+ LDA K%+&2E4+21+37      \ Apply the delta to the high byte of SLSP
  CLC              
  ADC K+2
- STA K%+&2E4+21+36
- STA SLSP
+ STA K%+&2E4+21+37
+ STA SLSP+1
 
  RTS                    \ Return from the subroutine
 
