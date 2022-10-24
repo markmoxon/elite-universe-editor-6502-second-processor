@@ -442,14 +442,14 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: ModifyExplosion
+\       Name: ApplyExplosionMod
 \       Type: Subroutine
 \   Category: Universe editor
 \    Summary: Apply mods for explosions
 \
 \ ******************************************************************************
 
-.ModifyExplosion
+.ApplyExplosionMod
 
  LDA #&4C               \ Modify DOEXP so that it jumps to DrawExplosion instead
  STA DOEXP              \ to draw the cloud but without progressing it
@@ -462,14 +462,14 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: RevertExplosion
+\       Name: RevertExplosionMod
 \       Type: Subroutine
 \   Category: Universe editor
 \    Summary: Reverse mods for explosions
 \
 \ ******************************************************************************
 
-.RevertExplosion
+.RevertExplosionMod
 
 IF _6502SP_VERSION
 
@@ -774,22 +774,22 @@ ENDIF
 
 .KickstartExplosion
 
- JSR RevertExplosion    \ Revert the explosion code so it implements the normal
-                        \ explosion cloud
+ JSR RevertExplosionMod \ Revert the explosion modification so it implements the
+                        \ normal explosion cloud
 
  JSR DrawShipStore      \ Store the ship data and draw the ship (but not on the
                         \ scanner)
 
- JSR DrawShip+3         \ Draw the ship (but not on the scanner, and without
+ JSR DrawShip           \ Draw the ship (but not on the scanner, and without
                         \ storing or updating the axes)
 
- JSR DrawShip+3         \ Draw the ship (but not on the scanner, and without
+ JSR DrawShip           \ Draw the ship (but not on the scanner, and without
                         \ storing or updating the axes)
 
- JSR DrawShip+3         \ Draw the ship (but not on the scanner, and without
+ JSR DrawShip           \ Draw the ship (but not on the scanner, and without
                         \ storing or updating the axes)
 
- JMP ModifyExplosion    \ Modify the explosion code so it doesn't update the
+ JMP ApplyExplosionMod  \ Modify the explosion code so it doesn't update the
                         \ explosion, returningh from the subroutine using a tail
                         \ call
 

@@ -705,8 +705,8 @@ ENDIF
 .DrawExplosion
 
  LDA INWK+31            \ If bit 3 of the ship's byte #31 is clear, then nothing
- AND #%00001000         \ is being drawn on-screen for this ship anyway, so
- BEQ P%+5               \ skip the following
+ AND #%00001000         \ is being drawn on-screen for this ship anyway, so jump
+ BEQ draw3              \ to draw3 to return from the subroutine
 
  JMP PTCLS              \ Call PTCLS to redraw the cloud, returning from the
                         \ subroutine using a tail call
@@ -772,8 +772,22 @@ ENDIF
 
  JSR STORE              \ Store the updated scanner byte
 
-                        \ Fall through into DrawShip to draw the ship on-screen
+                        \ Fall through into DrawShipAxes to draw the ship
+                        \ on-screen with the correct axes for the view
 
+\ ******************************************************************************
+\
+\       Name: DrawShipAxes
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Draw the ship with the correct axes for the view
+\
+\ ******************************************************************************
+
+.DrawShipAxes
+
+ JSR PLUT               \ Call PLUT to update the geometric axes in INWK to
+                        \ match the view (front, rear, left, right)
 \ ******************************************************************************
 \
 \       Name: DrawShip
@@ -784,9 +798,6 @@ ENDIF
 \ ******************************************************************************
 
 .DrawShip
-
- JSR PLUT               \ Call PLUT to update the geometric axes in INWK to
-                        \ match the view (front, rear, left, right)
 
  JSR LL9                \ Draw the ship
 
@@ -1338,9 +1349,9 @@ ENDIF
  EOR #%01000000         \ firing its laser at us (or to switch it off)
  STA INWK+31
 
- JMP DrawShip           \ Draw the ship (but not on the scanner, and without
-                        \ storing), returning from the subroutine using a tail
-                        \ call
+ JMP DrawShipAxes       \ Draw the ship with the correct axes for the view (but
+                        \ not on the scanner, and without storing), returning
+                        \ from the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -1383,13 +1394,13 @@ ENDIF
 
 .expl1
 
- JSR RevertExplosion    \ Revert the explosion code so it implements the normal
-                        \ explosion cloud
+ JSR RevertExplosionMod \ Revert the explosion modification so it implements the
+                        \ normal explosion cloud
 
- JSR DrawShip           \ Draw the ship (but not on the scanner, and without
-                        \ storing)
+ JSR DrawShipAxes       \ Draw the ship with the correct axes for the view (but
+                        \ not on the scanner, and without storing)
 
- JMP ModifyExplosion    \ Modify the explosion code so it doesn't update the
+ JMP ApplyExplosionMod  \ Modify the explosion code so it doesn't update the
                         \ explosion, returning from the subroutine using a tail
                         \ call
 

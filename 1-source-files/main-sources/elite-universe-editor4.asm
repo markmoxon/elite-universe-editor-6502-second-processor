@@ -87,7 +87,8 @@ ENDIF
  LDA #%11100111         \ Disable the clearing of bit 7 (lasers firing) in
  STA WS1-3              \ WPSHPS
 
- JSR ModifyExplosion    \ Modify the explosion code
+ JSR ApplyExplosionMod  \ Modify the explosion code so it doesn't update the
+                        \ explosion
 
  LDA #NWDAV5-TT92+6     \ Modify BNE TT92 in TT102 to BNE NWDAV5
  STA TT92-7
@@ -135,7 +136,8 @@ ENDIF
  LDA #%10100111         \ Re-enable the clearing of bit 7 (lasers firing) in
  STA WS1-3              \ WPSHPS
 
- JSR RevertExplosion    \ Revert the explosion code
+ JSR RevertExplosionMod \ Revert the explosion modification so it implements the
+                        \ normal explosion cloud
 
  LDA #6                 \ Revert BNE NWDAV5 in TT102 to BNE TT92
  STA TT92-7
