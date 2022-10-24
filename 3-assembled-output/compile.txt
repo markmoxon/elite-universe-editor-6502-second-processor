@@ -3159,7 +3159,7 @@ WP workspace from  &D00  to &E3C
 .StoreValue
      0EE3   20 37 6E   JSR &6E37
      0EE6   4C 52 F5   JMP &F552
-.ModifyExplosion
+.ApplyExplosionMod
      0EE9   A9 4C      LDA #&4C
      0EEB   8D DD 41   STA &41DD
      0EEE   A9 EC      LDA #&EC
@@ -3167,7 +3167,7 @@ WP workspace from  &D00  to &E3C
      0EF3   A9 70      LDA #&70
      0EF5   8D DF 41   STA &41DF
      0EF8   60         RTS
-.RevertExplosion
+.RevertExplosionMod
      0EF9   A9 A5      LDA #&A5
      0EFB   8D DD 41   STA &41DD
      0EFE   A9 64      LDA #&64
@@ -16683,7 +16683,7 @@ Saving file '3-assembled-output/ELTH.bin'
 .DrawExplosion
      70EC   A5 64      LDA &64
      70EE   29 08      AND #&08
-     70F0   F0 03      BEQ &70F5
+     70F0   F0 F9      BEQ &70EB
      70F2   4C 40 42   JMP &4240
 .FlipShip
      70F5   48         PHA
@@ -16696,8 +16696,9 @@ Saving file '3-assembled-output/ELTH.bin'
      7101   20 0B 6A   JSR &6A0B
 .DrawShipStore
      7104   20 37 6E   JSR &6E37
-.DrawShip
+.DrawShipAxes
      7107   20 FD 6B   JSR &6BFD
+.DrawShip
      710A   20 4E 60   JSR &604E
      710D   A0 1F      LDY #&1F
      710F   A5 64      LDA &64
