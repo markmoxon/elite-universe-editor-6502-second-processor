@@ -15730,10 +15730,10 @@ Saving file '3-assembled-output/ELTH.bin'
      7189   A0 01      LDY #&01
      718B   D0 06      BNE &7193
 .move1
-     718D   A0 C8      LDY #&C8
+     718D   A0 80      LDY #&80
      718F   D0 02      BNE &7193
 .move2
-     7191   A0 14      LDY #&14
+     7191   A0 10      LDY #&10
 .move3
      7193   A5 8B      LDA &8B
      7195   30 04      BMI &719B

@@ -958,12 +958,12 @@ ENDIF
 
 .move1
 
- LDY #200               \ Set Y = 200 to use as the delta and jump to move3
+ LDY #128               \ Set Y = 128 to use as the delta and jump to move3
  BNE move3              \ (this BNE is effectively a JMP as Y is never zero)
 
 .move2
 
- LDY #20                \ Set Y = 20 to use as the delta
+ LDY #16                \ Set Y = 16 to use as the delta
 
 .move3
 
