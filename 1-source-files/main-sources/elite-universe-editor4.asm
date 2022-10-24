@@ -793,12 +793,12 @@ IF _MASTER_VERSION
 
 IF _SNG47
 
- EQUS "SAVE :1.U.MYSCENE  400 +31F 0 0"
+ EQUS "SAVE :1.U.MYSCENE 400 +31F 0 0"
  EQUB 13
 
 ELIF _COMPACT
 
- EQUS "SAVE MYSCENE  400 +31F 0 0"
+ EQUS "SAVE MYSCENE 400 +31F 0 0"
  EQUB 13
 
 ENDIF
@@ -820,33 +820,6 @@ IF _MASTER_VERSION
 
  EQUS "DELETE :1.U.MYSCENE"
  EQUB 13
-
-ENDIF
-
-\ ******************************************************************************
-\
-\       Name: loadCommand
-\       Type: Variable
-\   Category: Universe editor
-\    Summary: The OS command string for loading a universe file
-\
-\ ******************************************************************************
-
-IF _MASTER_VERSION
-
-.loadCommand
-
-IF _SNG47
-
- EQUS "LOAD :1.U.MYSCENE  400"
- EQUB 13
-
-ELIF _COMPACT
-
- EQUS "LOAD MYSCENE  400"
- EQUB 13
-
-ENDIF
 
 ENDIF
 
@@ -1407,108 +1380,103 @@ IF _MASTER_VERSION
 
  JMP ConvertFile        \ Convert the loaded file so it works on the Master
 
+ LDA #LO(LSO)           \ Set bytes #33 and #34 to point to LSO for the ship
+ STA K%+NI%+33          \ line heap for the space station
+ LDA #HI(LSO)
+ STA K%+NI%+34
+
 ENDIF
 
 \ ******************************************************************************
 \
-\       Name: SetFilename
+\       Name: TWIST
 \       Type: Subroutine
 \   Category: Universe editor
-\    Summary: Copy the filename from INWK to the save and load commands 
+\    Summary: Pitch the current ship by a small angle in a positive direction
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   Pitch direction
 \
 \ ******************************************************************************
 
 IF _MASTER_VERSION
 
-.SetFilename
+.TWIST2
 
- LDY #0                 \ We start by changing the load and save commands to
-                        \ contain the filename that was just entered by the
-                        \ user, so we set an index in Y so we can copy the
-                        \ filename from INWK+5 into the command
+ STA RAT2               \ Set the pitch direction in RAT2 to A
 
-.setf1
+ LDX #15                \ Rotate (roofv_x, nosev_x) by a small angle (pitch)
+ LDY #9                 \ in the direction given in RAT2
+ JSR MVS5
 
- LDA INWK+5,Y           \ Fetch the Y-th character of the filename
+ LDX #17                \ Rotate (roofv_y, nosev_y) by a small angle (pitch)
+ LDY #11                \ in the direction given in RAT2
+ JSR MVS5
 
- CMP #13                \ If the character is a carriage return then we have
- BEQ setf2              \ reached the end of the filename, so jump to setf2 as
-                        \ we have now copied the whole filename
-
-IF _SNG47
-
- STA loadCommand+10,Y   \ Store the Y-th character of the filename in the Y-th
-                        \ character of loadCommand+10, where loadCommand+10
-                        \ points to the MYSCENE part of the load command in
-                        \ loadCommand:
-                        \
-                        \   "LOAD :1.U.MYSCENE  3FF"
-
- STA saveCommand+10,Y   \ Store the Y-th character of the commander name in the
-                        \ Y-th character of saveCommand+10, where saveCommand+10
-                        \ points to the MYSCENE part of the save command in
-                        \ saveCommand:
-                        \
-                        \   "SAVE :1.U.MYSCENE  3FF +31E 0 0"
-
-ELIF _COMPACT
-
- STA loadCommand+5,Y    \ Store the Y-th character of the filename in the Y-th
-                        \ character of loadCommand+5, where loadCommand+5
-                        \ points to the MYSCENE part of the load command in
-                        \ loadCommand:
-                        \
-                        \   "LOAD MYSCENE  3FF"
-
- STA saveCommand+5,Y    \ Store the Y-th character of the commander name in the
-                        \ Y-th character of saveCommand+5, where saveCommand+5
-                        \ points to the MYSCENE part of the save command in
-                        \ saveCommand:
-                        \
-                        \   "SAVE MYSCENE  3FF +31E 0 0"
-ENDIF
-
- INY                    \ Increment the loop counter
-
- CPY #7                 \ If Y < 7 then there may be more characters in the
- BCC setf1              \ name, so loop back to setf1 to fetch the next one
-
-.setf2
-
- LDA #' '               \ We have copied the name into the loadCommand string,
-                        \ but the new name might be shorter then the previous
-                        \ one, so we now need to blank out the rest of the name
-                        \ with spaces, so we load the space character into A
-
-IF _SNG47
-
- STA loadCommand+10,Y   \ Store the Y-th character of the filename in the Y-th
-                        \ character of loadCommand+10, which will be directly
-                        \ after the last letter we copied above
-
- STA saveCommand+10,Y   \ Store the Y-th character of the commander name in the
-                        \ Y-th character of saveCommand+10, which will be
-                        \ directly after the last letter we copied above
-
-ELIF _COMPACT
-
- STA loadCommand+5,Y    \ Store the Y-th character of the filename in the Y-th
-                        \ character of loadCommand+5, which will be directly
-                        \ after the last letter we copied above
-
- STA saveCommand+5,Y    \ Store the Y-th character of the commander name in the
-                        \ Y-th character of saveCommand+5, which will be 
-                        \ directly after the last letter we copied above
+ LDX #19                \ Rotate (roofv_z, nosev_z) by a small angle (pitch)
+ LDY #13                \ in the direction given in RAT2 and return from the
+ JMP MVS5               \ subroutine using a tail call
 
 ENDIF
 
- INY                    \ Increment the loop counter
+\ ******************************************************************************
+\
+\       Name: STORE
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Copy the ship data block at INWK back to the K% workspace
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   INF                 The ship data block in the K% workspace to copy INWK to
+\
+\ ******************************************************************************
 
- CPY #7                 \ If Y < 7 then we haven't yet blanked out the whole
- BCC setf2              \ name, so loop back to setf2 to blank the next one
-                        \ until the load string is ready for use
+IF _MASTER_VERSION
+
+.STORE
+
+ LDY #(NI%-1)           \ Set a counter in Y so we can loop through the NI%
+                        \ bytes in the ship data block
+
+.DML2
+
+ LDA INWK,Y             \ Load the Y-th byte of INWK and store it in the Y-th
+ STA (INF),Y            \ byte of INF
+
+ DEY                    \ Decrement the loop counter
+
+ BPL DML2               \ Loop back for the next byte, until we have copied the
+                        \ last byte from INWK back to INF
 
  RTS                    \ Return from the subroutine
+
+ENDIF
+
+\ ******************************************************************************
+\
+\       Name: ZEBC
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Zero-fill pages &B and &C
+\
+\ ******************************************************************************
+
+IF _MASTER_VERSION
+
+.ZEBC
+
+ LDX #&C                \ Call ZES1 with X = &C to zero-fill page &C
+ JSR ZES1
+
+ DEX                    \ Decrement X to &B
+
+ JMP ZES1               \ Jump to ZES1 to zero-fill page &B
 
 ENDIF
 

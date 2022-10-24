@@ -131,12 +131,13 @@ IF _MASTER_VERSION
 
 .ConvertFile
 
- LDY #NOSH              \ Set a counter in Y to loop through all the slots
+ LDY #2                 \ Set a counter in Y to loop through all the ship slots,
+                        \ not including the station
 
 .conv1
 
- LDA FRIN,Y             \ If the slot is empty, move on to the next slot
- BEQ conv4
+ LDA FRIN,Y             \ If the slot is empty then we have done them all, so
+ BEQ conv5              \ jump to conv5 to move on to updating SLSP
 
  CMP K+3                \ If the slot entry is not equal to the ship to delete
  BNE conv2              \ in K+3, jump to conv2
@@ -149,13 +150,14 @@ IF _MASTER_VERSION
  STA FRIN,Y             \ file we assembled for saving (where the slots are at
  STA K%+&2E4,Y          \ K%+&2E4) to delete the unsupported ship
 
- BEQ conv4              \ Jump to conv4 to move on to the next slot (this BEQ is
+ BEQ conv5              \ Jump to conv5 to move on to updating SLSP, as we have
+                        \ just created the last empty slot (this BEQ is
                         \ effectively a JMP as A is always zero)
 
 .conv2
 
  CMP K                  \ If the slot entry is not equal to the search value in
- BNE conv3              \ K, jump to conv3
+ BNE conv3              \ K, jump to conv3 to update the heap pointer
 
  LDA K+1                \ We have a match, so replace the slot entry with the
  STA FRIN,Y             \ replace value in K+1 in both the file in memory and in
@@ -163,6 +165,9 @@ IF _MASTER_VERSION
                         \ at K%+&2E4) to delete the unsupported ship
 
 .conv3
+
+                        \ We now update the ship heap pointer to point to the
+                        \ correct address for the platform we are running on
 
  PHY                    \ Store the loop counter on the stack
 
@@ -187,9 +192,12 @@ IF _MASTER_VERSION
 
 .conv4
 
- DEY                    \ Decrement the counter
+ INY                    \ Increment the counter to move on to the next slot
 
- BPL conv1              \ Loop back until all X bytes are searched
+ CPY #NOSH
+ BCC conv1              \ Loop back until all X bytes are searched
+
+.conv5
 
  LDA K%+&2E4+21+37      \ Apply the delta to the high byte of SLSP
  CLC              
