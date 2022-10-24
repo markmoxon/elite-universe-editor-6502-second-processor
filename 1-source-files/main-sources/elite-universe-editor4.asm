@@ -1540,6 +1540,7 @@ ENDIF
  LDX #1                 \ Force-load the front space view
  STX QQ11
  DEX
+ STX VIEW
  JSR LOOK1
 
                         \ Do the following from DEATH2:
@@ -1671,8 +1672,7 @@ ENDIF
  LDA #1                 \ Reset DELTA (speed) to 1, so we go as slowly as
  STA DELTA              \ possible at the start
 
- JSR M%                 \ Call the M% routine to do the main flight loop once,
-                        \ which will display the universe
+ JSR DrawShips          \ Redraw all the ships in the current view
 
  LDX #5                 \ Set a countdown timer, counting down from 5 (we can
  STX ECMA               \ use ECMA, as this is only used when E.C.M. is active)
@@ -1696,8 +1696,7 @@ ENDIF
 
  BNE play4              \ Loop back to keep counting down until we reach zero
 
- JMP TT100+3            \ Jump to TT100, just after the JSR M%, to join the main
-                        \ loop and play the game
+ JMP TT100              \ Jump to TT100 to start the main loop and play the game
 
 \ ******************************************************************************
 \
