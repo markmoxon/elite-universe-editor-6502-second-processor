@@ -131,12 +131,12 @@ IF _MASTER_VERSION
 
 .ConvertFile
 
- LDY #2                 \ Set a counter in Y to loop through all the ship slots,
+ LDX #2                 \ Set a counter in X to loop through all the ship slots,
                         \ not including the station
 
 .conv1
 
- LDA FRIN,Y             \ If the slot is empty then we have done them all, so
+ LDA FRIN,X             \ If the slot is empty then we have done them all, so
  BEQ conv5              \ jump to conv5 to move on to updating SLSP
 
  CMP K+3                \ If the slot entry is not equal to the ship to delete
@@ -147,8 +147,8 @@ IF _MASTER_VERSION
                         \ the unsupported ship is in the last slot
 
  LDA #0                 \ Zero the slot in both the file in memory and in the
- STA FRIN,Y             \ file we assembled for saving (where the slots are at
- STA K%+&2E4,Y          \ K%+&2E4) to delete the unsupported ship
+ STA FRIN,X             \ file we assembled for saving (where the slots are at
+ STA K%+&2E4,X          \ K%+&2E4) to delete the unsupported ship
 
  BEQ conv5              \ Jump to conv5 to move on to updating SLSP, as we have
                         \ just created the last empty slot (this BEQ is
@@ -160,8 +160,8 @@ IF _MASTER_VERSION
  BNE conv3              \ K, jump to conv3 to update the heap pointer
 
  LDA K+1                \ We have a match, so replace the slot entry with the
- STA FRIN,Y             \ replace value in K+1 in both the file in memory and in
- STA K%+&2E4,Y          \ the file we assembled for saving (where the slots are
+ STA FRIN,X             \ replace value in K+1 in both the file in memory and in
+ STA K%+&2E4,X          \ the file we assembled for saving (where the slots are
                         \ at K%+&2E4) to delete the unsupported ship
 
 .conv3
@@ -169,15 +169,13 @@ IF _MASTER_VERSION
                         \ We now update the ship heap pointer to point to the
                         \ correct address for the platform we are running on
 
- PHY                    \ Store the loop counter on the stack
-
- TYA                    \ Set X = Y * 2
+ TXA                    \ Set Y = X * 2
  ASL A                  \
- TAX                    \ so we can use X as an index into UNIV for this slot
+ TAY                    \ so we can use X as an index into UNIV for this slot
 
- LDA UNIV,X             \ Copy the address of the target ship's data block from
+ LDA UNIV,Y             \ Copy the address of the target ship's data block from
  STA V                  \ UNIV(X+1 X) to V(1 0)
- LDA UNIV+1,X
+ LDA UNIV+1,Y
  STA V+1
 
  LDY #34                \ Set A = INWK+34, the high byte of the ship heap
@@ -188,13 +186,11 @@ IF _MASTER_VERSION
 
  STA (V),Y              \ Update the high byte of the ship heap address
 
- PLY                    \ Retrieve the loop counter from the stack
-
 .conv4
 
- INY                    \ Increment the counter to move on to the next slot
+ INX                    \ Increment the counter to move on to the next slot
 
- CPY #NOSH
+ CPX #NOSH
  BCC conv1              \ Loop back until all X bytes are searched
 
 .conv5
