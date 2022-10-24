@@ -2279,16 +2279,19 @@ IF _6502SP_VERSION
  EJMP 30                \                {white}
 ENDIF
  EJMP 1                 \                {all caps}
- EJMP 8                 \                {tab 6} DISK MENU{crlf}
+ EJMP 8                 \                {tab 6} UNIVERSE MENU{crlf}
  ECHR ' '               \                {lf}
- ETWO 'D', 'I'          \                {sentence case}
- ECHR 'S'               \                1. LOAD UNIVERSE{crlf}
- ECHR 'K'               \                2. SAVE UNIVERSE {commander name}{crlf}
- ECHR ' '               \                3. CATALOGUE{crlf}
- ECHR 'M'               \                4. DELETE A FILE{crlf}
- ECHR 'E'               \                5. PLAY UNIVERSE{crlf}
- ETWO 'N', 'U'          \                6. EXIT{crlf}
- ETWO '-', '-'          \               "
+ ECHR 'U'               \                {sentence case}
+ ECHR 'N'               \                1. LOAD UNIVERSE{crlf}
+ ECHR 'I'               \                2. SAVE UNIVERSE {commander name}{crlf}
+ ETWO 'V', 'E'          \                3. CATALOGUE{crlf}
+ ECHR 'R'               \                4. DELETE A FILE{crlf}
+ ETWO 'S', 'E'          \                5. PLAY UNIVERSE{crlf}
+ ECHR ' '               \                6. EXIT{crlf}
+ ECHR 'M'               \               "
+ ECHR 'E'
+ ETWO 'N', 'U'
+ ETWO '-', '-'
  EJMP 10
  EJMP 2
  ECHR '1'
