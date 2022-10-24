@@ -3253,24 +3253,30 @@ WP workspace from  &D00  to &E3C
 .rexp1
      0FA8   8E 9A 08   STX &089A
      0FAB   BC 52 08   LDY &0852,X
-     0FAE   F0 1F      BEQ &0FCF
+     0FAE   F0 1C      BEQ &0FCC
      0FB0   20 0C F2   JSR &F20C
      0FB3   A5 64      LDA &64
      0FB5   29 20      AND #&20
-     0FB7   F0 0E      BEQ &0FC7
+     0FB7   F0 0B      BEQ &0FC4
      0FB9   A5 64      LDA &64
-     0FBB   29 17      AND #&17
-     0FBD   09 80      ORA #&80
+     0FBB   09 80      ORA #&80
+     0FBD   29 97      AND #&97
      0FBF   85 64      STA &64
-     0FC1   20 04 71   JSR &7104
-     0FC4   20 07 71   JSR &7107
+     0FC1   20 CD 0F   JSR &0FCD
 .rexp2
-     0FC7   AE 9A 08   LDX &089A
-     0FCA   E8         INX
-     0FCB   E0 14      CPX #&14
-     0FCD   90 D9      BCC &0FA8
+     0FC4   AE 9A 08   LDX &089A
+     0FC7   E8         INX
+     0FC8   E0 14      CPX #&14
+     0FCA   90 DC      BCC &0FA8
 .rexp3
-     0FCF   60         RTS
+     0FCC   60         RTS
+.KickstartExplosion
+     0FCD   20 F9 0E   JSR &0EF9
+     0FD0   20 04 71   JSR &7104
+     0FD3   20 0A 71   JSR &710A
+     0FD6   20 0A 71   JSR &710A
+     0FD9   20 0A 71   JSR &710A
+     0FDC   4C E9 0E   JMP &0EE9
 .endUniverseEditor1
 Saving file '3-assembled-output/EDITOR1.bin'
 .MOS
@@ -16920,19 +16926,19 @@ Saving file '3-assembled-output/ELTH.bin'
 .ExplodeShip
      72B2   E0 02      CPX #&02
      72B4   90 40      BCC &72F6
-     72B6   20 F9 0E   JSR &0EF9
-     72B9   A5 64      LDA &64
-     72BB   29 20      AND #&20
-     72BD   D0 14      BNE &72D3
-     72BF   20 FE F5   JSR &F5FE
-     72C2   20 0B 6A   JSR &6A0B
-     72C5   A5 64      LDA &64
-     72C7   09 80      ORA #&80
-     72C9   29 EF      AND #&EF
-     72CB   85 64      STA &64
-     72CD   20 04 71   JSR &7104
-     72D0   20 FE F5   JSR &F5FE
+     72B6   A5 64      LDA &64
+     72B8   29 20      AND #&20
+     72BA   D0 14      BNE &72D0
+     72BC   20 FE F5   JSR &F5FE
+     72BF   20 0B 6A   JSR &6A0B
+     72C2   A5 64      LDA &64
+     72C4   09 80      ORA #&80
+     72C6   29 EF      AND #&EF
+     72C8   85 64      STA &64
+     72CA   20 CD 0F   JSR &0FCD
+     72CD   4C FE F5   JMP &F5FE
 .expl1
+     72D0   20 F9 0E   JSR &0EF9
      72D3   20 07 71   JSR &7107
      72D6   4C E9 0E   JMP &0EE9
 .CreateShip

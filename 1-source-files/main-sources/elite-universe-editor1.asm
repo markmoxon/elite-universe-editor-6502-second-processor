@@ -744,15 +744,11 @@ ENDIF
  BEQ rexp2
 
  LDA INWK+31            \ Reset the explosion by clearing bits 3, 5 and 6 and
- AND #%00010111         \ setting bit 7 of the ship's INWK+31 byte
- ORA #%10000000
+ ORA #%10000000         \ setting bit 7 of the ship's INWK+31 byte
+ AND #%10010111
  STA INWK+31
 
- JSR DrawShipStore      \ Store the ship data and draw the ship (but not on the
-                        \ scanner)
-
- JSR DrawShip           \ Draw the ship (but not on the scanner, and without
-                        \ storing)
+ JSR KickstartExplosion \ Kickstart the explosion
 
 .rexp2
 
@@ -766,5 +762,35 @@ ENDIF
 .rexp3
 
  RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: KickstartExplosion
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Restart an explosion by working through the first four steps
+\
+\ ******************************************************************************
+
+.KickstartExplosion
+
+ JSR RevertExplosion    \ Revert the explosion code so it implements the normal
+                        \ explosion cloud
+
+ JSR DrawShipStore      \ Store the ship data and draw the ship (but not on the
+                        \ scanner)
+
+ JSR DrawShip+3         \ Draw the ship (but not on the scanner, and without
+                        \ storing or updating the axes)
+
+ JSR DrawShip+3         \ Draw the ship (but not on the scanner, and without
+                        \ storing or updating the axes)
+
+ JSR DrawShip+3         \ Draw the ship (but not on the scanner, and without
+                        \ storing or updating the axes)
+
+ JMP ModifyExplosion    \ Modify the explosion code so it doesn't update the
+                        \ explosion, returningh from the subroutine using a tail
+                        \ call
 
 .endUniverseEditor1

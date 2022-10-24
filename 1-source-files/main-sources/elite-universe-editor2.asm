@@ -1362,9 +1362,6 @@ ENDIF
  CPX #2                 \ If this is the station or planet, jump to 
  BCC MakeErrorBeep      \ MakeErrorBeep as you can't explode them
 
- JSR RevertExplosion    \ Revert the explosion code so it implements the normal
-                        \ explosion cloud
-
  LDA INWK+31            \ If bit 5 of byte #31 is set, then the ship is already
  AND #%00100000         \ exploding, so jump to expl1 to move the explosion on
  BNE expl1              \ by one step
@@ -1379,12 +1376,15 @@ ENDIF
  AND #%11101111
  STA INWK+31
 
- JSR DrawShipStore      \ Store the ship data and draw the ship (but not on the
-                        \ scanner) to get the explosion going
+ JSR KickstartExplosion \ Kickstart the explosion
 
- JSR PrintShipType      \ Print the new ship type, which will be "Cloud" 
+ JMP PrintShipType      \ Print the new ship type, which will be "Cloud",
+                        \ returning from the subroutine using a tail call
 
 .expl1
+
+ JSR RevertExplosion    \ Revert the explosion code so it implements the normal
+                        \ explosion cloud
 
  JSR DrawShip           \ Draw the ship (but not on the scanner, and without
                         \ storing)
