@@ -15784,7 +15784,7 @@ Saving file '3-assembled-output/ELTH.bin'
      71E6   A5 65      LDA &65
      71E8   29 7F      AND #&7F
      71EA   85 65      STA &65
-     71EC   A9 05      LDA #&05
+     71EC   A9 04      LDA #&04
 .init5
      71EE   AE 91 08   LDX &0891
      71F1   E0 01      CPX #&01

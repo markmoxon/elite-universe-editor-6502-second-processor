@@ -1001,6 +1001,14 @@ ENDIF
 \   Category: Universe editor
 \    Summary: Set the coordinates and orientation for a ship just in front of us
 \
+\ ------------------------------------------------------------------------------
+\
+\ Sun and planet are positioned with (z_sign z_hi z_lo) = (2 0 0)
+\
+\ Station is positioned with (z_sign z_hi z_lo) = (0 4 0)
+\
+\ Ships are positioned with (z_sign z_hi z_lo) = (0 2 0)
+\
 \ ******************************************************************************
 
 .InitialiseShip
@@ -1013,7 +1021,7 @@ ENDIF
                         \   nosev = (0,  0, -1)
 
  LDA TYPE               \ If this is a ship or station, jump to init3 to set a
- BPL init3              \ distance of 2 or 5
+ BPL init3              \ distance of 2 or 4
 
  LDA #%10000000         \ Pitch the planet so the crater is visible (in case we
  JSR TWIST2             \ switch planet types straight away)
@@ -1069,7 +1077,7 @@ ENDIF
  AND #%01111111         \ INWK+32
  STA INWK+32
 
- LDA #5                 \ Set A = 5 to store as the high-byte distance for the
+ LDA #4                 \ Set A = 4 to store as the high-byte distance for the
                         \ new station, so it's a little way in front of us
 
 .init5
