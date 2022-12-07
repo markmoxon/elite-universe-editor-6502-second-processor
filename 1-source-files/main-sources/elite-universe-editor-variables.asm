@@ -132,4 +132,55 @@ keyLt = &2C
 
 INCLUDE "1-source-files/main-sources/elite-universe-editor-macros.asm"
 
+ELIF _C64_VERSION
+
+currentSlot = $00FD
+repeatingKey = $00FE
+
+token8 = &A49E
+
+keyA = $36              \ See TRANTABLE at $8D0C for key values
+keyC = $2C
+keyD = $2E
+keyE = $32
+keyG = $26
+keyH = $23
+keyK = $1B
+keyL = $16
+keyM = $1C
+keyN = $19
+keyO = $1A
+keyP = $17
+keyQ = $02
+keyR = $2F
+keyS = $33
+keyT = $2A
+keyW = $37
+keyX = $29
+
+key1 = $08
+key2 = $05
+key3 = $38
+key4 = $35
+key5 = $30
+key6 = $2D
+key7 = $28
+key8 = $25
+key9 = $20
+key0 = $1D
+
+keyAt = $12
+keyCopy = $0D           \ CLR/HOME
+keyDelete = $40
+keyDown = $39
+keyEscape = $07         \ BACK <-
+keyReturn = $3F
+keyUp = &8F             \ SHIFT-DOWN ???
+keyGt = $14
+keyLt = $11
+
+f1 = $3C
+
+INCLUDE "../src/elite-universe-editor-macros.asm"
+
 ENDIF

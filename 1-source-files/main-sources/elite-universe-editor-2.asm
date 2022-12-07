@@ -208,6 +208,28 @@ ELIF _MASTER_VERSION
  EQUB &20, &2F          \ SPACE         ?
  EQUB &8C, &8D          \ Left arrow    Right arrow
 
+ELIF _C64_VERSION
+
+                        \ Front view
+
+ EQUB $3E, &8C          \ Right arrow   Left arrow ???
+ EQUB $04, $09          \ SPACE         ?
+
+                        \ Rear view
+
+ EQUB &8C, $3E          \ Left arrow    Right arrow
+ EQUB $09, $04          \ ?             SPACE
+
+                        \ Left view
+
+ EQUB $09, $04          \ ?             SPACE
+ EQUB $3E, &8C          \ Right arrow   Left arrow
+
+                        \ Right view
+
+ EQUB $04, $09          \ SPACE         ?
+ EQUB &8C, $3E          \ Left arrow    Right arrow
+
 ENDIF
 
 \ ******************************************************************************
