@@ -2301,7 +2301,7 @@ ENDIF
 \
 \ ******************************************************************************
 
-IF _MASTER_VERSION
+IF _MASTER_VERSION OR _C64_VERSION
 
 .TWIST2
 
@@ -2336,7 +2336,7 @@ ENDIF
 \
 \ ******************************************************************************
 
-IF _MASTER_VERSION
+IF _MASTER_VERSION OR _C64_VERSION
 
 .STORE
 
