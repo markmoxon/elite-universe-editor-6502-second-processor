@@ -767,15 +767,18 @@ ENDIF
  AND #%00100000         \ exploding, so jump to high5 to highlight the cloud
  BNE high5
 
+IF _6502SP_VERSION
+
  LDA shpcol,X           \ Set A to the ship colour for this type, from the X-th
                         \ entry in the shpcol table
-
-IF _6502SP_VERSION
 
  JSR DOCOL              \ Send a #SETCOL command to the I/O processor to switch
                         \ to this colour
 
 ELIF _MASTER_VERSION
+
+ LDA shpcol,X           \ Set A to the ship colour for this type, from the X-th
+                        \ entry in the shpcol table
 
  STA COL                \ Switch to this colour
 
