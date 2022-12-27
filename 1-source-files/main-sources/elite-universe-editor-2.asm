@@ -52,6 +52,13 @@
 
  JSR ApplyMods          \ Apply the mods required for the Universe Editor
 
+IF _C64_VERSION
+
+ LDA #$FF               \ Set option byte $1D0F (which corresponds to the "P"
+ STA $1D0F              \ option) so planet meridians and equators are drawn
+
+ENDIF
+
  LDA #0                 \ Remove the escape pod so we always show the standard
  STA ESCP               \ palette for the editor
 
