@@ -1541,6 +1541,11 @@ ELIF _MASTER_VERSION
  LDY #0                 \ Call the NOISE routine with Y = 0 to make a long, low
  JMP NOISE              \ beep, returning from the subroutine using a tail call
 
+ELIF _C64_VERSION
+
+ LDY #6                 \ Call the NOISE routine with Y = 6 to make a long, low
+ JMP NOISE              \ beep, returning from the subroutine using a tail call
+
 ENDIF
 
 \ ******************************************************************************
