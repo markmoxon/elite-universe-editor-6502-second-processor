@@ -55,6 +55,14 @@
  LDA #0                 \ Remove the escape pod so we always show the standard
  STA ESCP               \ palette for the editor
 
+IF _C64_VERSION
+
+ STA MCNT               \ Set MCNT to 0 so the DIALS routine updates the whole
+                        \ dashboard (as this only happens when bits 0 and 1 of
+                        \ MCNT are zero)
+
+ENDIF
+
  JSR TT66               \ Clear the top part of the screen, draw a white border,
                         \ and set the current view type in QQ11 to 0 (space
                         \ view)
@@ -71,10 +79,17 @@
  JSR SOLAR              \ Add the sun, planet and stardust, according to the
                         \ current system seeds
 
- LDX #1                 \ Get the details for the sun from slot 1
- STX currentSlot        \
- STX MCNT               \ Also, set MCNT to 1 so we don't update the compass in
- JSR GetShipData        \ the DIALS routine
+ LDX #1                 \ Set the current slot to 1 so we can create the sun
+ STX currentSlot
+
+IF _6502SP_VERSION OR _MASTER_VERSION
+
+ STX MCNT               \ Set MCNT to 1 so we don't update the compass in the
+                        \ DIALS routine
+
+ENDIF
+
+ JSR GetShipData        \ Get the details for the sun from slot 1
 
  JSR ZINF               \ Initialise the sun so it's in front of us
  JSR InitialiseShip
