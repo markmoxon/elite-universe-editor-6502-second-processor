@@ -173,13 +173,26 @@ keyAt = $12
 keyCopy = $0D           \ CLR/HOME
 keyDelete = $40
 keyDown = $39
-keyEscape = $07         \ BACK <-
+keyRight = $3E
+keyEscape = $01         \ RUN/STOP
 keyReturn = $3F
-keyUp = &8F             \ SHIFT-DOWN ???
 keyGt = $14
 keyLt = $11
 
-f1 = $3C
+keyShiftL = $31
+keyShiftR = $0C
+keyCtrl = $06
+keyC64 = $03
+
+keyUp = $41             \ Spare byte on and of table
+keyLeft = $42           \ Spare byte on and of table
+
+f0 = $3C                \ Show front view = f1/f2 key
+f1 = $3B                \ Show rear view = f3/f4 key
+f2 = $3A                \ Show left view = f5/f7 key
+f3 = $3D                \ Show right view = f7/f8 key
+
+f4 = $07                \ Show the long-range chart = "<-" key
 
 INCLUDE "../src/elite-universe-editor-macros.asm"
 
