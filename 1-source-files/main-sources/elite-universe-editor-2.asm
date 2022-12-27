@@ -212,23 +212,23 @@ ELIF _C64_VERSION
 
                         \ Front view
 
- EQUB $3E, &8C          \ Right arrow   Left arrow ???
+ EQUB $3E, $42          \ Right arrow   Left arrow
  EQUB $04, $09          \ SPACE         ?
 
                         \ Rear view
 
- EQUB &8C, $3E          \ Left arrow    Right arrow
+ EQUB $42, $3E          \ Left arrow    Right arrow
  EQUB $09, $04          \ ?             SPACE
 
                         \ Left view
 
  EQUB $09, $04          \ ?             SPACE
- EQUB $3E, &8C          \ Right arrow   Left arrow
+ EQUB $3E, $42          \ Right arrow   Left arrow
 
                         \ Right view
 
  EQUB $04, $09          \ SPACE         ?
- EQUB &8C, $3E          \ Left arrow    Right arrow
+ EQUB $42, $3E          \ Left arrow    Right arrow
 
 ENDIF
 
@@ -596,7 +596,7 @@ ENDIF
                         \ in A (skipping the check at the start for the status
                         \ key)
 
-IF _6502SP_VERSION
+IF _6502SP_VERSION OR _C64_VERSION
 
  LDA KL                 \ If "H" was not pressed, jump to char3 to skip the
  CMP #keyH              \ following
@@ -654,7 +654,7 @@ ENDIF
  PLA                    \ Restore the current fuel level from the stack
  STA QQ14
 
-IF _6502SP_VERSION
+IF _6502SP_VERSION OR _C64_VERSION
 
  LDA KL                 \ If "G" was not pressed, jump to draw3 to return from
  CMP #keyG              \ the subroutine (as draw3 contains an RTS)
@@ -1303,7 +1303,7 @@ IF _6502SP_VERSION
  SBC #'a'-':'           \ Reduce 'A' to 'Z' so that 'A' is after '9' (we know
                         \ the C flag is set as we just passed through a BCC)
 
-ELIF _MASTER_VERSION
+ELIF _MASTER_VERSION OR _C64_VERSION
 
  CMP #'W'               \ If key is 'W' or greater, it is invalid, so jump to
  BCS add5               \ add5 to make an error beep and return from the

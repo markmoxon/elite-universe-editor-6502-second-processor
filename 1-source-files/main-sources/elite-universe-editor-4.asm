@@ -115,6 +115,24 @@ ELIF _C64_VERSION
 
 ENDIF
 
+IF _C64_VERSION
+
+ LDA #$20               \ Modify the STX KL: SEC commands at $8D9B in RDKEY with
+ STA $8D9B              \ JSR SkipModifierKeys
+ LDA #LO(SkipModifierKeys)
+ STA $8D9C
+ LDA #HI(SkipModifierKeys)
+ STA $8D9D
+
+ LDA #$20               \ Modify the STA $DC00 command at $8DAC in RDKEY with
+ STA $8DAC              \ JSR ShiftCursorKeys
+ LDA #LO(ShiftCursorKeys)
+ STA $8DAD
+ LDA #HI(ShiftCursorKeys)
+ STA $8DAE
+
+ENDIF
+
  RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
@@ -163,6 +181,24 @@ ELIF _MASTER_VERSION
 
  JMP GameDashboard      \ Switch to the main game dashboard, returning from the
                         \ subroutine using a tail call
+
+ENDIF
+
+IF _C64_VERSION
+
+ LDA #$86               \ Revert the STX KL: SEC commands at $8D9B in RDKEY
+ STA $8D9B
+ LDA #KL
+ STA $8D9C
+ LDA #$38
+ STA $8D9D
+
+ LDA #$8D               \ Revert the STA $DC00 command at $8DAC in RDKEY
+ STA $8DAC
+ LDA #$00
+ STA $8DAD
+ LDA #$DC
+ STA $8DAE
 
 ENDIF
 
