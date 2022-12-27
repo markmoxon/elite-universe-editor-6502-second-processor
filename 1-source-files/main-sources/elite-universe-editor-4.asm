@@ -429,8 +429,17 @@ ENDIF
  LDA #13                \ Move the text cursor to column 13
  JSR DOXC
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  LDA #22                \ Move the text cursor to row 22
  JSR DOYC
+
+ELIF _C64_VERSION
+
+ LDA #16                \ Move the text cursor to row 16
+ JSR DOYC
+
+ENDIF
 
  PLA                    \ Print the token, returning from the subroutine using a
  JMP PrintToken         \ tail call
