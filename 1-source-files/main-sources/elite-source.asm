@@ -31142,7 +31142,7 @@ ENDIF
  LDA #6                 \ Print extended token 6 ("UNIVERSE EDITOR")
  JSR PrintToken
 
- NOP                    \ Pad out the code to the same width to prevent build
+ NOP                    \ Pad out the code to the same size to prevent build
  NOP                    \ issues
  NOP
  NOP
