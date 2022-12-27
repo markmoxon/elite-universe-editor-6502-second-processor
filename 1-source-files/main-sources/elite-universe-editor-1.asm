@@ -32,16 +32,25 @@
 \       Name: CheckShiftCtrl
 \       Type: Subroutine
 \   Category: Universe editor
-\    Summary: Check for SHIFT and CTRL
+\    Summary: Check for SHIFT and CTRL (or C= and CTRL on the Commodore 64)
 \
 \ ******************************************************************************
 
 .CheckShiftCtrl
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  STZ shiftCtrl          \ We now test for SHIFT and CTRL and set bit 7 and 6 of
                         \ shiftCtrl accordingly, so zero the byte first
 
-IF _6502SP_VERSION
+ELIF _C64_VERSION
+
+ LDA #0                 \ We now test for C= and CTRL and set bit 7 and 6 of
+ STA shiftCtrl          \ shiftCtrl accordingly, so zero the byte first
+
+ENDIF
+
+IF _6502SP_VERSION OR _C64_VERSION
 
  JSR CTRL               \ Scan the keyboard to see if CTRL is currently pressed,
                         \ returning a negative value in A if it is
@@ -84,6 +93,10 @@ ELIF _COMPACT
  JSR DKS4mc             \ pressed
 
 ENDIF
+
+ELIF _C64_VERSION
+
+ LDA keyLog+keyC64      \ Set A to &FF if the C= key is being pressed
 
 ENDIF
 
@@ -244,8 +257,19 @@ ENDIF
 
 .RotateShip
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  PHX                    \ Store X and Y on the stack
  PHY
+
+ELIF _C64_VERSION
+
+ TXA                    \ Store X and Y on the stack
+ PHA
+ TYA
+ PHA
+
+ENDIF
 
  JSR MVS5               \ Rotate vector_x by a small angle
 
@@ -259,8 +283,19 @@ ENDIF
  INX
  INX
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  PHX                    \ Store X and Y on the stack
  PHY
+
+ELIF _C64_VERSION
+
+ TXA                    \ Store X and Y on the stack
+ PHA
+ TYA
+ PHA
+
+ENDIF
 
  JSR MVS5               \ Rotate vector_y by a small angle
 
@@ -308,7 +343,16 @@ ENDIF
 
 .hide2
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  STZ showingBulb        \ Zero the bulb status byte
+
+ELIF _C64_VERSION
+
+ LDA #0                 \ Zero the bulb status byte
+ STA showingBulb
+
+ENDIF
 
  RTS                    \ Return from the subroutine
 
@@ -528,7 +572,16 @@ ENDIF
  LDY #&FF               \ Set maximum number for gnum to 255
  STY QQ25
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  STZ V                  \ Set seed counter in V to 0
+
+ELIF _C64_VERSION
+
+ LDA #0                 \ Set seed counter in V to 0
+ STA V
+
+ENDIF
 
  LDA #&60               \ Modify gnum so that errors return rather than jumping
  STA BAY2               \ to the inventory screen
@@ -605,7 +658,16 @@ ENDIF
  LDA #70                \ Set the fuel level to 7 light years, for the chart
  STA QQ14               \ display
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  STZ KL                 \ Flush the key logger
+
+ELIF _C64_VERSION
+
+ LDA #0                 \ Flush the key logger
+ STA KL
+
+ENDIF
 
  LDA #f4                \ Jump to ForceChart, setting the key that's "pressed"
  JMP ForceChart         \ to red key f4 (so we show the Long-range Chart)
@@ -635,15 +697,18 @@ ENDIF
 
  LDX TYPE               \ Get the current ship type
 
+IF _6502SP_VERSION
+
  LDA shpcol,X           \ Set A to the ship colour for this type, from the X-th
                         \ entry in the shpcol table
-
-IF _6502SP_VERSION
 
  JSR DOCOL              \ Send a #SETCOL command to the I/O processor to switch
                         \ to this colour
 
 ELIF _MASTER_VERSION
+
+ LDA shpcol,X           \ Set A to the ship colour for this type, from the X-th
+                        \ entry in the shpcol table
 
  STA COL                \ Switch to this colour
 

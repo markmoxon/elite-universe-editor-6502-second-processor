@@ -163,7 +163,6 @@ ENDIF
 
  RTS                    \ Return from the subroutine
 
-
 \ ******************************************************************************
 \
 \       Name: DeleteUniverse

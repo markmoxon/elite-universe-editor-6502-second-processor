@@ -696,7 +696,16 @@ ENDIF
  LDA FRIN,X             \ If the slot is empty, return from the subroutine as
  BEQ draw3              \ we are done
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  PHX                    \ Store the counter on the stack
+
+ELIF _C64_VERSION
+
+ TXA                    \ Store the counter on the stack
+ PHA
+
+ENDIF
 
  JSR GetShipData        \ Fetch the details for the ship in slot X
 
@@ -704,7 +713,16 @@ ENDIF
 
 .draw2
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  PLX                    \ Retrieve the counter from the stack
+
+ELIF _C64_VERSION
+
+ PLA                    \ Retrieve the counter from the stack
+ TAX
+
+ENDIF
 
  INX                    \ Move to the next slot
 
@@ -1465,14 +1483,32 @@ ENDIF
 
 .slot2
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  PHX                    \ Store the empty slot number
+
+ELIF _C64_VERSION
+
+ TXA                    \ Store the empty slot number
+ PHA
+
+ENDIF
 
  LDA TYPE               \ Fetch the type of ship to create
 
  JSR NWSHP              \ Add the new ship and store it in K%
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  PLX                    \ Restore the empty slot number (which is where the new
                         \ ship will be if it was added)
+
+ELIF _C64_VERSION
+
+ PLA                    \ Restore the empty slot number (which is where the new
+ TAX                    \ ship will be if it was added)
+
+ENDIF
 
  BCC MakeErrorBeep      \ If we didn't add a new ship, jump to MakeErrorBeep to
                         \ make an error beep and return from the subroutine

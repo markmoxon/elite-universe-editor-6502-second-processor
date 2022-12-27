@@ -104,7 +104,16 @@ ENDIF
 
  BPL mods1              \ Loop back for the next byte of the universe filename
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  STZ showingBulb        \ Zero the flags that keep track of the bulb indicators
+
+ELIF _C64_VERSION
+
+ LDA #0                 \ Zero the flags that keep track of the bulb indicators
+ STA showingBulb
+
+ENDIF
 
  RTS                    \ Return from the subroutine
 
@@ -305,11 +314,29 @@ ENDIF
 
 .UpdateSlotNumber
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  PHX                    \ Store the new slot number on the stack
+
+ELIF _C64_VERSION
+
+ TXA                    \ Store the new slot number on the stack
+ PHA
+
+ENDIF
 
  JSR PrintSlotNumber    \ Erase the current slot number from screen
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  PLX                    \ Retrieve the new slot number from the stack
+
+ELIF _C64_VERSION
+
+ PLA                    \ Retrieve the new slot number from the stack
+ TAX
+
+ENDIF
 
  STX currentSlot        \ Set the current slot number to the new slot number
 
@@ -334,8 +361,17 @@ ENDIF
 
  PHA                    \ Store the token number on the stack
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  STZ DLY                \ Set the delay in DLY to 0, so any new in-flight
                         \ messages will be shown instantly
+
+ELIF _C64_VERSION
+
+ LDA #0                 \ Set the delay in DLY to 0, so any new in-flight
+ STA DLY                \ messages will be shown instantly
+
+ENDIF
 
 IF _6502SP_VERSION
 
@@ -579,7 +615,16 @@ ENDIF
 
 .hsca2
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  PHX                    \ Store the loop counter in X on the stack
+
+ELIF _C64_VERSION
+
+ TXA                    \ Store the loop counter in X on the stack
+ PHA
+
+ENDIF
 
  JSR SCAN               \ Draw the ship on the scanner to remove it
 
@@ -595,8 +640,18 @@ ENDIF
  LDY #2                 \ Wait for 2/50 of a second (0.04 seconds)
  JSR DELAY
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  PLX                    \ Retrieve the loop counter in X and decrement it
  DEX
+
+ELIF _C64_VERSION
+
+ PLA                    \ Retrieve the loop counter in X and decrement it
+ TAX
+ DEX
+
+ENDIF
 
  BPL hsca2              \ Loop back until we have moved the ship X times
 
@@ -604,7 +659,16 @@ ENDIF
 
 .hsca3
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  PHX                    \ Store the loop counter in X on the stack
+
+ELIF _C64_VERSION
+
+ TXA                    \ Store the loop counter in X on the stack
+ PHA
+
+ENDIF
 
  JSR SCAN               \ Draw the ship on the scanner to remove it
 
@@ -620,8 +684,18 @@ ENDIF
  LDY #2                 \ Wait for 2/50 of a second (0.04 seconds)
  JSR DELAY
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  PLX                    \ Retrieve the loop counter in X and decrement it
  DEX
+
+ELIF _C64_VERSION
+
+ PLA                    \ Retrieve the loop counter in X and decrement it
+ TAX
+ DEX
+
+ENDIF
 
  BPL hsca3              \ Loop back until we have moved the ship X times
 
@@ -1104,7 +1178,16 @@ ENDIF
  LDY #NOSH+1
  JSR CopyBlock
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  STZ FRIN+NOSH          \ Zero the slot terminator
+
+ELIF _C64_VERSION
+
+ LDA #0                 \ Zero the slot terminator
+ STA FRIN+NOSH
+
+ENDIF
 
  LDA #HI(K%+&2E4+21)    \ Copy NTY + 1 bytes from K%+&2E4+21 to MANY
  STA P+1
@@ -1135,7 +1218,16 @@ ENDIF
 
 .load1
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  STZ currentSlot        \ Switch to slot 0
+
+ELIF _C64_VERSION
+
+ LDA #0                 \ Switch to slot 0
+ STA currentSlot
+
+ENDIF
 
  JSR HideBulbs          \ Hide both dashboard bulbs
 
@@ -1363,10 +1455,21 @@ ENDIF
  TXS                    \ location for the 6502 stack, so this instruction
                         \ effectively resets the stack
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  STZ ECMA               \ Set ECMA to zero so the call to RES2 doesn't shoe the
                         \ "E" bulb (we've been reusing the location of ECMA as
                         \ shiftCtrl to store the CTRL and SHIFT key presses, so
                         \ it could be non-zero at this point)
+
+ELIF _C64_VERSION
+
+ LDA #0                 \ Set ECMA to zero so the call to RES2 doesn't shoe the
+ STA ECMA               \ "E" bulb (we've been reusing the location of ECMA as
+                        \ shiftCtrl to store the CTRL and SHIFT key presses, so
+                        \ it could be non-zero at this point)
+
+ENDIF
 
  LDA #&60               \ Modify the JSR ZERO in RES2 so it's an RTS, which
  STA yu+3               \ stops RES2 from resetting the ship slots, ship heap
