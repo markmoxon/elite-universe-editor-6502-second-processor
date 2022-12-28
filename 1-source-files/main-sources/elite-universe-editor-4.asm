@@ -74,7 +74,7 @@ IF _6502SP_VERSION
  STA LL74+20            \ that disables the laser once it has fired, so that
                         \ lasers remain on-screen while in the editor
 
-ELIF _MASTER_VERSION
+ELIF _MASTER_VERSION OR _C64_VERSION
 
  JSR EditorDashboard    \ Switch to the Universe Editor dashboard
 
@@ -172,18 +172,6 @@ ENDIF
  JSR DFAULT             \ Call DFAULT to reset the current commander data
                         \ block to the last saved commander
 
-IF _6502SP_VERSION
-
- LDA #251               \ Switch to the main game dashboard, returning from the
- JMP SwitchDashboard    \ subroutine using a tail call
-
-ELIF _MASTER_VERSION
-
- JMP GameDashboard      \ Switch to the main game dashboard, returning from the
-                        \ subroutine using a tail call
-
-ENDIF
-
 IF _C64_VERSION
 
  LDA #$86               \ Revert the STX KL: SEC commands at $8D9B in RDKEY
@@ -199,6 +187,18 @@ IF _C64_VERSION
  STA $8DAD
  LDA #$DC
  STA $8DAE
+
+ENDIF
+
+IF _6502SP_VERSION
+
+ LDA #251               \ Switch to the main game dashboard, returning from the
+ JMP SwitchDashboard    \ subroutine using a tail call
+
+ELIF _MASTER_VERSION OR _C64_VERSION
+
+ JMP GameDashboard      \ Switch to the main game dashboard, returning from the
+                        \ subroutine using a tail call
 
 ENDIF
 
@@ -1003,10 +1003,6 @@ ENDIF
 IF _6502SP_VERSION
 
  JSR ZEBC               \ Call ZEBC to zero-fill pages &B and &C
-
-ENDIF
-
-IF _6502SP_VERSION
 
  LDA #LO(MEBRK)         \ Set BRKV to point to the MEBRK routine, disabling
  SEI                    \ interrupts while we make the change and re-enabling
