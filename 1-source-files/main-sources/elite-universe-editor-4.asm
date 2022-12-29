@@ -153,7 +153,7 @@ IF _6502SP_VERSION
  LDA #&14               \ Re-enable the TRB XX1+31 instruction in part 9 of LL9
  STA LL74+20
 
-ELIF _MASTER_VERSION
+ELIF _MASTER_VERSION OR _C64_VERSION
 
  LDA #&85               \ Re-enable the STA XX1+31 instruction in part 9 of LL9
  STA LL74+16
@@ -960,9 +960,13 @@ ENDIF
  LDA #&B2
  STA token8+2
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  LDA #'U'               \ Change the directory to U
  STA S1%+3
  STA dirCommand+4
+
+ENDIF
 
 IF _6502SP_VERSION
 
@@ -984,7 +988,11 @@ ELIF _MASTER_VERSION
 
 ENDIF
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  JSR ChangeDirectory    \ Change directory to U
+
+ENDIF
 
 \ ******************************************************************************
 \
@@ -1041,7 +1049,11 @@ ENDIF
 
                         \ Option 4: Delete
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  JSR DeleteUniverse     \ Delete a file
+
+ ENDIF
 
  JMP ReturnToDiscMenu   \ Show disc menu
 
@@ -1118,9 +1130,13 @@ ENDIF
 
 .RevertDiscMods
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  LDA #'E'               \ Change the directory back to E
  STA S1%+3
  STA dirCommand+4
+
+ENDIF
 
 IF _6502SP_VERSION
 
@@ -1128,7 +1144,11 @@ IF _6502SP_VERSION
 
 ENDIF
 
- JSR ChangeDirectory
+IF _6502SP_VERSION OR _MASTER_VERSION
+
+ JSR ChangeDirectory    \ Change directory to E
+
+ENDIF
 
  LDA #&CD               \ Revert token 8 in TKN1 to "Commander's Name"
  STA token8

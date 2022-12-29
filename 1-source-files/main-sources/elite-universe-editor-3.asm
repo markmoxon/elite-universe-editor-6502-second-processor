@@ -180,6 +180,8 @@ ENDIF
 \
 \ ******************************************************************************
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
 .DeleteUniverse
 
  JSR CATS               \ Call CATS to ask for a drive number (or a directory
@@ -329,6 +331,8 @@ ELIF _MASTER_VERSION
 
 ENDIF
 
+ENDIF
+
 \ ******************************************************************************
 \
 \       Name: ChangeDirectory
@@ -337,6 +341,8 @@ ENDIF
 \    Summary: Change disc directory
 \
 \ ******************************************************************************
+
+IF _6502SP_VERSION OR _MASTER_VERSION
 
 .ChangeDirectory
 
@@ -370,6 +376,8 @@ ELIF _MASTER_VERSION
 
  JMP SWAPZP             \ Call SWAPZP to restore the top part of zero page,
                         \ returning from the subroutine using a tail call
+
+ENDIF
 
 ENDIF
 
@@ -438,10 +446,14 @@ ENDIF
 \
 \ ******************************************************************************
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
 .dirCommand
 
  EQUS "DIR E"
  EQUB 13
+
+ENDIF
 
 \ ******************************************************************************
 \

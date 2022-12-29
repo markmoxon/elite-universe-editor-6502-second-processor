@@ -140,7 +140,7 @@ ENDIF
 \
 \ ******************************************************************************
 
-IF _MASTER_VERSION
+IF _MASTER_VERSION OR _C64_VERSION
 
 .ConvertFile
 
@@ -541,6 +541,15 @@ ELIF _MASTER_VERSION
  LDA #&29
  STA DOEXP+2
 
+ELIF _C64_VERSION
+
+ LDA #$A5               \ Revert DOEXP to its default behaviour of drawing the
+ STA DOEXP              \ cloud
+ LDA #$28
+ STA DOEXP+1
+ LDA #$29
+ STA DOEXP+2
+
 ENDIF
 
  RTS                    \ Return from the subroutine
@@ -623,7 +632,7 @@ ENDIF
 
  STA jmp-3              \ Disable the JSR MESS in zZ
 
-IF _6502SP_VERSION
+IF _6502SP_VERSION OR _C64_VERSION
 
  JSR zZ+11              \ Call the zZ routine at the JSR TT111 to change
                         \ galaxy without moving the selected system
