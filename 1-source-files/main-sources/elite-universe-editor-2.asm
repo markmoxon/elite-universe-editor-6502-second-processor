@@ -89,7 +89,7 @@ ENDIF
  LDX #1                 \ Set the current slot to 1 so we can create the sun
  STX currentSlot
 
-IF _6502SP_VERSION OR _MASTER_VERSION
+IF _6502SP_VERSION
 
  STX MCNT               \ Set MCNT to 1 so we don't update the compass in the
                         \ DIALS routine

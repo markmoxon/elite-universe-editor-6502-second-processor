@@ -2355,28 +2355,6 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: ZEBC
-\       Type: Subroutine
-\   Category: Universe editor
-\    Summary: Zero-fill pages &B and &C
-\
-\ ******************************************************************************
-
-IF _MASTER_VERSION
-
-.ZEBC
-
- LDX #&C                \ Call ZES1 with X = &C to zero-fill page &C
- JSR ZES1
-
- DEX                    \ Decrement X to &B
-
- JMP ZES1               \ Jump to ZES1 to zero-fill page &B
-
-ENDIF
-
-\ ******************************************************************************
-\
 \       Name: UniverseTokens
 \       Type: Variable
 \   Category: Universe editor

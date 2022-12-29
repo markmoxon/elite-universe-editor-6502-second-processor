@@ -621,28 +621,16 @@ ENDIF
  LDA #&A9               \ Revert the modification to gnum
  STA BAY2
 
-IF _6502SP_VERSION
-
- LDA #&2C               \ Disable the JSR TT110 in zZ
- STA zZ+8
-
-ELIF _MASTER_VERSION
-
- LDA #&2C               \ Disable the JSR TT110 in zZ
- STA zZ+6
-
-ENDIF
-
  STA jmp-3              \ Disable the JSR MESS in zZ
 
 IF _6502SP_VERSION
 
- JSR zZ+11              \ Call the modified zZ at the JSR TT111 to change
+ JSR zZ+11              \ Call the zZ routine at the JSR TT111 to change
                         \ galaxy without moving the selected system
 
 ELIF _MASTER_VERSION
 
- JSR zZ+9               \ Call the modified zZ to change galaxy to change
+ JSR zZ+9               \ Call the zZ routine at the JSR TT111 to change
                         \ galaxy without moving the selected system
 
 ENDIF
