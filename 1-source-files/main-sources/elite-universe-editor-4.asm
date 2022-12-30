@@ -1790,6 +1790,14 @@ ENDIF
  ASL A
  STA ALTIT
 
+IF _C64_VERSION
+
+ LDA QQ11               \ If this is not a space view, then we do not want to
+ BEQ P%+3               \ update the dashboard as it is not being shown, so
+ RTS                    \ return from the subroutine
+
+ENDIF
+
  JSR DIALS              \ Update the dashboard
 
  LDA INWK+31            \ Get the number of missiles
