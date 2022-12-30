@@ -192,7 +192,9 @@ f1 = $3B                \ Show rear view = f3/f4 key
 f2 = $3A                \ Show left view = f5/f7 key
 f3 = $3D                \ Show right view = f7/f8 key
 
-f4 = $07                \ Show the long-range chart = "<-" key
+f4 = $35                \ Show the long-range chart = "4"
+
+keyLeftArrow = $07      \ Switch to charts = "<-"
 
 INCLUDE "../src/elite-universe-editor-macros.asm"
 

@@ -582,7 +582,28 @@ ENDIF
 
 .keys29
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
                         \ Fall through into the routine for showing the charts
+
+ELIF _C64_VERSION
+
+ CMP #keyLeftArrow      \ If <- is not being pressed, jump to DrawCharts to
+ BNE DrawCharts         \ process the chart keys
+
+                        \ If we get here then <- is being pressed, so we switch
+                        \ to chart mode
+
+ LDA QQ14               \ Store the current fuel level on the stack
+ PHA
+
+ LDA #70                \ Set the fuel level to 7 light years, for the chart
+ STA QQ14               \ display
+
+ LDA #f4                \ Jump to ForceChart, setting the key that's "pressed"
+ JMP ForceChart         \ to red key f4 (so we show the Long-range Chart)
+
+ENDIF
 
 \ ******************************************************************************
 \
