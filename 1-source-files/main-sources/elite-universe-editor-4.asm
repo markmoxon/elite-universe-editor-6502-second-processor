@@ -74,11 +74,25 @@ IF _6502SP_VERSION
  STA LL74+20            \ that disables the laser once it has fired, so that
                         \ lasers remain on-screen while in the editor
 
-ELIF _MASTER_VERSION OR _C64_VERSION
+ELIF _MASTER_VERSION
 
  JSR EditorDashboard    \ Switch to the Universe Editor dashboard
 
  LDA #&24               \ Disable the STA XX1+31 instruction in part 9 of LL9
+ STA LL74+16            \ that disables the laser once it has fired, so that
+                        \ lasers remain on-screen while in the editor
+
+ELIF _C64_VERSION
+
+ LDA #&60               \ Modify DIALS to skip calling COMPAS at the end
+ STA PZW2-3
+
+ JSR EditorDashboard    \ Switch to the Universe Editor dashboard
+
+ JSR DOT                \ Remove the dot from the compass that the title screen
+                        \ otherwise leaves in-place
+
+ LDA #$24               \ Disable the STA XX1+31 instruction in part 9 of LL9
  STA LL74+16            \ that disables the laser once it has fired, so that
                         \ lasers remain on-screen while in the editor
 
@@ -148,6 +162,24 @@ ENDIF
 
  JSR HideBulbs          \ Hide both dashboard bulbs
 
+IF _C64_VERSION
+
+ LDA #$86               \ Revert the STX KL: SEC commands at $8D9B in RDKEY
+ STA $8D9B
+ LDA #KL
+ STA $8D9C
+ LDA #$38
+ STA $8D9D
+
+ LDA #$8D               \ Revert the STA $DC00 command at $8DAC in RDKEY
+ STA $8DAC
+ LDA #$00
+ STA $8DAD
+ LDA #$DC
+ STA $8DAE
+
+ENDIF
+
 IF _6502SP_VERSION
 
  LDA #&14               \ Re-enable the TRB XX1+31 instruction in part 9 of LL9
@@ -172,33 +204,24 @@ ENDIF
  JSR DFAULT             \ Call DFAULT to reset the current commander data
                         \ block to the last saved commander
 
-IF _C64_VERSION
-
- LDA #$86               \ Revert the STX KL: SEC commands at $8D9B in RDKEY
- STA $8D9B
- LDA #KL
- STA $8D9C
- LDA #$38
- STA $8D9D
-
- LDA #$8D               \ Revert the STA $DC00 command at $8DAC in RDKEY
- STA $8DAC
- LDA #$00
- STA $8DAD
- LDA #$DC
- STA $8DAE
-
-ENDIF
-
 IF _6502SP_VERSION
 
  LDA #251               \ Switch to the main game dashboard, returning from the
  JMP SwitchDashboard    \ subroutine using a tail call
 
-ELIF _MASTER_VERSION OR _C64_VERSION
+ELIF _MASTER_VERSION
 
  JMP GameDashboard      \ Switch to the main game dashboard, returning from the
                         \ subroutine using a tail call
+
+ELIF _C64_VERSION
+
+ JSR GameDashboard      \ Switch to the main game dashboard
+
+ LDA #&4C               \ Re-enable the call to COMPAS at the end of DIALS
+ STA PZW2-3
+
+ RTS                    \ Return from the subroutine
 
 ENDIF
 
