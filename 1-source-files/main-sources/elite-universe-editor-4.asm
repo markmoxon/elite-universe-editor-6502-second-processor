@@ -976,12 +976,12 @@ ENDIF
  LDA #HI(NAME)
  STA GTL2+2
 
- LDA #&11               \ Change token 8 in TKN1 to "File Name"
- STA token8
- LDA #&1E
- STA token8+1
- LDA #&B2
- STA token8+2
+ LDA #&11               \ Change token 8 in TKN1 from "Commander's Name" to
+ STA token8             \ "File Name" by changing the first three tokens to:
+ LDA #&1E               \
+ STA token8+1           \ ECHR 'F'
+ LDA #&B2               \ ECHR 'I'
+ STA token8+2           \ ETWO 'L', 'E'
 
 IF _6502SP_VERSION OR _MASTER_VERSION
 
@@ -1173,12 +1173,12 @@ IF _6502SP_VERSION OR _MASTER_VERSION
 
 ENDIF
 
- LDA #&CD               \ Revert token 8 in TKN1 to "Commander's Name"
- STA token8
- LDA #&70
- STA token8+1
- LDA #&04
- STA token8+2
+ LDA #&CD               \ Revert token 8 in TKN1 to "Commander's Name" by
+ STA token8             \ changing the first three tokens back to:
+ LDA #&70               \
+ STA token8+1           \ ETOK 154
+ LDA #&04               \ ECHR '`'
+ STA token8+2           \ ECHR 'S'
 
  LDA #LO(NA%)           \ Revert TR1 so it uses the commander name in NA% as the
  STA GTL2+1             \ default when no filename is entered
