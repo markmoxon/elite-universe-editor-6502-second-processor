@@ -2470,6 +2470,9 @@ ENDIF
  ECHR ' '
  EJMP 4
  ETWO '-', '-'
+
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  ECHR '3'
  ECHR '.'
  ECHR ' '
@@ -2495,6 +2498,23 @@ ENDIF
  ETWO 'L', 'E'
  ETWO '-', '-'
  ECHR '5'
+
+ELIF _C64_VERSION
+
+ ECHR '3'
+ ECHR '.'
+ ECHR ' '
+ ECHR 'C'
+ ECHR 'H'
+ ETWO 'A', 'N'
+ ETWO 'G', 'E'
+ ETOK 201
+ EJMP 31
+ ETWO '-', '-'
+ ECHR '4'
+
+ENDIF
+
  ECHR '.'
  ECHR ' '
  ECHR 'P'
@@ -2508,7 +2528,17 @@ ENDIF
  ECHR 'R'
  ETWO 'S', 'E'
  ETWO '-', '-'
+
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  ECHR '6'
+
+ELIF _C64_VERSION
+
+ ECHR '5'
+
+ENDIF
+
  ECHR '.'
  ECHR ' '
  ECHR 'E'

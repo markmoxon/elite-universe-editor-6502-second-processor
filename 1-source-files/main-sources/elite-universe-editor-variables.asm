@@ -137,7 +137,7 @@ ELIF _C64_VERSION
 currentSlot = $00FD
 repeatingKey = $00FE
 
-token8 = &A49E
+token8 = &0E8D
 
 keyA = $36              \ See TRANTABLE at $8D0C for key values
 keyC = $2C
