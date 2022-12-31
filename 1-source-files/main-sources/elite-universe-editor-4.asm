@@ -983,17 +983,12 @@ ENDIF
  LDA #&B2               \ ECHR 'I'
  STA token8+2           \ ETWO 'L', 'E'
 
-IF _6502SP_VERSION OR _MASTER_VERSION
+IF _6502SP_VERSION
 
  LDA #'U'               \ Change the directory to U
  STA S1%+3
  STA dirCommand+4
-
-ENDIF
-
-IF _6502SP_VERSION
-
- STA DELI+9             \ Change the directory to U
+ STA DELI+9
 
  LDA #&4C               \ Stop MEBRK error handler from returning to the SVE
  STA SVE                \ routine, jump back here instead
@@ -1002,16 +997,18 @@ IF _6502SP_VERSION
  LDA #HI(ReturnToDiscMenu)
  STA SVE+2
 
+ JSR ChangeDirectory    \ Change directory to U
+
 ELIF _MASTER_VERSION
+
+ LDA #'U'               \ Change the directory to U
+ STA S1%+3
+ STA dirCommand+4
 
  LDA #LO(ReturnToDiscMenu) \ Stop BRBR error handler from returning to the SVE
  STA DEATH-2               \ routine, jump back here instead
  LDA #HI(ReturnToDiscMenu)
  STA DEATH-1
-
-ENDIF
-
-IF _6502SP_VERSION OR _MASTER_VERSION
 
  JSR ChangeDirectory    \ Change directory to U
 
@@ -1042,9 +1039,7 @@ IF _6502SP_VERSION
  STA BRKV+1             \ handler in BRBR while disc access operations are
  CLI                    \ happening
 
-ENDIF
-
-IF _MASTER_VERSION
+ELIF _MASTER_VERSION
 
  JSR TRADE              \ Set the palette for trading screens and switch the
                         \ current colour to white
@@ -1052,7 +1047,7 @@ IF _MASTER_VERSION
 ENDIF
 
  LDA #1                 \ Print extended token 1, the disc access menu, which
- JSR PrintToken         \ presents these options:
+ JSR PrintToken         \ presents these options on the BBC:
                         \
                         \   1. Load Universe
                         \   2. Save Universe {universe name}
@@ -1060,6 +1055,14 @@ ENDIF
                         \   4. Delete A File
                         \   5. Play Universe
                         \   6. Exit
+                        \
+                        \ or these options on the Commodore 64:
+                        \
+                        \   1. Load Universe
+                        \   2. Save Universe {universe name}
+                        \   3. Change to {other media}
+                        \   4. Play Universe
+                        \   5. Exit
 
  JSR t                  \ Scan the keyboard until a key is pressed, returning
                         \ the ASCII code in A and X
@@ -1067,29 +1070,53 @@ ENDIF
  CMP #'1'               \ If A < ASCII "1", jump to disc5 to exit as the key
  BCC disc5              \ press doesn't match a menu option
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  CMP #'4'               \ If "4" was not pressed, jump to disc1
  BNE disc1
 
-                        \ Option 4: Delete
-
-IF _6502SP_VERSION OR _MASTER_VERSION
+                        \ Option 4: Delete (BBC)
 
  JSR DeleteUniverse     \ Delete a file
 
- ENDIF
+ELIF _C64_VERSION
+
+ CMP #'3'               \ If "3" was not pressed, jump to disc1
+ BNE disc1
+
+                        \ Option 3: Change to {other media} (Commodore 64)
+
+ LDA $1D0E              \ Flip the current device in $1D0E, so it contains:
+ EOR #%11111111         \
+ STA $1D0E              \   * 0 for tape
+                        \   * &FF for disk
+
+ENDIF
 
  JMP ReturnToDiscMenu   \ Show disc menu
 
 .disc1
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  CMP #'5'               \ If "5" was not pressed, jump to disc2 to skip the
  BNE disc2              \ following
 
-                        \ Option 5: Play universe
+ELIF _C64_VERSION
+
+ CMP #'4'               \ If "4" was not pressed, jump to disc2 to skip the
+ BNE disc2              \ following
+
+ENDIF
+
+                        \ Option 5: Play universe (BBC)
+                        \ Option 4: Play universe (Commodore 64)
 
  JMP PlayUniverse       \ Play the current universe file
 
 .disc2
+
+IF _6502SP_VERSION OR _MASTER_VERSION
 
  BCS disc5              \ If A >= ASCII "5", jump to disc5 to exit as the key
                         \ press is either option 6 (exit), or it doesn't match a
@@ -1098,7 +1125,18 @@ IF _6502SP_VERSION OR _MASTER_VERSION
  CMP #'2'               \ If A >= ASCII "2" (i.e. save or catalogue), skip to
  BCS disc3              \ disc3
 
-                        \ Option 1: Load
+ELIF _C64_VERSION
+
+ BCS disc5              \ If A >= ASCII "4", jump to disc5 to exit as the key
+                        \ press is either option 5 (exit), or it doesn't match a
+                        \ menu option (as we already checked for "4" above)
+
+ CMP #'2'               \ If A = ASCII "2" (i.e. save), skip to disc4
+ BEQ disc4
+
+ENDIF
+
+                        \ Option 1: Load (BBC and Commodore 64)
 
  JSR GTNMEW             \ If we get here then option 1 (load) was chosen, so
                         \ call GTNMEW to fetch the name of the commander file
@@ -1109,12 +1147,14 @@ IF _6502SP_VERSION OR _MASTER_VERSION
 
  JMP disc5              \ Jump to disc5 to return from the subroutine
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
 .disc3
 
  BEQ disc4              \ We get here following the CMP #'2' above, so this
                         \ jumps to disc4 if option 2 (save) was chosen
 
-                        \ Option 3: Catalogue
+                        \ Option 3: Catalogue (BBC)
 
  JSR CATS               \ Call CATS to ask for a drive number, catalogue that
                         \ disc and update the catalogue command at CTLI
@@ -1124,9 +1164,11 @@ IF _6502SP_VERSION OR _MASTER_VERSION
 
  JMP ReturnToDiscMenu   \ Show the disc menu again
 
+ENDIF
+
 .disc4
 
-                        \ Option 2: Save
+                        \ Option 2: Save (BBC and Commodore 64)
 
  JSR SaveUniverse       \ Save the universe file
 
@@ -1134,7 +1176,8 @@ IF _6502SP_VERSION OR _MASTER_VERSION
 
 .disc5
 
-                        \ Option 6: Exit
+                        \ Option 6: Exit (BBC)
+                        \ Option 5: Exit (Commodore 64)
 
  JSR RevertDiscMods     \ Reverse all the modifications we did above
 
@@ -1153,21 +1196,20 @@ IF _6502SP_VERSION OR _MASTER_VERSION
 
 .RevertDiscMods
 
-IF _6502SP_VERSION OR _MASTER_VERSION
+IF _6502SP_VERSION
 
  LDA #'E'               \ Change the directory back to E
  STA S1%+3
  STA dirCommand+4
+ STA DELI+9
 
-ENDIF
+ JSR ChangeDirectory    \ Change directory to E
 
-IF _6502SP_VERSION
+ELIF _MASTER_VERSION
 
- STA DELI+9             \ Change the directory back to E
-
-ENDIF
-
-IF _6502SP_VERSION OR _MASTER_VERSION
+ LDA #'E'               \ Change the directory back to E
+ STA S1%+3
+ STA dirCommand+4
 
  JSR ChangeDirectory    \ Change directory to E
 
@@ -1206,6 +1248,10 @@ ELIF _MASTER_VERSION
  STA DEATH-2
  LDA #HI(SVE)
  STA DEATH-1
+
+ RTS                    \ Return from the subroutine
+
+ELIF _C64_VERSION
 
  RTS                    \ Return from the subroutine
 
@@ -2437,6 +2483,22 @@ ENDIF
  ECHR 'M'               \               "
  ECHR 'E'
  ETWO 'N', 'U'
+IF _C64_VERSION
+ ECHR ' '               \ For Commodore 64:
+ ECHR '('               \
+ EJMP 30                \ Token 1:      "{clear screen}
+ ECHR ')'               \                {draw box around title}
+                        \                {all caps}
+                        \                {tab 6} UNIVERSE MENU ({current media}){crlf}
+                        \                {lf}
+                        \                {sentence case}
+                        \                1. LOAD UNIVERSE{crlf}
+                        \                2. SAVE UNIVERSE {commander name}{crlf}
+                        \                3. CHANGE TO {other media}{crlf}
+                        \                4. PLAY UNIVERSE{crlf}
+                        \                5. EXIT{crlf}
+                        \               "
+ENDIF
  ETWO '-', '-'
  EJMP 10
  EJMP 2
@@ -2470,9 +2532,7 @@ ENDIF
  ECHR ' '
  EJMP 4
  ETWO '-', '-'
-
 IF _6502SP_VERSION OR _MASTER_VERSION
-
  ECHR '3'
  ECHR '.'
  ECHR ' '
@@ -2498,9 +2558,7 @@ IF _6502SP_VERSION OR _MASTER_VERSION
  ETWO 'L', 'E'
  ETWO '-', '-'
  ECHR '5'
-
 ELIF _C64_VERSION
-
  ECHR '3'
  ECHR '.'
  ECHR ' '
@@ -2512,9 +2570,7 @@ ELIF _C64_VERSION
  EJMP 31
  ETWO '-', '-'
  ECHR '4'
-
 ENDIF
-
  ECHR '.'
  ECHR ' '
  ECHR 'P'
@@ -2528,17 +2584,11 @@ ENDIF
  ECHR 'R'
  ETWO 'S', 'E'
  ETWO '-', '-'
-
 IF _6502SP_VERSION OR _MASTER_VERSION
-
  ECHR '6'
-
 ELIF _C64_VERSION
-
  ECHR '5'
-
 ENDIF
-
  ECHR '.'
  ECHR ' '
  ECHR 'E'
