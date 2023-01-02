@@ -968,8 +968,12 @@ ENDIF
 
  JSR WPSHPS             \ Clear the ships from the scanner
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  TSX                    \ Transfer the stack pointer to X and store it in stack,
  STX stack              \ so we can restore it in the break handler
+
+ENDIF
 
  LDA #LO(NAME)          \ Change TR1 so it uses the universe name in NAME as the
  STA GTL2+1             \ default when no filename is entered
@@ -1011,6 +1015,14 @@ ELIF _MASTER_VERSION
  STA DEATH-1
 
  JSR ChangeDirectory    \ Change directory to U
+
+ELIF _C64_VERSION
+
+ LDA #2                 \ Change the file number in GTDRV from 1 to 2, so we can
+ STA $8BE2              \ load and save universe files as SEQ files
+
+ LDA #2                 \ Change the secondary address in GTDRV from 0 to 2, so
+ STA $8BE4              \ we can load and save universe files as SEQ files
 
 ENDIF
 
@@ -1213,6 +1225,14 @@ ELIF _MASTER_VERSION
 
  JSR ChangeDirectory    \ Change directory to E
 
+ELIF _C64_VERSION
+
+ LDA #1                 \ Revert the file number in GTDRV back to 1
+ STA $8BE2
+
+ LDA #0                 \ Revert the secondary address in GTDRV back to 0
+ STA $8BE4
+
 ENDIF
 
  LDA #&CD               \ Revert token 8 in TKN1 to "Commander's Name" by
@@ -1286,6 +1306,8 @@ ELIF _MASTER_VERSION
 
 ENDIF
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
  LDA #&FF               \ Call SaveLoadFile with A = &FF to load the universe
  JSR SaveLoadFile       \ file to address K%
 
@@ -1293,6 +1315,17 @@ ENDIF
                         \ entered during the call to SaveLoadFile and the file
                         \ wasn't loaded, so jump to load1 to skip the following
                         \ and return from the subroutine
+
+ELIF _C64_VERSION
+
+ JSR GTDRV              \ Set the correct media, file parameters and filename so
+                        \ we can load the universe file as a SEQ file
+
+ JSR LoadUniverseC64    \ Load the universe file
+
+ BCS load1              \ If there was a loading error, skip the following
+
+ENDIF
 
  JSR StoreName          \ Transfer the universe filename from INWK to NAME, to
                         \ set it as the current filename
@@ -1336,7 +1369,7 @@ ENDIF
  LDA K%+&2E4+21+35      \ Copy 1 byte from K%+&2E4+21+35 to JUNK
  STA JUNK
 
- LDA K%+&2E4+21+36      \ Copy 2 bytes from K%+&2E4+21+36 SLSP to 
+ LDA K%+&2E4+21+36      \ Copy 2 bytes from K%+&2E4+21+36 to SLSP
  STA SLSP
  LDA K%+&2E4+21+37
  STA SLSP+1
@@ -1344,6 +1377,11 @@ ENDIF
 IF _MASTER_VERSION
 
  JSR ConvertToMaster    \ Convert the loaded file so it works on the Master
+
+ELIF _C64_VERSION
+
+ JSR ConvertToC64       \ Convert the loaded file so it works on the Commodore
+                        \ 64
 
 ENDIF
 
@@ -1364,7 +1402,139 @@ ENDIF
 
  JSR HideBulbs          \ Hide both dashboard bulbs
 
- RTS                    \ Return from the subroutine with the C flag set
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: LoadUniverseC64
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Load and convert a universe file for the Commodore 64
+\
+\ ******************************************************************************
+
+IF _C64_VERSION
+
+.LoadUniverseC64
+
+ JSR OPEN               \ Call OPEN to open the file as file number 2
+
+ BCS loco4              \ If there was an error, jump to loco4 to return from
+                        \ the subroutine with the C flag set, to indicate
+                        \ failure
+
+ LDX #2                 \ Call CHKIN to define file number 2 as the default input
+ JSR CHKIN              \ file
+
+ LDA #LO(K%)            \ Set P(1 0) = K%, where we want to store the file
+ STA P
+ LDA #HI(K%)
+ STA P+1
+
+.loco1
+
+ JSR READST             \ Call READST to read the status byte
+
+ BNE loco3              \ If this is the end of the file or we have a read
+                        \ error, jump to loco3 to close the file
+
+ JSR CHRIN              \ Call CHRIN to read the next byte from the file into A
+
+ DEC CPU_PORT           \ Patch out kernal memory (change processor port from
+                        \ %110 to %101)
+
+ LDY #0                 \ Write the byte to the address in P(1 0)
+ STA (P),Y
+
+ INC CPU_PORT           \ Patch in kernal memory (change processor port from
+                        \ %101 to %110)
+
+ INC P                  \ Increment P(1 0) to point to the next address
+ BNE loco2
+ INC P+1
+
+.loco2
+
+ JMP loco1              \ Loop back to loco1 to keep reading from the file
+
+.loco3
+
+ CLC                    \ Clear the C flag to indicate success
+
+ AND #%01000000         \ If bit 6 is set then we reached the end of the file,
+ BNE loco4              \ so jump to loco4, keeping the C flag clear
+
+ SEC                    \ If we get here then we had a read error, so set the C
+                        \ flag to indicate failure
+
+.loco4
+
+ PHP                    \ Store the C flag on the stack
+
+ LDA #2                 \ Call CLOSE to close file number 2
+ JSR CLOSE
+
+ JSR CLRCHN             \ Call CLRCHN to close the default input/output files
+
+ JSR RevertLoadSaveMode \ Revert the changes for file access
+
+ PLP                    \ Retrieve the C flag from the stack
+
+ BCC loco5              \ If there was no error, then the C flag is clear, so
+                        \ jump to loco5 to return from the subroutine
+
+ LDA #255               \ Print the error
+ JSR DETOK
+
+ JSR t                  \ Wait for a key press
+
+ SEC                    \ Set the C flag to indicate that we had an error
+
+.loco5
+
+ RTS                    \ Return from the subroutine
+
+ENDIF
+
+\ ******************************************************************************
+\
+\       Name: RevertLoadSaveMode
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Revert the changes for file access that get done in GETDRV
+\
+\ ******************************************************************************
+
+IF _C64_VERSION
+
+.RevertLoadSaveMode
+
+ LDA #%00000001
+ STA CIA1_ICSREG
+
+ SEI                    \ Disable interrupts
+ 
+ LDX #0                 \ Set the screen part to the first part of the screen,
+ STX screenSection      \ above the mode switch, i.e. the space view
+
+ INX
+ STX VIC_ICREG
+ 
+ LDA VIC_SCREG1
+ AND #%01111111
+ STA VIC_SCREG1
+ 
+ LDA #40                \ Raster line 40
+ STA VIC_RASTER
+ 
+ LDA #%00000100         \ Turn off Kernal and I/O, go back to full 64K RAM
+ JSR SetMemory
+ 
+ CLI                    \ Re-enable interrupts
+
+ JMP SWAPZP
+
+ENDIF
 
 \ ******************************************************************************
 \
@@ -1438,12 +1608,6 @@ ENDIF
  LDA SLSP+1
  STA K%+&2E4+21+37
 
-IF _MASTER_VERSION
-
- JSR ConvertFromMaster  \ Convert the universe file so it can be saved
-
-ENDIF
-
 IF _6502SP_VERSION
 
  LDA #0                 \ Call SaveLoadFile with A = 0 to save the universe
@@ -1453,6 +1617,8 @@ IF _6502SP_VERSION
 
 ELIF _MASTER_VERSION
 
+ JSR ConvertFromMaster  \ Convert the universe file so it can be saved
+
  LDA #0                 \ Call SaveLoadFile with A = 0 to save the universe
  JSR SaveLoadFile       \ file with the filename we copied to INWK at the start
                         \ of this routine
@@ -1460,6 +1626,161 @@ ELIF _MASTER_VERSION
  JMP ConvertToMaster    \ Convert the loaded file back again so it works on the
                         \ Master, returning from the subroutine using a tail
                         \ call
+
+ELIF _C64_VERSION
+
+ JSR ConvertFromC64     \ Convert the universe file so it can be saved
+
+ JSR GTDRV              \ Set the correct media, file parameters and filename so
+                        \ we can save the universe file as a SEQ file
+
+ JSR SaveUniverseC64    \ Save the universe file, returning from the subroutine
+                        \ using a tail call
+
+ JMP ConvertToC64       \ Convert the loaded file back again so it works on the
+                        \ Commodore 64, returning from the subroutine using a
+                        \ tail call
+
+ENDIF
+
+\ ******************************************************************************
+\
+\       Name: SaveUniverseC64
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Save a universe file from the Commodore 64
+\
+\ ******************************************************************************
+
+IF _C64_VERSION
+
+.SaveUniverseC64
+
+ JSR OPEN               \ Call OPEN to open the file as file number 2
+
+ BCS saco4              \ If there was an error, jump to saco4 to return from
+                        \ the subroutine with the C flag set, to indicate
+                        \ failure
+
+ LDX #2                 \ Call CHKOUT to define file number 2 as the default
+ JSR CHKOUT             \ output file
+
+ LDA #LO(K%)            \ Set P(1 0) = K%, where we want to store the file
+ STA P
+ LDA #HI(K%)
+ STA P+1
+
+.saco1
+
+ JSR READST             \ Call READST to read the status byte
+
+ BNE saco3              \ If there is a write error, jump to saco3 to close the
+                        \ file
+
+ DEC CPU_PORT           \ Patch out kernal memory (change processor port from
+                        \ %110 to %101)
+
+ LDY #0                 \ Fetch the byte to write from the address in P(1 0)
+ LDA (P),Y
+
+ INC CPU_PORT           \ Patch in kernal memory (change processor port from
+                        \ %101 to %110)
+
+ JSR CHROUT             \ Call CHROUT to write the byte in A to the file
+
+ INC P                  \ Increment P(1 0) to point to the next address
+ BNE saco2
+ INC P+1
+
+.saco2
+
+ LDA P+1                \ If the high byte of P(1 0) hasn't reached the end of
+ CMP #HI(K%+$31E)       \ the file, which is $31E bytes long, then loop back to
+ BNE saco1              \ saco1 to write the next byte
+
+ LDA P                  \ If the low byte of P(1 0) hasn't reached the end of
+ CMP #LO(K%+$31E)       \ the file, which is $31E bytes long, then loop back to
+ BNE saco1              \ saco1 to write the next byte
+
+ LDA #%01000000         \ Set bit 6 of A to indicate that we have successfully
+                        \ reached the end of the file
+
+.saco3
+
+ CLC                    \ Clear the C flag to indicate success
+
+ AND #%01000000         \ If bit 6 is set then we reached the end of the file,
+ BNE saco4              \ so jump to saco4, keeping the C flag clear
+
+ SEC                    \ If we get here then we had a read error, so set the C
+                        \ flag to indicate failure
+
+.saco4
+
+ PHP                    \ Store the C flag on the stack
+
+ LDA #2                 \ Call CLOSE to close file number 2
+ JSR CLOSE
+
+ JSR CLRCHN             \ Call CLRCHN to close the default input/output files
+
+ JSR RevertLoadSaveMode \ Revert the changes for file access
+
+ PLP                    \ Retrieve the C flag from the stack
+
+ BCC saco5              \ If there was no error, then the C flag is clear, so
+                        \ jump to saco5 to return from the subroutine
+
+ LDA #255               \ Print the error
+ JSR DETOK
+
+ JSR t                  \ Wait for a key press
+
+ SEC                    \ Set the C flag to indicate that we had an error
+
+.saco5
+
+ RTS                    \ Return from the subroutine
+
+ENDIF
+
+\ ******************************************************************************
+\
+\       Name: ConvertFromC64
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Convert a Commodore 64 universe file to the save format
+\
+\ ******************************************************************************
+
+IF _C64_VERSION
+
+.ConvertFromC64
+
+                        \ We are saving a file from the Master version, so we
+                        \ need to make the following changes:
+                        \
+                        \   * Change any Cougars from type 32 to 33
+                        \
+                        \   * Fix the ship heap addresses in INWK+33 and INWK+34
+                        \     by subtracting &FFC0-&D000 (as the ship line heap
+                        \     descends from &D000 in the 6502SP version and from
+                        \     &FFC0 in the Commodore 64 version)
+
+ LDX #32                \ Set K = 32, to act as the search value
+ STX K
+
+ INX                    \ Set K+1 = 33, to act as the replacement value
+ STX K+1
+
+ LDX #0                 \ Set K+3 = 0, so we don't delete any ships from the
+ STX K+3                \ file
+
+ LDX #&D1               \ Set K+2 = -(&FF-&D0) = &D1, so we move the ship heap
+ STX K+2                \ addresses from &FFC0 to &D000
+
+ JMP ConvertFile        \ Convert the Commodore 64 file into the correct format
+                        \ for saving
 
 ENDIF
 
@@ -1500,6 +1821,57 @@ IF _MASTER_VERSION
 
  JMP ConvertFile        \ Convert the Master file into the correct format for
                         \ saving
+
+ENDIF
+
+\ ******************************************************************************
+\
+\       Name: ConvertToC64
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Convert a loaded universe file so it works on a Commodore 64
+\
+\ ******************************************************************************
+
+IF _C64_VERSION
+
+.ConvertToC64
+
+                        \ We are loading a file into the Master version, so we
+                        \ need to make the following changes:
+                        \
+                        \   * Delete any Elite logos of type 32
+                        \
+                        \   * Change any Cougars from type 33 to 32
+                        \
+                        \   * Fix the ship heap addresses in INWK+33 and INWK+34
+                        \     by adding &FFC0-&D000 (as the ship line heap
+                        \     descends from &D000 in the 6502SP version and from
+                        \     &FFC0 in the Commodore 64 version)
+
+ LDX #33                \ Set K = 33, to act as the search value
+ STX K
+
+ DEX                    \ Set K+1 = 32, to act as the replacement value
+ STX K+1
+
+ STX K+3                \ Set K+3 = 32, so we delete the Elite logo from the
+                        \ 6502SP file (before doing the above search)
+
+ LDX #&2F               \ Set K+2 = &FF-&D0 = &2F, so we move the ship heap
+ STX K+2                \ addresses from &D000 to &FFC0 (as ConvertFile also
+                        \ adds $C0 in the Commodore 64 version)
+
+ JMP ConvertFile        \ Convert the loaded file so it works on the Commodore
+                        \ 64
+
+ LDA #0                 \ Clear the last ship slot, so it can act as a backstop
+ STA FRIN+NOSH
+
+ LDA #LO(LSO)           \ Set bytes #33 and #34 to point to LSO for the ship
+ STA K%+NI%+33          \ line heap for the space station
+ LDA #HI(LSO)
+ STA K%+NI%+34
 
 ENDIF
 

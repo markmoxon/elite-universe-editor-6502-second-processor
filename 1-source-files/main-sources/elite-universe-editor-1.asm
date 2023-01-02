@@ -130,11 +130,19 @@ ENDIF
 \
 \                         * 0 = do not change addresses
 \
-\                         * &C8 = Add &D000-&0800 to each address
+\                         * &C8 = Add &D000-&0800 to each address (&C800)
 \                                 (Save file from Master)
 \
-\                         * &38 = Subtract &D000-&0800 from each address
+\                         * &38 = Add -(&D000-&0800) to each address (&3800)
 \                                 (Load file on Master)
+\
+\                         * $D1 = Add -($FFC0-$D000) to each address ($D040)
+\                                 (Save file on Commodore 64)
+\
+\                         * $2F = Add $FFC0-$D000 to each address ($2FC0)
+\                                 (Load file on Commodore 64)
+\
+\                       Note that the Commodore 64 also adds &C0 to the low byte
 \
 \   K+3                 Ship number to delete (0 for no deletion)
 \
@@ -191,6 +199,8 @@ IF _MASTER_VERSION OR _C64_VERSION
  LDA UNIV+1,Y
  STA V+1
 
+IF _MASTER_VERSION
+
  LDY #34                \ Set A = INWK+34, the high byte of the ship heap
  LDA (V),Y              \ address
 
@@ -198,6 +208,24 @@ IF _MASTER_VERSION OR _C64_VERSION
  ADC K+2                \ address
 
  STA (V),Y              \ Update the high byte of the ship heap address
+
+ELIF _C64_VERSION
+
+ LDY #33                \ Set A = INWK+33, the low byte of the ship heap
+ LDA (V),Y              \ address
+
+ CLC                    \ Add $C0 to the low byte of the ship heap
+ ADC #$C0
+
+ LDY #34                \ Set A = INWK+34, the high byte of the ship heap
+ LDA (V),Y              \ address
+
+ ADC K+2                \ Apply the delta to the high byte of the ship heap
+                        \ address
+
+ STA (V),Y              \ Update the high byte of the ship heap address
+
+ENDIF
 
 .conv4
 

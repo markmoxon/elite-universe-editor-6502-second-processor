@@ -62,6 +62,8 @@
 \
 \ ******************************************************************************
 
+IF _6502SP_VERSION OR _MASTER_VERSION
+
 .SaveLoadFile
 
  PHA                    \ Store A on the stack so we can restore it after the
@@ -162,6 +164,8 @@ ENDIF
 .slod3
 
  RTS                    \ Return from the subroutine
+
+ENDIF
 
 \ ******************************************************************************
 \
