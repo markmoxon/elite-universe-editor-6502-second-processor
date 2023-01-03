@@ -1016,14 +1016,6 @@ ELIF _MASTER_VERSION
 
  JSR ChangeDirectory    \ Change directory to U
 
-ELIF _C64_VERSION
-
- LDA #2                 \ Change the file number in GTDRV from 1 to 2, so we can
- STA GTDRV+34           \ load and save universe files as SEQ files
-
- LDA #2                 \ Change the secondary address in GTDRV from 0 to 2, so
- STA GTDRV+36           \ we can load and save universe files as SEQ files
-
 ENDIF
 
 \ ******************************************************************************
@@ -1225,14 +1217,6 @@ ELIF _MASTER_VERSION
 
  JSR ChangeDirectory    \ Change directory to E
 
-ELIF _C64_VERSION
-
- LDA #1                 \ Revert the file number in GTDRV back to 1
- STA GTDRV+34
-
- LDA #0                 \ Revert the secondary address in GTDRV back to 0
- STA GTDRV+36
-
 ENDIF
 
  LDA #&CD               \ Revert token 8 in TKN1 to "Commander's Name" by
@@ -1317,9 +1301,6 @@ IF _6502SP_VERSION OR _MASTER_VERSION
                         \ and return from the subroutine
 
 ELIF _C64_VERSION
-
- JSR GTDRV              \ Set the correct media, file parameters and filename so
-                        \ we can load the universe file as a SEQ file
 
  JSR LoadUniverseC64    \ Load the universe file
 
@@ -1417,6 +1398,8 @@ IF _C64_VERSION
 
 .LoadUniverseC64
 
+ JSR ApplyLoadSaveMode  \ Apply the changes for file access
+
  JSR OPEN               \ Call OPEN to open the file as file number 2
 
  BCS loco4              \ If there was an error, jump to loco4 to return from
@@ -1426,10 +1409,10 @@ IF _C64_VERSION
  LDX #2                 \ Call CHKIN to define file number 2 as the default
  JSR CHKIN              \ input file
 
- LDA #LO(K%)            \ Set P(1 0) = K%, where we want to store the file
- STA P
+ LDA #LO(K%)            \ Set K4(1 0) = K%, where we want to store the file
+ STA K4
  LDA #HI(K%)
- STA P+1
+ STA K4+1
 
  LDY #0                 \ Set Y = 0 so we can use post-indexed indirect
                         \ addressing to store the loaded byte
@@ -1447,15 +1430,15 @@ IF _C64_VERSION
                         \ $E000 to $FFFF is RAM (i.e. change the processor port
                         \ from %110 to %101)
 
- STA (P),Y              \ Write the byte to the address in P(1 0)
+ STA (K4),Y             \ Write the byte to the address in K4(1 0)
 
  INC CPU_PORT           \ Patch the kernal ROM into main memory so that $E000 to
                         \ $FFFF is ROM (i.e. change the processor port from %101
                         \ to %110)
 
- INC P                  \ Increment P(1 0) to point to the next address
+ INC K4                 \ Increment K4(1 0) to point to the next address
  BNE loco2
- INC P+1
+ INC K4+1
 
 .loco2
 
@@ -1475,6 +1458,16 @@ IF _C64_VERSION
 
  PHP                    \ Store the C flag on the stack
 
+ BCC loco5              \ If there was no error, then the C flag is clear, so
+                        \ jump to loco5 to return from the subroutine
+
+ LDA #255               \ Print the error
+ JSR DETOK
+
+ JSR t                  \ Wait for a key press
+
+.loco5
+
  LDA #2                 \ Call CLOSE to close file number 2
  JSR CLOSE
 
@@ -1484,19 +1477,70 @@ IF _C64_VERSION
 
  PLP                    \ Retrieve the C flag from the stack
 
- BCC loco5              \ If there was no error, then the C flag is clear, so
-                        \ jump to loco5 to return from the subroutine
-
- LDA #255               \ Print the error
- JSR DETOK
-
- JSR t                  \ Wait for a key press
-
- SEC                    \ Set the C flag to indicate that we had an error
-
-.loco5
-
  RTS                    \ Return from the subroutine
+
+ENDIF
+
+\ ******************************************************************************
+\
+\       Name: ApplyLoadSaveMode
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Apply the changes for file access that get done in GETDRV
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine reverses the changes that are implemented in the GETDRV routine,
+\ which disables interrupts and pages the kernal ROM and I/O into main memory.
+\ GETDRV gets the system ready for file access, and this routine reverses the
+\ process.
+\
+\ It is based on the code in the routine at $8BC0, which is the Commodore 64
+\ equivalent of the GETDRV routine in the BBC versions.
+\
+\ ******************************************************************************
+
+IF _C64_VERSION
+
+.ApplyLoadSaveMode
+
+ JSR SWAPZP             \ Call SWAPZP to save the top part of zero page
+
+ LDA #%00000110         \ Set A so we can page the kernal ROM and I/O into main
+                        \ memory below
+
+ SEI                    \ Disable interrupts
+
+ JSR SetMemory          \ Page the kernal ROM and I/O into main memory
+
+ LDA #0                 \ Clear bit 0 of the VIC Interrupt Control Register to
+ STA VIC_ICREG          \ disable the raster interrupt
+ 
+ CLI
+
+ LDA #%10000001         \ Set bit 0 of the CIA #1 Interrupt Control and Status
+ STA CIA1_ICSREG        \ Register to enable interrupts generated by a timer A
+                        \ underflow
+
+ LDA #%11000000         \ Set the system error display switch so we display both
+ JSR SETMSG             \ error and control messages
+
+ LDX DTAPE              \ Set X to the correct device number for tape or disk,
+ INX                    \ taken from the table at deviceNumber, using the media
+ LDA deviceNumber,X     \ setting in DTAPE
+ TAX
+
+ LDA #2                 \ Call SETLFS to set the file parameters, with X set to
+ LDY #2                 \ the device number, and A and Y set to the file number
+ JSR SETLFS
+
+ LDA NAMELEN1           \ Set A to the filename length that was set in GTNMEW
+
+ LDX #LO(INWK+5)        \ Set (Y X) to the address of the file name at INWK,
+ LDY #HI(INWK+5)        \ skipping the ":0.E." prefix
+
+ JMP SETNAM             \ Call SETNAM to set the name of file 2, returning from
+                        \ the subroutine using a tail call
 
 ENDIF
 
@@ -1514,7 +1558,7 @@ ENDIF
 \ GETDRV gets the system ready for file access, and this routine reverses the
 \ process.
 \
-\ It is based on the code in the routine at  $8C0D, which is the Commodore 64
+\ It is based on the code in the routine at $8C0D, which is the Commodore 64
 \ equivalent of the LOD routine in the BBC versions.
 \
 \ ******************************************************************************
@@ -1523,8 +1567,8 @@ IF _C64_VERSION
 
 .RevertLoadSaveMode
 
- LDA #%00000001         \ Set bit 0 of the CIA #1 Interrupt Control and Status
- STA CIA1_ICSREG        \ Register to enable interrupts generated by a timer A
+ LDA #%00000001         \ Clear bit 0 of the CIA #1 Interrupt Control and Status
+ STA CIA1_ICSREG        \ Register to disable interrupts generated by a timer A
                         \ underflow
 
  SEI                    \ Disable interrupts
@@ -1647,9 +1691,6 @@ ELIF _C64_VERSION
 
  JSR ConvertFromC64     \ Convert the universe file so it can be saved
 
- JSR GTDRV              \ Set the correct media, file parameters and filename so
-                        \ we can save the universe file as a SEQ file
-
  JSR SaveUniverseC64    \ Save the universe file, returning from the subroutine
                         \ using a tail call
 
@@ -1672,6 +1713,8 @@ IF _C64_VERSION
 
 .SaveUniverseC64
 
+ JSR ApplyLoadSaveMode  \ Apply the changes for file access
+
  JSR OPEN               \ Call OPEN to open the file as file number 2
 
  BCS saco4              \ If there was an error, jump to saco4 to return from
@@ -1681,10 +1724,10 @@ IF _C64_VERSION
  LDX #2                 \ Call CHKOUT to define file number 2 as the default
  JSR CHKOUT             \ output file
 
- LDA #LO(K%)            \ Set P(1 0) = K%, where we want to store the file
- STA P
+ LDA #LO(K%)            \ Set K4(1 0) = K%, so we save from this address
+ STA K4
  LDA #HI(K%)
- STA P+1
+ STA K4+1
 
  LDY #0                 \ Set Y = 0 so we can use post-indexed indirect
                         \ addressing to fetch the byte to save
@@ -1700,7 +1743,7 @@ IF _C64_VERSION
                         \ $E000 to $FFFF is RAM (i.e. change the processor port
                         \ from %110 to %101)
 
- LDA (P),Y              \ Fetch the byte to write from the address in P(1 0)
+ LDA (K4),Y             \ Fetch the byte to write from the address in K4(1 0)
 
  INC CPU_PORT           \ Patch the kernal ROM into main memory so that $E000 to
                         \ $FFFF is ROM (i.e. change the processor port from %101
@@ -1708,32 +1751,28 @@ IF _C64_VERSION
 
  JSR CHROUT             \ Call CHROUT to write the byte in A to the file
 
- INC P                  \ Increment P(1 0) to point to the next address
+ INC K4                 \ Increment K4(1 0) to point to the next address
  BNE saco2
- INC P+1
+ INC K4+1
 
 .saco2
 
- LDA P+1                \ If the high byte of P(1 0) hasn't reached the end of
+ LDA K4+1               \ If the high byte of K4(1 0) hasn't reached the end of
  CMP #HI(K%+$31E)       \ the file, which is $31E bytes long, then loop back to
  BNE saco1              \ saco1 to write the next byte
 
- LDA P                  \ If the low byte of P(1 0) hasn't reached the end of
+ LDA K4                 \ If the low byte of K4(1 0) hasn't reached the end of
  CMP #LO(K%+$31E)       \ the file, which is $31E bytes long, then loop back to
  BNE saco1              \ saco1 to write the next byte
 
- LDA #%01000000         \ Set bit 6 of A to indicate that we have successfully
-                        \ reached the end of the file
+ CLC                    \ Clear the C flag to indicate success
+
+ BCC saco4              \ Jump to saco4 to close the file (this BCC is
+                        \ effectively a JMP as we know the C flag is clear)
 
 .saco3
 
- CLC                    \ Clear the C flag to indicate success
-
- AND #%01000000         \ If bit 6 is set then we reached the end of the file,
- BNE saco4              \ so jump to saco4, keeping the C flag clear
-
- SEC                    \ If we get here then we had a read error, so set the C
-                        \ flag to indicate failure
+ SEC                    \ Set the C flag to indicate failure
 
 .saco4
 
@@ -1744,9 +1783,8 @@ IF _C64_VERSION
 
  JSR CLRCHN             \ Call CLRCHN to close the default input/output files
 
- JSR RevertLoadSaveMode \ Revert the changes for file access
-
- PLP                    \ Retrieve the C flag from the stack
+ PLP                    \ Retrieve the C flag from the stack, leaving a copy on
+ PHP                    \ the stack for later
 
  BCC saco5              \ If there was no error, then the C flag is clear, so
                         \ jump to saco5 to return from the subroutine
@@ -1756,9 +1794,11 @@ IF _C64_VERSION
 
  JSR t                  \ Wait for a key press
 
- SEC                    \ Set the C flag to indicate that we had an error
-
 .saco5
+
+ JSR RevertLoadSaveMode \ Revert the changes for file access
+
+ PLP                    \ Retrieve the C flag from the stack
 
  RTS                    \ Return from the subroutine
 
