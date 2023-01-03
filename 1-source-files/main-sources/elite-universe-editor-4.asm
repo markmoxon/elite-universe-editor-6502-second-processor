@@ -1941,6 +1941,7 @@ IF _MASTER_VERSION
  LDA #HI(LSO)
  STA K%+NI%+34
 
+ RTS                    \ Return from the subroutine
 ENDIF
 
 \ ******************************************************************************
