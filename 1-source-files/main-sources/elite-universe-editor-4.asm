@@ -1431,6 +1431,9 @@ IF _C64_VERSION
  LDA #HI(K%)
  STA P+1
 
+ LDY #0                 \ Set Y = 0 so we can use post-indexed indirect
+                        \ addressing to store the loaded byte
+
 .loco1
 
  JSR READST             \ Call READST to read the status byte
@@ -1444,8 +1447,7 @@ IF _C64_VERSION
                         \ $E000 to $FFFF is RAM (i.e. change the processor port
                         \ from %110 to %101)
 
- LDY #0                 \ Write the byte to the address in P(1 0)
- STA (P),Y
+ STA (P),Y              \ Write the byte to the address in P(1 0)
 
  INC CPU_PORT           \ Patch the kernal ROM into main memory so that $E000 to
                         \ $FFFF is ROM (i.e. change the processor port from %101
@@ -1672,6 +1674,9 @@ IF _C64_VERSION
  LDA #HI(K%)
  STA P+1
 
+ LDY #0                 \ Set Y = 0 so we can use post-indexed indirect
+                        \ addressing to fetch the byte to save
+
 .saco1
 
  JSR READST             \ Call READST to read the status byte
@@ -1683,8 +1688,7 @@ IF _C64_VERSION
                         \ $E000 to $FFFF is RAM (i.e. change the processor port
                         \ from %110 to %101)
 
- LDY #0                 \ Fetch the byte to write from the address in P(1 0)
- LDA (P),Y
+ LDA (P),Y              \ Fetch the byte to write from the address in P(1 0)
 
  INC CPU_PORT           \ Patch the kernal ROM into main memory so that $E000 to
                         \ $FFFF is ROM (i.e. change the processor port from %101
