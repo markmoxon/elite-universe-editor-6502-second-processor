@@ -1932,7 +1932,7 @@ IF _MASTER_VERSION
  LDX #&38               \ Set K+2 = -(&D0-&08) = &38, so we move the ship heap
  STX K+2                \ addresses from &D000 to &0800
 
- JMP ConvertFile        \ Convert the loaded file so it works on the Master
+ JSR ConvertFile        \ Convert the loaded file so it works on the Master
 
  STZ FRIN+NOSH          \ Clear the last ship slot, so it can act as a backstop
 
