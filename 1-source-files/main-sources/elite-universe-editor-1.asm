@@ -136,7 +136,7 @@ ENDIF
 \                         * &38 = Add -(&D000-&0800) to each address (&3800)
 \                                 (Load file on Master)
 \
-\                         * $D1 = Add -($FFC0-$D000) to each address ($D040)
+\                         * $D0 = Add -($FFC0-$D000) to each address ($D040)
 \                                 (Save file on Commodore 64)
 \
 \                         * $2F = Add $FFC0-$D000 to each address ($2FC0)
@@ -151,6 +151,16 @@ ENDIF
 IF _MASTER_VERSION OR _C64_VERSION
 
 .ConvertFile
+
+IF _C64_VERSION
+
+ LDX #$C0               \ Set the following, to cater for the Commodore 64:
+ BIT K+2                \
+ BCC P%+4               \   * If K+2 = $2F, set P = $C0 so we add $2FC0
+ LDX #$40               \
+ STX P                  \   * If K+2 = $D0, set P = $40 so we add $D040
+
+ENDIF
 
  LDX #2                 \ Set a counter in X to loop through all the ship slots,
                         \ not including the station
@@ -214,8 +224,8 @@ ELIF _C64_VERSION
  LDY #33                \ Set A = INWK+33, the low byte of the ship heap
  LDA (V),Y              \ address
 
- CLC                    \ Add $C0 to the low byte of the ship heap
- ADC #$C0
+ CLC                    \ Add $C0 or $40 to the low byte of the ship heap
+ ADC P
 
  LDY #34                \ Set A = INWK+34, the high byte of the ship heap
  LDA (V),Y              \ address
@@ -236,11 +246,28 @@ ENDIF
 
 .conv5
 
+IF _MASTER_VERSION
+
  LDA K%+&2E4+21+37      \ Apply the delta to the high byte of SLSP
  CLC              
  ADC K+2
  STA K%+&2E4+21+37
  STA SLSP+1
+
+ELIF _C64_VERSION
+
+ LDA K%+&2E4+21+36      \ Apply the delta + $C0 or $40 to SLSP, starting with
+ CLC                    \ the low bytes
+ ADC P
+ STA K%+&2E4+21+36
+ STA SLSP
+
+ LDA K%+&2E4+21+37      \ And then the high bytes
+ ADC K+2
+ STA K%+&2E4+21+37
+ STA SLSP+1
+
+ENDIF
 
  RTS                    \ Return from the subroutine
 

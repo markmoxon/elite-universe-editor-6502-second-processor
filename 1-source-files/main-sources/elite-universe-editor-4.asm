@@ -1796,11 +1796,12 @@ IF _C64_VERSION
  LDX #0                 \ Set K+3 = 0, so we don't delete any ships from the
  STX K+3                \ file
 
- LDX #&D1               \ Set K+2 = -(&FF-&D0) = &D1, so we move the ship heap
- STX K+2                \ addresses from &FFC0 to &D000
+ LDX #&D0               \ Set K+2 = -(&FF-&D0) - 1 = &D0, so we move the ship
+ STX K+2                \ heap addresses from &FFC0 to &D000
 
  JMP ConvertFile        \ Convert the Commodore 64 file into the correct format
-                        \ for saving
+                        \ for saving, returning from the subroutine using a tail
+                        \ call
 
 ENDIF
 
@@ -1840,7 +1841,8 @@ IF _MASTER_VERSION
  STX K+2                \ addresses from &0800 to &D000
 
  JMP ConvertFile        \ Convert the Master file into the correct format for
-                        \ saving
+                        \ saving, returning from the subroutine using a tail
+                        \ call
 
 ENDIF
 
@@ -1882,7 +1884,7 @@ IF _C64_VERSION
  STX K+2                \ addresses from &D000 to &FFC0 (as ConvertFile also
                         \ adds $C0 in the Commodore 64 version)
 
- JMP ConvertFile        \ Convert the loaded file so it works on the Commodore
+ JSR ConvertFile        \ Convert the loaded file so it works on the Commodore
                         \ 64
 
  LDA #0                 \ Clear the last ship slot, so it can act as a backstop
@@ -1892,6 +1894,8 @@ IF _C64_VERSION
  STA K%+NI%+33          \ line heap for the space station
  LDA #HI(LSO)
  STA K%+NI%+34
+
+ RTS                    \ Return from the subroutine
 
 ENDIF
 
@@ -1942,6 +1946,7 @@ IF _MASTER_VERSION
  STA K%+NI%+34
 
  RTS                    \ Return from the subroutine
+
 ENDIF
 
 \ ******************************************************************************
