@@ -218,6 +218,7 @@ GREEN2          = %11111111
 
 CPU_PORT        = $0001
 
+CIA1_PORTA      = $DC00
 CIA1_ICSREG     = $DC0D
 VIC_SCREG1      = $D011
 VIC_RASTER      = $D012
@@ -308,6 +309,8 @@ QQ5             = $0502
 LSO             = $0580
 ALTIT           = $06F3
 token8          = &0E8D \ Token 8 in TKN1 ("{single cap}COMMANDER'S NAME? ")
+dashboardActive = $1D04 \ Unique to Commodore 64
+DTAPE           = $1D0E
 
 DETOK           = $2390
 DTEN            = $23A0
@@ -397,6 +400,7 @@ screenSection   = $A8D9 \ Unique to Commodore 64
 DOT             = $B09D
 ECBLB           = $B0FD
 SPBLB           = $B10E
+ShowDashboard   = $B301 \ Unique to Commodore 64
 SCAN            = $B410
 XX21            = $D000
 K%              = $F900

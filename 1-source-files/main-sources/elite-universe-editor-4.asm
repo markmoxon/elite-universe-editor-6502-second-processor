@@ -131,19 +131,19 @@ ENDIF
 
 IF _C64_VERSION
 
- LDA #$20               \ Modify the STX KL: SEC commands at $8D9B in RDKEY with
- STA $8D9B              \ JSR SkipModifierKeys
+ LDA #$20               \ Modify the STX KL: SEC instructions in RDKEY to
+ STA RDKEY+72           \ JSR SkipModifierKeys
  LDA #LO(SkipModifierKeys)
- STA $8D9C
+ STA RDKEY+73
  LDA #HI(SkipModifierKeys)
- STA $8D9D
+ STA RDKEY+74
 
- LDA #$20               \ Modify the STA $DC00 command at $8DAC in RDKEY with
- STA $8DAC              \ JSR ShiftCursorKeys
+ LDA #$20               \ Modify the STA CIA1_PORTA instruction in RDKEY to
+ STA RDKEY+89           \ JSR ShiftCursorKeys
  LDA #LO(ShiftCursorKeys)
- STA $8DAD
+ STA RDKEY+90
  LDA #HI(ShiftCursorKeys)
- STA $8DAE
+ STA RDKEY+91
 
 ENDIF
 
@@ -164,19 +164,19 @@ ENDIF
 
 IF _C64_VERSION
 
- LDA #$86               \ Revert the STX KL: SEC commands at $8D9B in RDKEY
- STA $8D9B
+ LDA #$86               \ Revert the STX KL: SEC instructions in RDKEY
+ STA RDKEY+72
  LDA #KL
- STA $8D9C
+ STA RDKEY+73
  LDA #$38
- STA $8D9D
+ STA RDKEY+74
 
- LDA #$8D               \ Revert the STA $DC00 command at $8DAC in RDKEY
- STA $8DAC
- LDA #$00
- STA $8DAD
- LDA #$DC
- STA $8DAE
+ LDA #$8D               \ Revert the STA CIA1_PORTA instruction in RDKEY
+ STA RDKEY+89
+ LDA #LO(CIA1_PORTA)
+ STA RDKEY+90
+ LDA #HI(CIA1_PORTA)
+ STA RDKEY+91
 
 ENDIF
 
@@ -1019,10 +1019,10 @@ ELIF _MASTER_VERSION
 ELIF _C64_VERSION
 
  LDA #2                 \ Change the file number in GTDRV from 1 to 2, so we can
- STA $8BE2              \ load and save universe files as SEQ files
+ STA GTDRV+34           \ load and save universe files as SEQ files
 
  LDA #2                 \ Change the secondary address in GTDRV from 0 to 2, so
- STA $8BE4              \ we can load and save universe files as SEQ files
+ STA GTDRV+36           \ we can load and save universe files as SEQ files
 
 ENDIF
 
@@ -1098,9 +1098,9 @@ ELIF _C64_VERSION
 
                         \ Option 3: Change to {other media} (Commodore 64)
 
- LDA $1D0E              \ Flip the current device in $1D0E, so it contains:
+ LDA DTAPE              \ Flip the current device in DTAPE, so it contains:
  EOR #%11111111         \
- STA $1D0E              \   * 0 for tape
+ STA DTAPE              \   * 0 for tape
                         \   * &FF for disk
 
 ENDIF
@@ -1228,10 +1228,10 @@ ELIF _MASTER_VERSION
 ELIF _C64_VERSION
 
  LDA #1                 \ Revert the file number in GTDRV back to 1
- STA $8BE2
+ STA GTDRV+34
 
  LDA #0                 \ Revert the secondary address in GTDRV back to 0
- STA $8BE4
+ STA GTDRV+36
 
 ENDIF
 

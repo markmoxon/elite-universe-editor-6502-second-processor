@@ -745,6 +745,9 @@ ENDIF
 
 IF _C64_VERSION
 
+                        \ The following instructions modify the screen RAM at
+                        \ $6400, which defines colour 1 in the upper nibble
+
  LDA #$37               \ Set dashboard labels to cyan ($3 in the upper nibble)
  STA $66D4
  STA $66D5
@@ -761,10 +764,10 @@ IF _C64_VERSION
  STA $679C
  STA $679D
 
- LDA #0                 \ Zero $1D04 so the following call overwrites the
- STA $1D04              \ existing dashboard
+ LDA #0                 \ Zero dashboardActive so the following call overwrites
+ STA dashboardActive    \ the existing dashboard
 
- JSR $B301              \ Copy the updated dashboard to the screen
+ JSR ShowDashboard      \ Copy the updated dashboard to the screen
 
 ENDIF
 
@@ -833,6 +836,9 @@ ENDIF
 
 IF _C64_VERSION
 
+                        \ The following instructions modify the screen RAM at
+                        \ $6400, which defines colour 1 in the upper nibble
+
  LDA #$17               \ Set dashboard labels back to white
  STA $66D4
  STA $66D5
@@ -849,10 +855,10 @@ IF _C64_VERSION
  STA $679C
  STA $679D
 
- LDA #0                 \ Zero $1D04 so the following call overwrites the
- STA $1D04              \ existing dashboard
+ LDA #0                 \ Zero dashboardActive so the following call overwrites
+ STA dashboardActive    \ the existing dashboard
 
- JSR $B301              \ Copy the updated dashboard to the screen
+ JSR ShowDashboard      \ Copy the updated dashboard to the screen
 
 ENDIF
 
