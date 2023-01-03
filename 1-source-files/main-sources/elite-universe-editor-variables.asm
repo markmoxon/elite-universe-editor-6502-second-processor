@@ -372,6 +372,7 @@ BR1             = $8882
 DFAULT          = $88F0
 TITLE           = $8920
 CHECK           = $89EB
+JAMESON         = $8A0C
 GTL2            = $8A2F \ STA GTL2+1 in ShowDiscMenu/RevertDiscMods
 GTNMEW          = $8A38
 MT26            = $8A5B
