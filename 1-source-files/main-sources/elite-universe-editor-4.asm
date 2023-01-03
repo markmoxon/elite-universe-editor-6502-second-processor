@@ -1423,8 +1423,8 @@ IF _C64_VERSION
                         \ the subroutine with the C flag set, to indicate
                         \ failure
 
- LDX #2                 \ Call CHKIN to define file number 2 as the default input
- JSR CHKIN              \ file
+ LDX #2                 \ Call CHKIN to define file number 2 as the default
+ JSR CHKIN              \ input file
 
  LDA #LO(K%)            \ Set P(1 0) = K%, where we want to store the file
  STA P
@@ -1440,14 +1440,16 @@ IF _C64_VERSION
 
  JSR CHRIN              \ Call CHRIN to read the next byte from the file into A
 
- DEC CPU_PORT           \ Patch out kernal memory (change processor port from
-                        \ %110 to %101)
+ DEC CPU_PORT           \ Patch out the kernal ROM from main memory, so that
+                        \ $E000 to $FFFF is RAM (i.e. change the processor port
+                        \ from %110 to %101)
 
  LDY #0                 \ Write the byte to the address in P(1 0)
  STA (P),Y
 
- INC CPU_PORT           \ Patch in kernal memory (change processor port from
-                        \ %101 to %110)
+ INC CPU_PORT           \ Patch the kernal ROM into main memory so that $E000 to
+                        \ $FFFF is ROM (i.e. change the processor port from %101
+                        \ to %110)
 
  INC P                  \ Increment P(1 0) to point to the next address
  BNE loco2
@@ -1677,14 +1679,16 @@ IF _C64_VERSION
  BNE saco3              \ If there is a write error, jump to saco3 to close the
                         \ file
 
- DEC CPU_PORT           \ Patch out kernal memory (change processor port from
-                        \ %110 to %101)
+ DEC CPU_PORT           \ Patch out the kernal ROM from main memory, so that
+                        \ $E000 to $FFFF is RAM (i.e. change the processor port
+                        \ from %110 to %101)
 
  LDY #0                 \ Fetch the byte to write from the address in P(1 0)
  LDA (P),Y
 
- INC CPU_PORT           \ Patch in kernal memory (change processor port from
-                        \ %101 to %110)
+ INC CPU_PORT           \ Patch the kernal ROM into main memory so that $E000 to
+                        \ $FFFF is ROM (i.e. change the processor port from %101
+                        \ to %110)
 
  JSR CHROUT             \ Call CHROUT to write the byte in A to the file
 
