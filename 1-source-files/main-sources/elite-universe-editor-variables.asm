@@ -239,6 +239,7 @@ CHROUT          = $FFD2
 
 \ Game variables and labels
 
+RAND            = $0002
 T1              = $0006
 SC              = $0007
 SCH             = $0008

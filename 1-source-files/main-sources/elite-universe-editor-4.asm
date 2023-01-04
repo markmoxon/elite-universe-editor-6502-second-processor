@@ -1407,10 +1407,10 @@ IF _C64_VERSION
  LDX #2                 \ Call CHKIN to define file number 2 as the default
  JSR CHKIN              \ input file
 
- LDA #LO(K%)            \ Set SC(1 0) = K%, where we want to store the file
- STA SC
+ LDA #LO(K%)            \ Set RAND(1 0) = K%, where we want to store the file
+ STA RAND
  LDA #HI(K%)
- STA SC+1
+ STA RAND+1
 
  LDY #0                 \ Set Y = 0 so we can use post-indexed indirect
                         \ addressing to store the loaded byte
@@ -1424,19 +1424,23 @@ IF _C64_VERSION
 
  JSR CHRIN              \ Call CHRIN to read the next byte from the file into A
 
+ SEI                    \ Disable interrupts
+
  DEC CPU_PORT           \ Patch out the kernal ROM from main memory, so that
                         \ $E000 to $FFFF is RAM (i.e. change the processor port
                         \ from %110 to %101)
 
- STA (SC),Y             \ Write the byte to the address in SC(1 0)
+ STA (RAND),Y           \ Write the byte to the address in RAND(1 0)
 
  INC CPU_PORT           \ Patch the kernal ROM into main memory so that $E000 to
                         \ $FFFF is ROM (i.e. change the processor port from %101
                         \ to %110)
 
- INC SC                 \ Increment SC(1 0) to point to the next address
+ CLI                    \ Re-enable interrupts
+
+ INC RAND               \ Increment RAND(1 0) to point to the next address
  BNE loco2
- INC SC+1
+ INC RAND+1
 
 .loco2
 
@@ -1726,10 +1730,10 @@ IF _C64_VERSION
  LDX #2                 \ Call CHKOUT to define file number 2 as the default
  JSR CHKOUT             \ output file
 
- LDA #LO(K%)            \ Set SC(1 0) = K%, so we save from this address
- STA SC
+ LDA #LO(K%)            \ Set RAND(1 0) = K%, so we save from this address
+ STA RAND
  LDA #HI(K%)
- STA SC+1
+ STA RAND+1
 
  LDY #0                 \ Set Y = 0 so we can use post-indexed indirect
                         \ addressing to fetch the byte to save
@@ -1741,28 +1745,33 @@ IF _C64_VERSION
  BNE saco3              \ If there is a write error, jump to saco3 to close the
                         \ file
 
+ SEI                    \ Disable interrupts
+
  DEC CPU_PORT           \ Patch out the kernal ROM from main memory, so that
                         \ $E000 to $FFFF is RAM (i.e. change the processor port
                         \ from %110 to %101)
- LDA (SC),Y             \ Fetch the byte to write from the address in SC(1 0)
+
+ LDA (RAND),Y           \ Fetch the byte to write from the address in RAND(1 0)
 
  INC CPU_PORT           \ Patch the kernal ROM into main memory so that $E000 to
                         \ $FFFF is ROM (i.e. change the processor port from %101
                         \ to %110)
 
+ CLI                    \ Re-enable interrupts
+
  JSR CHROUT             \ Call CHROUT to write the byte in A to the file
 
- INC SC                 \ Increment SC(1 0) to point to the next address
+ INC RAND               \ Increment RAND(1 0) to point to the next address
  BNE saco2
- INC SC+1
+ INC RAND+1
 
 .saco2
 
- LDA SC+1               \ If the high byte of SC(1 0) hasn't reached the end of
+ LDA RAND+1             \ If the high byte of RAND(1 0) hasn't reached the end of
  CMP #HI(K%+$31E)       \ the file, which is $31E bytes long, then loop back to
  BNE saco1              \ saco1 to write the next byte
 
- LDA SC                 \ If the low byte of SC(1 0) hasn't reached the end of
+ LDA RAND               \ If the low byte of RAND(1 0) hasn't reached the end of
  CMP #LO(K%+$31E)       \ the file, which is $31E bytes long, then loop back to
  BNE saco1              \ saco1 to write the next byte
 
