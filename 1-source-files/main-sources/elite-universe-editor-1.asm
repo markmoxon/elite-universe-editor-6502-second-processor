@@ -156,7 +156,7 @@ IF _C64_VERSION
 
  LDX #$C0               \ Set the following, to cater for the Commodore 64:
  BIT K+2                \
- BCC P%+4               \   * If K+2 = $2F, set P = $C0 so we add $2FC0
+ BPL P%+4               \   * If K+2 = $2F, set P = $C0 so we add $2FC0
  LDX #$40               \
  STX P                  \   * If K+2 = $D0, set P = $40 so we add $D040
 
@@ -226,6 +226,8 @@ ELIF _C64_VERSION
 
  CLC                    \ Add $C0 or $40 to the low byte of the ship heap
  ADC P
+
+ STA (V),Y              \ Update the low byte of the ship heap address
 
  LDY #34                \ Set A = INWK+34, the high byte of the ship heap
  LDA (V),Y              \ address
