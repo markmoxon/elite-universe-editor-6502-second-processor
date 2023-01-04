@@ -218,11 +218,12 @@ GREEN2          = %11111111
 
 CPU_PORT        = $0001
 
-CIA1_PORTA      = $DC00
-CIA1_ICSREG     = $DC0D
 VIC_SCREG1      = $D011
 VIC_RASTER      = $D012
 VIC_ICREG       = $D01A
+
+CIA1_PORTA      = $DC00
+CIA1_ICSREG     = $DC0D
 
 SETMSG          = $FF90
 READST          = $FFB7
