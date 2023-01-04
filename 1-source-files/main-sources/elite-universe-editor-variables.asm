@@ -236,6 +236,8 @@ CHKOUT          = $FFC9
 CLRCHN          = $FFCC
 CHRIN           = $FFCF
 CHROUT          = $FFD2
+LOAD            = $FFD5
+SAVE            = $FFD8
 
 \ Game variables and labels
 
@@ -394,6 +396,7 @@ CTRL            = $8E92
 TT217           = $8FEA
 t               = $8FEC
 TIDY            = $9105
+log             = $9300
 LL9             = $9A86
 LL74            = $9F35 \ STA LL74+16 in ApplyMods/RevertMods
 MV5             = $A434
