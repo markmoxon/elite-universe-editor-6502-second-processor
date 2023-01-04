@@ -1398,9 +1398,7 @@ IF _C64_VERSION
 
 .LoadUniverseC64
 
- JSR ApplyLoadSaveMode  \ Apply the changes for file access
-
- JSR OPEN               \ Call OPEN to open the file as file number 2
+ JSR OpenFile           \ Open a file for loading
 
  BCS loco4              \ If there was an error, jump to loco4 to return from
                         \ the subroutine with the C flag set, to indicate
@@ -1409,10 +1407,10 @@ IF _C64_VERSION
  LDX #2                 \ Call CHKIN to define file number 2 as the default
  JSR CHKIN              \ input file
 
- LDA #LO(K%)            \ Set K4(1 0) = K%, where we want to store the file
- STA K4
+ LDA #LO(K%)            \ Set SC(1 0) = K%, where we want to store the file
+ STA SC
  LDA #HI(K%)
- STA K4+1
+ STA SC+1
 
  LDY #0                 \ Set Y = 0 so we can use post-indexed indirect
                         \ addressing to store the loaded byte
@@ -1430,15 +1428,15 @@ IF _C64_VERSION
                         \ $E000 to $FFFF is RAM (i.e. change the processor port
                         \ from %110 to %101)
 
- STA (K4),Y             \ Write the byte to the address in K4(1 0)
+ STA (SC),Y             \ Write the byte to the address in SC(1 0)
 
  INC CPU_PORT           \ Patch the kernal ROM into main memory so that $E000 to
                         \ $FFFF is ROM (i.e. change the processor port from %101
                         \ to %110)
 
- INC K4                 \ Increment K4(1 0) to point to the next address
+ INC SC                 \ Increment SC(1 0) to point to the next address
  BNE loco2
- INC K4+1
+ INC SC+1
 
 .loco2
 
@@ -1458,24 +1456,21 @@ IF _C64_VERSION
 
  PHP                    \ Store the C flag on the stack
 
+ JSR CloseFile          \ Close the file that was opened by OpenFile
+
+ PLP                    \ Retrieve the C flag from the stack
+
  BCC loco5              \ If there was no error, then the C flag is clear, so
                         \ jump to loco5 to return from the subroutine
 
- LDA #255               \ Print the error
- JSR DETOK
+ LDA #255               \ Print token 255 ("{cr}{currently selected media}
+ JSR DETOK              \ ERROR")
 
  JSR t                  \ Wait for a key press
 
+ SEC                    \ Set the C flag to indicate an error
+
 .loco5
-
- LDA #2                 \ Call CLOSE to close file number 2
- JSR CLOSE
-
- JSR CLRCHN             \ Call CLRCHN to close the default input/output files
-
- JSR RevertLoadSaveMode \ Revert the changes for file access
-
- PLP                    \ Retrieve the C flag from the stack
 
  RTS                    \ Return from the subroutine
 
@@ -1483,10 +1478,10 @@ ENDIF
 
 \ ******************************************************************************
 \
-\       Name: ApplyLoadSaveMode
+\       Name: OpenFile
 \       Type: Subroutine
 \   Category: Universe editor
-\    Summary: Apply the changes for file access that get done in GETDRV
+\    Summary: Open a file
 \
 \ ------------------------------------------------------------------------------
 \
@@ -1502,7 +1497,7 @@ ENDIF
 
 IF _C64_VERSION
 
-.ApplyLoadSaveMode
+.OpenFile
 
  JSR SWAPZP             \ Call SWAPZP to save the top part of zero page
 
@@ -1525,31 +1520,33 @@ IF _C64_VERSION
  LDA #%11000000         \ Set the system error display switch so we display both
  JSR SETMSG             \ error and control messages
 
+ LDA NAMELEN1           \ Set A to the filename length that was set in GTNMEW
+
+ LDX #LO(INWK+5)        \ Set (Y X) to the address of the file name at INWK,
+ LDY #HI(INWK+5)        \ skipping the ":0.E." prefix
+
+ JSR SETNAM             \ Call SETNAM to set the name of file 2
+
  LDX DTAPE              \ Set X to the correct device number for tape or disk,
  INX                    \ taken from the table at deviceNumber, using the media
  LDA deviceNumber,X     \ setting in DTAPE
  TAX
 
  LDA #2                 \ Call SETLFS to set the file parameters, with X set to
- LDY #2                 \ the device number, and A and Y set to the file number
- JSR SETLFS
+ LDY #2                 \ the device number from above, and A and Y set to file
+ JSR SETLFS             \ number 2 and secondary address 2
 
- LDA NAMELEN1           \ Set A to the filename length that was set in GTNMEW
-
- LDX #LO(INWK+5)        \ Set (Y X) to the address of the file name at INWK,
- LDY #HI(INWK+5)        \ skipping the ":0.E." prefix
-
- JMP SETNAM             \ Call SETNAM to set the name of file 2, returning from
-                        \ the subroutine using a tail call
+ JMP OPEN               \ Call OPEN to open the file as file number 2, returning
+                        \ from the subroutine using a tail call
 
 ENDIF
 
 \ ******************************************************************************
 \
-\       Name: RevertLoadSaveMode
+\       Name: CloseFile
 \       Type: Subroutine
 \   Category: Universe editor
-\    Summary: Revert the changes for file access that get done in GETDRV
+\    Summary: Close the file that was opened by OpenFile
 \
 \ ------------------------------------------------------------------------------
 \
@@ -1565,7 +1562,12 @@ ENDIF
 
 IF _C64_VERSION
 
-.RevertLoadSaveMode
+.CloseFile
+
+ LDA #2                 \ Call CLOSE to close file number 2
+ JSR CLOSE
+
+ JSR CLRCHN             \ Call CLRCHN to close the default input/output files
 
  LDA #%00000001         \ Clear bit 0 of the CIA #1 Interrupt Control and Status
  STA CIA1_ICSREG        \ Register to disable interrupts generated by a timer A
@@ -1713,21 +1715,19 @@ IF _C64_VERSION
 
 .SaveUniverseC64
 
- JSR ApplyLoadSaveMode  \ Apply the changes for file access
+ JSR OpenFile           \ Open a file for saving
 
- JSR OPEN               \ Call OPEN to open the file as file number 2
-
- BCS saco4              \ If there was an error, jump to saco4 to return from
+ BCS saco3              \ If there was an error, jump to saco3 to return from
                         \ the subroutine with the C flag set, to indicate
                         \ failure
 
  LDX #2                 \ Call CHKOUT to define file number 2 as the default
  JSR CHKOUT             \ output file
 
- LDA #LO(K%)            \ Set K4(1 0) = K%, so we save from this address
- STA K4
+ LDA #LO(K%)            \ Set SC(1 0) = K%, so we save from this address
+ STA SC
  LDA #HI(K%)
- STA K4+1
+ STA SC+1
 
  LDY #0                 \ Set Y = 0 so we can use post-indexed indirect
                         \ addressing to fetch the byte to save
@@ -1742,8 +1742,7 @@ IF _C64_VERSION
  DEC CPU_PORT           \ Patch out the kernal ROM from main memory, so that
                         \ $E000 to $FFFF is RAM (i.e. change the processor port
                         \ from %110 to %101)
-
- LDA (K4),Y             \ Fetch the byte to write from the address in K4(1 0)
+ LDA (SC),Y             \ Fetch the byte to write from the address in SC(1 0)
 
  INC CPU_PORT           \ Patch the kernal ROM into main memory so that $E000 to
                         \ $FFFF is ROM (i.e. change the processor port from %101
@@ -1751,17 +1750,17 @@ IF _C64_VERSION
 
  JSR CHROUT             \ Call CHROUT to write the byte in A to the file
 
- INC K4                 \ Increment K4(1 0) to point to the next address
+ INC SC                 \ Increment SC(1 0) to point to the next address
  BNE saco2
- INC K4+1
+ INC SC+1
 
 .saco2
 
- LDA K4+1               \ If the high byte of K4(1 0) hasn't reached the end of
+ LDA SC+1               \ If the high byte of SC(1 0) hasn't reached the end of
  CMP #HI(K%+$31E)       \ the file, which is $31E bytes long, then loop back to
  BNE saco1              \ saco1 to write the next byte
 
- LDA K4                 \ If the low byte of K4(1 0) hasn't reached the end of
+ LDA SC                 \ If the low byte of SC(1 0) hasn't reached the end of
  CMP #LO(K%+$31E)       \ the file, which is $31E bytes long, then loop back to
  BNE saco1              \ saco1 to write the next byte
 
@@ -1778,27 +1777,21 @@ IF _C64_VERSION
 
  PHP                    \ Store the C flag on the stack
 
- LDA #2                 \ Call CLOSE to close file number 2
- JSR CLOSE
+ JSR CloseFile          \ Close the file that was opened by OpenFile
 
- JSR CLRCHN             \ Call CLRCHN to close the default input/output files
-
- PLP                    \ Retrieve the C flag from the stack, leaving a copy on
- PHP                    \ the stack for later
+ PLP                    \ Retrieve the C flag from the stack
 
  BCC saco5              \ If there was no error, then the C flag is clear, so
                         \ jump to saco5 to return from the subroutine
 
- LDA #255               \ Print the error
- JSR DETOK
+ LDA #255               \ Print token 255 ("{cr}{currently selected media}
+ JSR DETOK              \ ERROR")
 
  JSR t                  \ Wait for a key press
 
+ SEC                    \ Set the C flag to indicate a failure
+
 .saco5
-
- JSR RevertLoadSaveMode \ Revert the changes for file access
-
- PLP                    \ Retrieve the C flag from the stack
 
  RTS                    \ Return from the subroutine
 
