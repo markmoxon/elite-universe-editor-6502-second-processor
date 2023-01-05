@@ -864,4 +864,75 @@ ENDIF
 
  RTS                    \ Return from the subroutine
 
+\ ******************************************************************************
+\
+\       Name: TWIST
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Pitch the current ship by a small angle in a positive direction
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   Pitch direction
+\
+\ ******************************************************************************
+
+IF _MASTER_VERSION OR _C64_VERSION
+
+.TWIST2
+
+ STA RAT2               \ Set the pitch direction in RAT2 to A
+
+ LDX #15                \ Rotate (roofv_x, nosev_x) by a small angle (pitch)
+ LDY #9                 \ in the direction given in RAT2
+ JSR MVS5
+
+ LDX #17                \ Rotate (roofv_y, nosev_y) by a small angle (pitch)
+ LDY #11                \ in the direction given in RAT2
+ JSR MVS5
+
+ LDX #19                \ Rotate (roofv_z, nosev_z) by a small angle (pitch)
+ LDY #13                \ in the direction given in RAT2 and return from the
+ JMP MVS5               \ subroutine using a tail call
+
+ENDIF
+
+\ ******************************************************************************
+\
+\       Name: STORE
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Copy the ship data block at INWK back to the K% workspace
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   INF                 The ship data block in the K% workspace to copy INWK to
+\
+\ ******************************************************************************
+
+IF _MASTER_VERSION OR _C64_VERSION
+
+.STORE
+
+ LDY #(NI%-1)           \ Set a counter in Y so we can loop through the NI%
+                        \ bytes in the ship data block
+
+.DML2
+
+ LDA INWK,Y             \ Load the Y-th byte of INWK and store it in the Y-th
+ STA (INF),Y            \ byte of INF
+
+ DEY                    \ Decrement the loop counter
+
+ BPL DML2               \ Loop back for the next byte, until we have copied the
+                        \ last byte from INWK back to INF
+
+ RTS                    \ Return from the subroutine
+
+ENDIF
+
 .endUniverseEditorZ
