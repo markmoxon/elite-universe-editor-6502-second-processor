@@ -1798,4 +1798,23 @@ ENDIF
 
  EQUB 0
 
+\ ******************************************************************************
+\
+\       Name: dashboardBuff
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: Buffer for changing the dashboard
+\
+\ ******************************************************************************
+
+IF _6502SP_VERSION
+
+.dashboardBuff
+
+ EQUB 2                 \ The number of bytes to transmit with this command
+
+ EQUB 2                 \ The number of bytes to receive with this command
+
+ENDIF
+
 .endUniverseEditor2

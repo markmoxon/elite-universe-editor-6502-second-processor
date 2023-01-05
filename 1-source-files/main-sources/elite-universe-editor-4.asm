@@ -1276,12 +1276,13 @@ IF _6502SP_VERSION
 
  JSR ZEBC               \ Call ZEBC to zero-fill pages &B and &C
 
- LDY #HI(K%)            \ Set up an OSFILE block at &0C00, containing:
+ LDY #HI(K%-2)          \ Set up an OSFILE block at &0C00, containing:
  STY &0C03              \
- STZ &0C02              \ Load address = K% in &0C02 to &0C05
- LDY #&03               \
- STY &0C0B              \ Length of file = &031D in &0C0A to &0C0D
- LDY #&1D
+ LDY #LO(K%-2)          \ Load address = K%-2 in &0C02 to &0C05
+ STY &0C02              \
+ LDY #&03               \ Length of file = &0321 in &0C0A to &0C0D
+ STY &0C0B
+ LDY #&21
  STY &0C0A
 
 ELIF _MASTER_VERSION
@@ -1381,9 +1382,8 @@ ELIF _C64_VERSION
 
 ENDIF
 
- JSR HideBulbs          \ Hide both dashboard bulbs
-
- RTS                    \ Return from the subroutine
+ JMP HideBulbs          \ Hide both dashboard bulbs, returning from the
+                        \ subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -1571,11 +1571,12 @@ IF _6502SP_VERSION
 
  JSR ZEBC               \ Call ZEBC to zero-fill pages &B and &C
 
- LDY #HI(K%)            \ Set up an OSFILE block at &0C00, containing:
+ LDY #HI(K%-2)          \ Set up an OSFILE block at &0C00, containing:
  STY &0C0B              \
- STZ &0C0A              \ Start address for save = K% in &0C0A to &0C0D
- LDY #HI(K%+&031F)      \
- STY &0C0F              \ End address for save = K%+&031F in &0C0E to &0C11
+ LDY #LO(K%-2)          \ Start address for save = K%-2 in &0C0A to &0C0D
+ STY &0C0A              \
+ LDY #HI(K%+&031F)      \ End address for save = K%+&031F in &0C0E to &0C11
+ STY &0C0F
  LDY #LO(K%+&031F)
  STY &0C0E
 
@@ -2717,6 +2718,36 @@ ENDIF
 
 \ ******************************************************************************
 \
+\       Name: CopyBlock
+\       Type: Subroutine
+\   Category: Universe editor
+\    Summary: Copy a small block of memory
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   Y                   Number of bytes to copy - 1
+\
+\   P(1 0)              From address
+\
+\   Q(1 0)              To address
+\
+\ ******************************************************************************
+
+.CopyBlock
+
+ LDA (P),Y              \ Copy byte X from P(1 0) to Q(1 0)
+ STA (Q),Y
+
+ DEY                    \ Decrement the counter
+
+ BPL CopyBlock          \ Loop back until all X bytes are copied
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
 \       Name: defaultName
 \       Type: Variable
 \   Category: Universe editor
@@ -2728,6 +2759,24 @@ ENDIF
 
  EQUS "MYSCENE"
  EQUB 13
+
+\ ******************************************************************************
+\
+\       Name: dirCommand
+\       Type: Variable
+\   Category: Universe editor
+\    Summary: The OS command string for changing the disc directory to E
+\
+\ ******************************************************************************
+
+IF _6502SP_VERSION OR _MASTER_VERSION
+
+.dirCommand
+
+ EQUS "DIR E"
+ EQUB 13
+
+ENDIF
 
 \ ******************************************************************************
 \
@@ -2744,12 +2793,12 @@ IF _MASTER_VERSION
 
 IF _SNG47
 
- EQUS "SAVE :1.U.MYSCENE 400 +31F 0 0"
+ EQUS "SAVE :1.U.MYSCENE 3FE +321 0 0"
  EQUB 13
 
 ELIF _COMPACT
 
- EQUS "SAVE MYSCENE 400 +31F 0 0"
+ EQUS "SAVE MYSCENE 3FE +321 0 0"
  EQUB 13
 
 ENDIF
