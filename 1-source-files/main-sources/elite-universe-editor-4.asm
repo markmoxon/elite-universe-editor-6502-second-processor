@@ -93,7 +93,7 @@ ELIF _C64_VERSION
                         \ otherwise leaves in-place
 
  LDA #$24               \ Disable the STA XX1+31 instruction in part 9 of LL9
- STA LL74+16            \ that disables the laser once it has fired, so that
+ STA LL74+26            \ that disables the laser once it has fired, so that
                         \ lasers remain on-screen while in the editor
 
 ENDIF
@@ -185,10 +185,15 @@ IF _6502SP_VERSION
  LDA #&14               \ Re-enable the TRB XX1+31 instruction in part 9 of LL9
  STA LL74+20
 
-ELIF _MASTER_VERSION OR _C64_VERSION
+ELIF _MASTER_VERSION
 
  LDA #&85               \ Re-enable the STA XX1+31 instruction in part 9 of LL9
  STA LL74+16
+
+ELIF _C64_VERSION
+
+ LDA #$85               \ Re-enable the STA XX1+31 instruction in part 9 of LL9
+ STA LL74+26
 
 ENDIF
 
