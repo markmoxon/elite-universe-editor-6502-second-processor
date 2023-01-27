@@ -71,7 +71,7 @@ GUARD &F800             \ Guard against assembling over MOS memory
 
                         \ --- And replaced by: -------------------------------->
 
-Q% = TRUE               \ The Universe Editor has with a maxed-out default
+Q% = TRUE               \ The Universe Editor starts with a maxed-out default
                         \ commander
 
                         \ --- End of replacement ------------------------------>
