@@ -30879,12 +30879,12 @@ ENDIF
 
                         \ --- Mod: Code removed for Universe Editor: ---------->
 
-\ CMP #&60              \ Did we press TAB? If not, skip the following
-\ BNE P%+5              \ instruction
-
+\CMP #&60               \ Did we press TAB? If not, skip the following
+\BNE P%+5               \ instruction
+\
 \.BRGO
-
-\ JMP DEMON             \ We pressed TAB, so jump to DEMON to show the demo
+\
+\JMP DEMON              \ We pressed TAB, so jump to DEMON to show the demo
 
                         \ --- And replaced by: -------------------------------->
 
@@ -31176,15 +31176,15 @@ ENDIF
 
                         \ --- Mod: Code removed for Universe Editor: ---------->
 
-\ LDA #6                \ Move the text cursor to column 6 again
-\ JSR DOXC
-
-\ LDA PATG              \ If PATG = 0, skip the following two lines, which
-\ BEQ awe               \ print the author credits (PATG can be toggled by
+\LDA #6                 \ Move the text cursor to column 6 again
+\JSR DOXC
+\
+\LDA PATG               \ If PATG = 0, skip the following two lines, which
+\BEQ awe                \ print the author credits (PATG can be toggled by
 \                       \ pausing the game and pressing "X")
-
-\ LDA #13               \ Print extended token 13 ("BY D.BRABEN & I.BELL")
-\ JSR DETOK
+\
+\LDA #13                \ Print extended token 13 ("BY D.BRABEN & I.BELL")
+\JSR DETOK
 
                         \ --- And replaced by: -------------------------------->
 
@@ -31334,7 +31334,7 @@ ENDIF
 
                         \ --- Mod: Code removed for Universe Editor: ---------->
 
-\ JMP DEMON             \ Once we have iterated through CNT2 iterations of MCNT,
+\JMP DEMON              \ Once we have iterated through CNT2 iterations of MCNT,
                         \ jump to DEMON to start the demo
 
                         \ --- And replaced by: -------------------------------->
@@ -49789,11 +49789,11 @@ ENDMACRO
 
                         \ --- Mod: Code removed for Universe Editor: ---------->
 
-\ EQUB &A9, &80         \ These bytes appear to be unused
-\ EQUB &14, &2B
-\ EQUB &20, &FD
-\ EQUB &B8, &90
-\ EQUB &01, &60
+\EQUB &A9, &80          \ These bytes appear to be unused
+\EQUB &14, &2B
+\EQUB &20, &FD
+\EQUB &B8, &90
+\EQUB &01, &60
 
                         \ --- And replaced by: -------------------------------->
 

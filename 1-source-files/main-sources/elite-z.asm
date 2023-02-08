@@ -6461,8 +6461,8 @@ ENDMACRO
 
                         \ --- Mod: Code removed for Universe Editor: ---------->
 
-\ EQUW SAFE             \            250 (&FA)    10 = Do nothing
-\ EQUW SAFE             \            251 (&FB)    11 = Do nothing
+\EQUW SAFE              \            250 (&FA)    10 = Do nothing
+\EQUW SAFE              \            251 (&FB)    11 = Do nothing
 
                         \ --- And replaced by: -------------------------------->
 
