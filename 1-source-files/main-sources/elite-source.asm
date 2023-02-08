@@ -54,7 +54,7 @@ GUARD &F800             \ Guard against assembling over MOS memory
 \
 \ ******************************************************************************
 
-                        \ --- Mod: Original Acornsoft code removed: ----------->
+                        \ --- Mod: Code removed for Universe Editor: ---------->
 
 \IF _SNG45 OR _SOURCE_DISC
 
@@ -30877,7 +30877,7 @@ ENDIF
  JSR TITLE              \ (Y/N)?{sentence case}{cr}{cr}"), returning with the
                         \ internal number of the key pressed in A
 
-                        \ --- Mod: Original Acornsoft code removed: ----------->
+                        \ --- Mod: Code removed for Universe Editor: ---------->
 
 \ CMP #&60              \ Did we press TAB? If not, skip the following
 \ BNE P%+5              \ instruction
@@ -31174,7 +31174,7 @@ ENDIF
  LDA #10                \ Print a line feed to move the text cursor down a line
  JSR TT26
 
-                        \ --- Mod: Original Acornsoft code removed: ----------->
+                        \ --- Mod: Code removed for Universe Editor: ---------->
 
 \ LDA #6                \ Move the text cursor to column 6 again
 \ JSR DOXC
@@ -31332,7 +31332,7 @@ ENDIF
  BNE TLL2               \ Loop back to keep the ship rotating, until the outer
                         \ loop counter is zero
 
-                        \ --- Mod: Original Acornsoft code removed: ----------->
+                        \ --- Mod: Code removed for Universe Editor: ---------->
 
 \ JMP DEMON             \ Once we have iterated through CNT2 iterations of MCNT,
                         \ jump to DEMON to start the demo
@@ -41832,7 +41832,7 @@ LOAD_I% = LOAD% + P% - CODE%
 
  RTS                    \ Return from the subroutine
 
-                        \ --- Mod: Original Acornsoft code removed: ----------->
+                        \ --- Mod: Code removed for Universe Editor: ---------->
 
                         \ DEMON to SPEECH
 
@@ -46308,7 +46308,7 @@ ENDIF
 
  JSR mvblock            \ Call mvblock to copy the recursive tokens
 
-                        \ --- Mod: Original Acornsoft code removed: ----------->
+                        \ --- Mod: Code removed for Universe Editor: ---------->
 
                         \ And then we copy the &22 pages of ship blueprints from
                         \ F% + &0400 to D%
@@ -46330,7 +46330,7 @@ ENDIF
  LDA #HI(D%)
  STA SC+1
 
-                        \ --- Mod: Original Acornsoft code removed: ----------->
+                        \ --- Mod: Code removed for Universe Editor: ---------->
 
  LDX #&22               \ Set X = &22 to act as a counter for copying &22 pages
 
@@ -49787,7 +49787,7 @@ ENDMACRO
  FACE     -169,       55,      -89,         31    \ Face 10
  FACE        0,        0,     -196,         31    \ Face 11
 
-                        \ --- Mod: Original Acornsoft code removed: ----------->
+                        \ --- Mod: Code removed for Universe Editor: ---------->
 
 \ EQUB &A9, &80         \ These bytes appear to be unused
 \ EQUB &14, &2B
