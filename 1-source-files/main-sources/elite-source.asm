@@ -46332,7 +46332,7 @@ ENDIF
 
                         \ --- Mod: Code removed for Universe Editor: ---------->
 
- LDX #&22               \ Set X = &22 to act as a counter for copying &22 pages
+\LDX #&22               \ Set X = &22 to act as a counter for copying &22 pages
 
                         \ --- And replaced by: -------------------------------->
 
