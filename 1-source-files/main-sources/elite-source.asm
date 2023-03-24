@@ -71,7 +71,7 @@
 
                         \ --- And replaced by: -------------------------------->
 
-Q% = TRUE               \ The Universe Editor starts with a maxed-out default
+ Q% = TRUE              \ The Universe Editor starts with a maxed-out default
                         \ commander
 
                         \ --- End of replacement ------------------------------>
@@ -3559,18 +3559,18 @@ ENDIF
 
                         \ --- Mod: Code added for Universe Editor: ------------>
 
-_6502SP_VERSION = TRUE
-_MASTER_VERSION = FALSE
-_C64_VERSION    = FALSE
+ _6502SP_VERSION = TRUE
+ _MASTER_VERSION = FALSE
+ _C64_VERSION    = FALSE
 
-ORG &0E3C
+ ORG &0E3C
 
-INCLUDE "1-source-files/main-sources/elite-universe-editor-variables.asm"
-INCLUDE "1-source-files/main-sources/elite-universe-editor-1.asm"
+ INCLUDE "1-source-files/main-sources/elite-universe-editor-variables.asm"
+ INCLUDE "1-source-files/main-sources/elite-universe-editor-1.asm"
 
-SKIPTO &1000
+ SKIPTO &1000
 
-SAVE "3-assembled-output/EDITOR1.bin", &0E3C, &1000, &0E3C
+ SAVE "3-assembled-output/EDITOR1.bin", &0E3C, &1000, &0E3C
 
                         \ --- End of added code ------------------------------->
 
@@ -42068,7 +42068,7 @@ ENDIF
 
                         \ --- And replaced by: -------------------------------->
 
-INCLUDE "1-source-files/main-sources/elite-universe-editor-2.asm"
+ INCLUDE "1-source-files/main-sources/elite-universe-editor-2.asm"
 
                         \ --- End of replacement ------------------------------>
 
@@ -46600,7 +46600,7 @@ ENDIF
 
                         \ --- Mod: Code added for Universe Editor: ------------>
 
-INCLUDE "1-source-files/main-sources/elite-universe-editor-3.asm"
+ INCLUDE "1-source-files/main-sources/elite-universe-editor-3.asm"
 
                         \ --- End of added code ------------------------------->
 
@@ -50027,7 +50027,7 @@ ENDMACRO
 
                         \ --- And replaced by: -------------------------------->
 
-INCLUDE "1-source-files/main-sources/elite-universe-editor-4.asm"
+ INCLUDE "1-source-files/main-sources/elite-universe-editor-4.asm"
 
                         \ --- End of replacement ------------------------------>
 
