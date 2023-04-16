@@ -2123,6 +2123,8 @@ IF _6502SP_VERSION
  JSR ZEKTRAN            \ Reset the key logger buffer that gets returned from
                         \ the I/O processor
 
+ JSR U%                 \ Clear the key logger
+
 ELIF _MASTER_VERSION OR _C64_VERSION
 
  JSR ZEKTRAN            \ Clear the key logger
