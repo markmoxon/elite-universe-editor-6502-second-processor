@@ -25886,7 +25886,7 @@ End macro ECHR
      8163   A9 04      LDA #&04
      8165   85 06      STA &06
      8167   A2 04      LDX #&04
-     8169   20 7E 81   JSR &817E
+     8169   20 80 81   JSR &8180
      816C   A9 00      LDA #&00
      816E   85 21      STA &21
      8170   A9 86      LDA #&86
@@ -25895,71 +25895,72 @@ End macro ECHR
      8176   85 05      STA &05
      8178   A9 D0      LDA #&D0
      817A   85 06      STA &06
-     817C   A2 28      LDX #&28
+     817C   A2 22      LDX #&22
+     817E   A2 28      LDX #&28
 .mvblock
-     817E   A0 00      LDY #&00
+     8180   A0 00      LDY #&00
 .mvbllop
-     8180   B1 21      LDA (&21),Y
-     8182   91 05      STA (&05),Y
-     8184   C8         INY
-     8185   D0 F9      BNE &8180
-     8187   E6 22      INC &22
-     8189   E6 06      INC &06
-     818B   CA         DEX
-     818C   D0 F2      BNE &8180
-     818E   60         RTS
+     8182   B1 21      LDA (&21),Y
+     8184   91 05      STA (&05),Y
+     8186   C8         INY
+     8187   D0 F9      BNE &8182
+     8189   E6 22      INC &22
+     818B   E6 06      INC &06
+     818D   CA         DEX
+     818E   D0 F2      BNE &8182
+     8190   60         RTS
 .SaveLoadFile
-     818F   48         PHA
-     8190   20 D8 53   JSR &53D8
-     8193   85 46      STA &46
-     8195   68         PLA
-     8196   B0 1C      BCS &81B4
-     8198   48         PHA
-     8199   A9 FF      LDA #&FF
-     819B   20 4C 54   JSR &544C
-     819E   68         PLA
-     819F   A2 45      LDX #&45
-     81A1   8E 00 0C   STX &0C00
-     81A4   A2 00      LDX #&00
-     81A6   A0 0C      LDY #&0C
-     81A8   20 DD FF   JSR &FFDD
-     81AB   20 58 54   JSR &5458
-     81AE   A9 00      LDA #&00
-     81B0   20 4C 54   JSR &544C
-     81B3   18         CLC
+     8191   48         PHA
+     8192   20 D8 53   JSR &53D8
+     8195   85 46      STA &46
+     8197   68         PLA
+     8198   B0 1C      BCS &81B6
+     819A   48         PHA
+     819B   A9 FF      LDA #&FF
+     819D   20 4C 54   JSR &544C
+     81A0   68         PLA
+     81A1   A2 45      LDX #&45
+     81A3   8E 00 0C   STX &0C00
+     81A6   A2 00      LDX #&00
+     81A8   A0 0C      LDY #&0C
+     81AA   20 DD FF   JSR &FFDD
+     81AD   20 58 54   JSR &5458
+     81B0   A9 00      LDA #&00
+     81B2   20 4C 54   JSR &544C
+     81B5   18         CLC
 .slod3
-     81B4   60         RTS
+     81B6   60         RTS
 .DeleteUniverse
-     81B5   20 A5 52   JSR &52A5
-     81B8   B0 FA      BCS &81B4
-     81BA   AD 90 52   LDA &5290
-     81BD   8D 99 52   STA &5299
-     81C0   A9 09      LDA #&09
-     81C2   20 0F 16   JSR &160F
-     81C5   20 3F 52   JSR &523F
-     81C8   98         TYA
-     81C9   F0 E9      BEQ &81B4
-     81CB   A2 09      LDX #&09
+     81B7   20 A5 52   JSR &52A5
+     81BA   B0 FA      BCS &81B6
+     81BC   AD 90 52   LDA &5290
+     81BF   8D 99 52   STA &5299
+     81C2   A9 09      LDA #&09
+     81C4   20 0F 16   JSR &160F
+     81C7   20 3F 52   JSR &523F
+     81CA   98         TYA
+     81CB   F0 E9      BEQ &81B6
+     81CD   A2 09      LDX #&09
 .dele1
-     81CD   B5 49      LDA &49,X
-     81CF   9D 9A 52   STA &529A,X
-     81D2   CA         DEX
-     81D3   D0 F8      BNE &81CD
-     81D5   A2 92      LDX #&92
-     81D7   A0 52      LDY #&52
-     81D9   4C 42 54   JMP &5442
+     81CF   B5 49      LDA &49,X
+     81D1   9D 9A 52   STA &529A,X
+     81D4   CA         DEX
+     81D5   D0 F8      BNE &81CF
+     81D7   A2 92      LDX #&92
+     81D9   A0 52      LDY #&52
+     81DB   4C 42 54   JMP &5442
 .ChangeDirectory
-     81DC   A2 34      LDX #&34
-     81DE   A0 F7      LDY #&F7
-     81E0   4C F7 FF   JMP &FFF7
+     81DE   A2 34      LDX #&34
+     81E0   A0 F7      LDY #&F7
+     81E2   4C F7 FF   JMP &FFF7
 .StoreName
-     81E3   A2 07      LDX #&07
+     81E5   A2 07      LDX #&07
 .name1
-     81E5   B5 4A      LDA &4A,X
-     81E7   9D 9C 08   STA &089C,X
-     81EA   CA         DEX
-     81EB   10 F8      BPL &81E5
-     81ED   60         RTS
+     81E7   B5 4A      LDA &4A,X
+     81E9   9D 9C 08   STA &089C,X
+     81EC   CA         DEX
+     81ED   10 F8      BPL &81E7
+     81EF   60         RTS
 .endUniverseEditor3
 .prgAddress
      81FE   00 F9
@@ -38030,7 +38031,7 @@ End macro FACE
      F340   8D 1C 53   STA &531C
      F343   A9 F3      LDA #&F3
      F345   8D 1D 53   STA &531D
-     F348   20 DC 81   JSR &81DC
+     F348   20 DE 81   JSR &81DE
 .ReturnToDiscMenu
      F34B   20 7B 52   JSR &527B
      F34E   A9 FF      LDA #&FF
@@ -38046,7 +38047,7 @@ End macro FACE
      F364   90 31      BCC &F397
      F366   C9 34      CMP #&34
      F368   D0 06      BNE &F370
-     F36A   20 B5 81   JSR &81B5
+     F36A   20 B7 81   JSR &81B7
      F36D   4C 4B F3   JMP &F34B
 .disc1
      F370   C9 35      CMP #&35
@@ -38077,7 +38078,7 @@ End macro FACE
      F3A4   8D 0F 10   STA &100F
      F3A7   8D 38 F7   STA &F738
      F3AA   8D 9B 52   STA &529B
-     F3AD   20 DC 81   JSR &81DC
+     F3AD   20 DE 81   JSR &81DE
      F3B0   A9 CD      LDA #&CD
      F3B2   8D 1E 74   STA &741E
      F3B5   A9 70      LDA #&70
@@ -38108,9 +38109,9 @@ End macro FACE
      F3EF   A0 21      LDY #&21
      F3F1   8C 0A 0C   STY &0C0A
      F3F4   A9 FF      LDA #&FF
-     F3F6   20 8F 81   JSR &818F
+     F3F6   20 91 81   JSR &8191
      F3F9   B0 45      BCS &F440
-     F3FB   20 E3 81   JSR &81E3
+     F3FB   20 E5 81   JSR &81E5
      F3FE   A9 84      LDA #&84
      F400   85 1A      STA &1A
      F402   A9 E4      LDA #&E4
@@ -38144,7 +38145,7 @@ End macro FACE
      F443   4C 75 0E   JMP &0E75
 .SaveUniverse
      F446   20 1F 52   JSR &521F
-     F449   20 E3 81   JSR &81E3
+     F449   20 E5 81   JSR &81E5
      F44C   20 7B 52   JSR &527B
      F44F   A0 81      LDY #&81
      F451   8C 0B 0C   STY &0C0B
@@ -38181,7 +38182,7 @@ End macro FACE
      F499   AD FD 08   LDA &08FD
      F49C   8D 1E 85   STA &851E
      F49F   A9 00      LDA #&00
-     F4A1   4C 8F 81   JMP &818F
+     F4A1   4C 91 81   JMP &8191
 .PlayUniverse
      F4A4   20 7F F1   JSR &F17F
      F4A7   B0 03      BCS &F4AC
