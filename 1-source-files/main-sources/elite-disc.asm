@@ -13,10 +13,10 @@
 \ in the documentation are entirely my fault
 \
 \ The terminology and notations used in this commentary are explained at
-\ https://www.bbcelite.com/about_site/terminology_used_in_this_commentary.html
+\ https://elite.bbcelite.com/terminology
 \
 \ The deep dive articles referred to in this commentary can be found at
-\ https://www.bbcelite.com/deep_dives
+\ https://elite.bbcelite.com/deep_dives
 \
 \ ------------------------------------------------------------------------------
 \
@@ -65,6 +65,11 @@ ELSE
  ELIF _EXECUTIVE
   PUTFILE "3-assembled-output/P.CODE.bin", "P.CODE", &000E3C, &00106C
  ENDIF
+ENDIF
+
+IF _SNG45
+ PUTFILE "1-source-files/boot-files/$.!BOOT.bin", "!BOOT", &002000, &00202B
+ PUTFILE "1-source-files/boot-files/$.SCREEN.bin", "SCREEN", &FF7C00, &000000
 ENDIF
 
  PUTFILE "3-assembled-output/README.txt", "README", &FFFFFF, &FFFFFF
