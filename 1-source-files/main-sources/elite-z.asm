@@ -8981,7 +8981,7 @@ ENDMACRO
  _MASTER_VERSION = FALSE
  _C64_VERSION    = FALSE
 
- INCLUDE "1-source-files/main-sources/elite-universe-editor-z.asm"
+ INCLUDE "library-elite-universe-editor/main-sources/elite-universe-editor-z.asm"
 
                         \ --- End of added code ------------------------------->
 

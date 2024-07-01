@@ -3663,8 +3663,8 @@ ENDIF
 
  ORG &0E3C
 
- INCLUDE "1-source-files/main-sources/elite-universe-editor-variables.asm"
- INCLUDE "1-source-files/main-sources/elite-universe-editor-1.asm"
+ INCLUDE "library-elite-universe-editor/main-sources/elite-universe-editor-variables.asm"
+ INCLUDE "library-elite-universe-editor/main-sources/elite-universe-editor-1.asm"
 
  SKIPTO &1000
 
@@ -43578,7 +43578,7 @@ ENDIF
 
                         \ --- And replaced by: -------------------------------->
 
- INCLUDE "1-source-files/main-sources/elite-universe-editor-2.asm"
+ INCLUDE "library-elite-universe-editor/main-sources/elite-universe-editor-2.asm"
 
                         \ --- End of replacement ------------------------------>
 
@@ -48126,7 +48126,7 @@ ENDIF
 
                         \ --- Mod: Code added for Universe Editor: ------------>
 
- INCLUDE "1-source-files/main-sources/elite-universe-editor-3.asm"
+ INCLUDE "library-elite-universe-editor/main-sources/elite-universe-editor-3.asm"
 
                         \ --- End of added code ------------------------------->
 
@@ -51763,7 +51763,7 @@ ENDMACRO
 
                         \ --- And replaced by: -------------------------------->
 
- INCLUDE "1-source-files/main-sources/elite-universe-editor-4.asm"
+ INCLUDE "library-elite-universe-editor/main-sources/elite-universe-editor-4.asm"
 
                         \ --- End of replacement ------------------------------>
 
