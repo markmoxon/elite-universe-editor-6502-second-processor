@@ -188,8 +188,17 @@ ENDMACRO
 
 .MESS2
 
- EQUS "R.I.CODE"        \ This is short for "*RUN I.CODE"
+                        \ --- Mod: Code removed for Compendium: --------------->
+
+\EQUS "R.I.CODE"        \ This is short for "*RUN I.CODE"
+\EQUB 13
+
+                        \ --- And replaced by: -------------------------------->
+
+ EQUS "R.V.ICODE"       \ This is short for "*RUN V.ICODE"
  EQUB 13
+ 
+                        \ --- End of replacement ------------------------------>
 
 \ ******************************************************************************
 \
@@ -203,8 +212,17 @@ ENDMACRO
 
 .MESS3
 
- EQUS "R.P.CODE"        \ This is short for "*RUN P.CODE"
+                        \ --- Mod: Code removed for Compendium: --------------->
+
+\EQUS "R.P.CODE"        \ This is short for "*RUN P.CODE"
+\EQUB 13
+
+                        \ --- And replaced by: -------------------------------->
+
+ EQUS "R.V.PCODE"       \ This is short for "*RUN V.PCODE"
  EQUB 13
+ 
+                        \ --- End of replacement ------------------------------>
 
 \ ******************************************************************************
 \

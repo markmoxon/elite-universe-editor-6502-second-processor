@@ -1316,8 +1316,17 @@ ENDIF
 
 .MESS2
 
- EQUS "R.I.ELITEa"      \ This is short for "*RUN I.ELITEa"
+                        \ --- Mod: Code removed for Compendium: --------------->
+
+\EQUS "R.I.ELITEa"      \ This is short for "*RUN I.ELITEa"
+\EQUB 13
+
+                        \ --- And replaced by: -------------------------------->
+
+ EQUS "R.V.IELITEa"     \ This is short for "*RUN V.IELITEa"
  EQUB 13
+ 
+                        \ --- End of replacement ------------------------------>
 
 \ ******************************************************************************
 \

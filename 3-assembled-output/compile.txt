@@ -46477,9 +46477,9 @@ End macro FNE
      22DF   44 49 52 ...
      22E4   0D
 .MESS2
-     22E5   52 2E 49 ...
-     22EF   0D
-S.ELITE &1FDC  &22F0  &1FDC  &1FDC 
+     22E5   52 2E 56 ...
+     22F0   0D
+S.ELITE &1FDC  &22F1  &1FDC  &1FDC 
 Saving file '3-assembled-output/ELITE.bin'
 .Z1
      0090
@@ -46487,7 +46487,7 @@ Saving file '3-assembled-output/ELITE.bin'
      0092
 .ENTRY
 Macro MVE:
-     2000   A9 89      LDA #&89
+     2000   A9 8B      LDA #&8B
      2002   85 90      STA &90
      2004   A9 20      LDA #&20
      2006   85 91      STA &91
@@ -46496,10 +46496,10 @@ Macro MVE:
      200C   A9 70      LDA #&70
      200E   85 93      STA &93
      2010   A2 0E      LDX #&0E
-     2012   20 7E 20   JSR &207E
+     2012   20 80 20   JSR &2080
 End macro MVE
 Macro MVE:
-     2015   A9 89      LDA #&89
+     2015   A9 8B      LDA #&8B
      2017   85 90      STA &90
      2019   A9 30      LDA #&30
      201B   85 91      STA &91
@@ -46508,10 +46508,10 @@ Macro MVE:
      2021   A9 42      LDA #&42
      2023   85 93      STA &93
      2025   A2 01      LDX #&01
-     2027   20 7E 20   JSR &207E
+     2027   20 80 20   JSR &2080
 End macro MVE
 Macro MVE:
-     202A   A9 89      LDA #&89
+     202A   A9 8B      LDA #&8B
      202C   85 90      STA &90
      202E   A9 32      LDA #&32
      2030   85 91      STA &91
@@ -46520,10 +46520,10 @@ Macro MVE:
      2036   A9 46      LDA #&46
      2038   85 93      STA &93
      203A   A2 01      LDX #&01
-     203C   20 7E 20   JSR &207E
+     203C   20 80 20   JSR &2080
 End macro MVE
 Macro MVE:
-     203F   A9 89      LDA #&89
+     203F   A9 8B      LDA #&8B
      2041   85 90      STA &90
      2043   A9 34      LDA #&34
      2045   85 91      STA &91
@@ -46532,41 +46532,41 @@ Macro MVE:
      204B   A9 6C      LDA #&6C
      204D   85 93      STA &93
      204F   A2 01      LDX #&01
-     2051   20 7E 20   JSR &207E
+     2051   20 80 20   JSR &2080
 End macro MVE
      2054   A2 62      LDX #&62
      2056   A0 20      LDY #&20
      2058   20 F7 FF   JSR &FFF7
-     205B   A2 6B      LDX #&6B
+     205B   A2 6C      LDX #&6C
      205D   A0 20      LDY #&20
      205F   4C F7 FF   JMP &FFF7
 .MESS2
-     2062   52 2E 49 ...
-     206A   0D
+     2062   52 2E 56 ...
+     206B   0D
 .MESS3
-     206B   52 2E 50 ...
-     2073   0D
+     206C   52 2E 56 ...
+     2075   0D
 .MVPG
-     2074   A0 00      LDY #&00
+     2076   A0 00      LDY #&00
 .MPL
-     2076   B1 90      LDA (&90),Y
-     2078   91 92      STA (&92),Y
-     207A   88         DEY
-     207B   D0 F9      BNE &2076
-     207D   60         RTS
+     2078   B1 90      LDA (&90),Y
+     207A   91 92      STA (&92),Y
+     207C   88         DEY
+     207D   D0 F9      BNE &2078
+     207F   60         RTS
 .MVBL
-     207E   20 74 20   JSR &2074
-     2081   E6 91      INC &91
-     2083   E6 93      INC &93
-     2085   CA         DEX
-     2086   10 F6      BPL &207E
-     2088   60         RTS
+     2080   20 76 20   JSR &2076
+     2083   E6 91      INC &91
+     2085   E6 93      INC &93
+     2087   CA         DEX
+     2088   10 F6      BPL &2080
+     208A   60         RTS
 .DIALS
 .DATE
 .ASOFT
 .ELITE
 .CpASOFT
-S.ELITEa &2000  &3689  &2000  &2000 
+S.ELITEa &2000  &368B  &2000  &2000 
 Saving file '3-assembled-output/ELITEa.bin'
 .readme
      0000   0A
