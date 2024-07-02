@@ -22,7 +22,3 @@ $RECYCLE.BIN/
 .vscode/tasks.json
 *.code-workspace
 run.bat
-
-# Build files
-3-assembled-output/*.bin
-*.ssd
