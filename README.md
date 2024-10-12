@@ -8,15 +8,15 @@ The Elite Universe Editor allows you to create your own universes in classic BBC
 
 This repository contains the Universe Editor code as a submodule:
 
-* [Elite Universe Editor Library](https://github.com/markmoxon/library-elite-universe-editor)
+* [Elite Universe Editor Library](https://github.com/markmoxon/elite-universe-editor-library)
 
-This code is patched into Elite. You can search the source code for the patch points by searching the sources for `Mod:`. This repository is downstream from the [6502 Second Processor Elite](https://github.com/markmoxon/6502sp-elite-beebasm) repository, and can be updated by pulling from the `main` branch upstream.
+This code is patched into Elite. You can search the source code for the patch points by searching the sources for `Mod:`. This repository is downstream from the [6502 Second Processor Elite](https://github.com/markmoxon/elite-source-code-6502-second-processor) repository, and can be updated by pulling from the `main` branch upstream.
 
 The following repositories are used to generate the Universe Editor for the different platforms:
 
-* [BBC Master Elite Universe Editor](https://github.com/markmoxon/master-elite-universe-editor)
-* [6502 Second Processor Elite Universe Editor](https://github.com/markmoxon/6502sp-elite-universe-editor)
-* [Commodore 64 Elite Universe Editor](https://github.com/markmoxon/c64-elite-universe-editor)
+* [BBC Master Elite Universe Editor](https://github.com/markmoxon/elite-universe-editor-bbc-master)
+* [6502 Second Processor Elite Universe Editor](https://github.com/markmoxon/elite-universe-editor-6502-second-processor)
+* [Commodore 64 Elite Universe Editor](https://github.com/markmoxon/elite-universe-editor-commodore-64)
 
 The above repositories are used when building the Universe Editor and the Elite Compendium discs:
 
