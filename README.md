@@ -8,7 +8,7 @@ The Elite Universe Editor allows you to create your own universes in classic BBC
 
 This repository contains the Universe Editor code as a submodule:
 
-* [Elite Universe Editor Library](https://github.com/markmoxon/library-elite-universe-editor)
+* [Elite Universe Editor Library](https://github.com/markmoxon/elite-universe-editor-library)
 
 This code is patched into Elite. You can search the source code for the patch points by searching the sources for `Mod:`. This repository is downstream from the [6502 Second Processor Elite](https://github.com/markmoxon/elite-source-code-6502-second-processor) repository, and can be updated by pulling from the `main` branch upstream.
 

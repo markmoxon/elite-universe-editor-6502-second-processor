@@ -74,10 +74,10 @@ ENDIF
 
  PUTFILE "3-assembled-output/README.txt", "README", &FFFFFF, &FFFFFF
 
- PUTFILE "library-elite-universe-editor/universe-files/U.BOXART1.bin", "U.BOXART1", &000000, &000000
- PUTFILE "library-elite-universe-editor/universe-files/U.BOXART2.bin", "U.BOXART2", &000000, &000000
- PUTFILE "library-elite-universe-editor/universe-files/U.MANUAL.bin", "U.MANUAL", &000000, &000000
- PUTFILE "library-elite-universe-editor/universe-files/U.SHIPID.bin", "U.SHIPID", &000000, &000000
- PUTFILE "library-elite-universe-editor/universe-files/U.SHIPID6.bin", "U.SHIPID6", &000000, &000000
+ PUTFILE "elite-universe-editor-library/universe-files/U.BOXART1.bin", "U.BOXART1", &000000, &000000
+ PUTFILE "elite-universe-editor-library/universe-files/U.BOXART2.bin", "U.BOXART2", &000000, &000000
+ PUTFILE "elite-universe-editor-library/universe-files/U.MANUAL.bin", "U.MANUAL", &000000, &000000
+ PUTFILE "elite-universe-editor-library/universe-files/U.SHIPID.bin", "U.SHIPID", &000000, &000000
+ PUTFILE "elite-universe-editor-library/universe-files/U.SHIPID6.bin", "U.SHIPID6", &000000, &000000
 
- PUTFILE "library-elite-universe-editor/basic-programs/B.CONVERT.bin", "B.CONVERT", &FF0E00, &FF8023
+ PUTFILE "elite-universe-editor-library/basic-programs/B.CONVERT.bin", "B.CONVERT", &FF0E00, &FF8023
